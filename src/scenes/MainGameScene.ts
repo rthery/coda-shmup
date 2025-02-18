@@ -1,7 +1,9 @@
-import { Scene } from 'phaser';
+import { Scene, GameObjects } from 'phaser';
 
 export class MainGameScene extends Scene
 {
+    private textGO: GameObjects.Text;
+
     constructor ()
     {
         super('MainGameScene');
@@ -17,14 +19,17 @@ export class MainGameScene extends Scene
 
     create ()
     {
-        
         this.add.image(512, 384, 'background');
         this.add.image(512, 350, 'logo').setDepth(100);
-        this.add.text(512, 490, 'Make something fun!\nand share it with us:\nsupport@phaser.io', {
+        this.textGO = this.add.text(512, 490, 'Make something fun!\nand share it with us:\nsupport@phaser.io', {
             fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
             stroke: '#000000', strokeThickness: 8,
             align: 'center'
         }).setOrigin(0.5).setDepth(100);
-        
+    }
+
+    update (time: number, delta: number)
+    {
+        this.textGO.text = `${time} ms\n${delta.toFixed(2)} ms`;
     }
 }

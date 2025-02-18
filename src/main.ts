@@ -13,6 +13,7 @@ const config: Types.Core.GameConfig = {
         mode: Scale.FIT,
         autoCenter: Scale.CENTER_BOTH
     },
+    // fps: { forceSetTimeOut: true, target: 120 },
     scene: [
         MainGameScene
     ]
