@@ -1,7 +1,8 @@
-import { Game as MainGame } from './scenes/Game';
-import { AUTO, Game, Scale,Types } from 'phaser';
+import { MainGameScene } from './scenes/MainGameScene.ts';
+import { AUTO, Game, Scale } from 'phaser';
+import type { Types } from 'phaser';
 
-//  Find out more information about the Game Config at:
+//  Find out more information about the GameConfig at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config: Types.Core.GameConfig = {
     type: AUTO,
@@ -14,7 +15,7 @@ const config: Types.Core.GameConfig = {
         autoCenter: Scale.CENTER_BOTH
     },
     scene: [
-        MainGame
+        MainGameScene
     ]
 };
 
