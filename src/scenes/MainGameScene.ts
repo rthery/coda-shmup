@@ -2,7 +2,7 @@ import { Scene, GameObjects, Physics } from 'phaser';
 
 export class MainGameScene extends Scene
 {
-    private player: GameObjects.Triangle;
+    private player: GameObjects.Image;
     private playerMovementSpeed: number = 0.9;
     private playerRateOfFire: number = 0.5;
     private playerScore: number;
@@ -26,6 +26,7 @@ export class MainGameScene extends Scene
 
         this.load.image('bg', 'Backgrounds/darkPurple.png');
         this.load.image('planet', 'Planets/planet00.png');
+        this.load.atlasXML('sprites', 'Spritesheet/sheet.png', 'Spritesheet/sheet.xml');
     }
 
     create ()
@@ -38,12 +39,11 @@ export class MainGameScene extends Scene
         this.bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg').setOrigin(0).setTileScale(2);
         this.planet = this.add.image(0, -512, 'planet').setOrigin(0);
 
-        this.player = this.add.triangle(this.cameras.main.centerX, this.cameras.main.height - 128, -1, 1, 1, 1, 0, -2, 0x247ba0).setScale(32).setDepth(100).setOrigin(0);
+        this.player = this.add.image(this.cameras.main.centerX, this.cameras.main.height - 128, 'sprites', 'playerShip3_blue.png').setDepth(100).setOrigin(0.5);
         this.physics.add.existing(this.player);
         let playerBody: Physics.Arcade.Body = this.player.body as Physics.Arcade.Body;
         playerBody.allowGravity = false;
         playerBody.setFriction(0, 0);
-        playerBody.setCircle(1, -1, -1); // Arcade physics only support circles or rectangle for collision shapes
 
         if (this.input.keyboard)
         {
@@ -105,7 +105,7 @@ export class MainGameScene extends Scene
         }
 
         const enemySize: number = 32;
-        let enemy: GameObjects.Arc = this.add.circle(Phaser.Math.Between(enemySize, this.cameras.main.width - enemySize), -enemySize/2, enemySize, 0xf25f5c).setDepth(100);
+        let enemy: GameObjects.Image = this.add.image(Phaser.Math.Between(enemySize, this.cameras.main.width - enemySize), -enemySize/2, "sprites", "ufoRed.png").setDepth(100);
         this.enemies.add(enemy);
         this.physics.add.existing(enemy);
         let enemyBody: Physics.Arcade.Body = enemy.body as Physics.Arcade.Body;
