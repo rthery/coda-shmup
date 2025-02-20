@@ -5,7 +5,8 @@ export class MainGameScene extends Scene
     private player: GameObjects.Triangle;
     private playerMovementSpeed: number = 0.9;
     private playerRateOfFire: number = 0.5;
-    private lastShotTime: number = 0;
+    private playerScore: number;
+    private lastShotTime: number;
     private cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
     private bullets: Physics.Arcade.Group;
     private enemies: Physics.Arcade.Group;
@@ -51,6 +52,8 @@ export class MainGameScene extends Scene
         this.physics.add.collider(this.bullets, this.enemies, (bullet, enemy) => {
             bullet.destroy();
             enemy.destroy();
+            this.playerScore++;
+            console.log("Score: " + this.playerScore);
         }, undefined, this);
         this.physics.add.collider(this.enemyBullets, this.player, (_bullet, _player) => {
             this.endGame();
@@ -66,6 +69,9 @@ export class MainGameScene extends Scene
             callbackScope: this,
             loop: true
         });
+
+        this.playerScore = 0;
+        this.lastShotTime = 0;
     }
 
     private endGame ()
