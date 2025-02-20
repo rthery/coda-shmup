@@ -5,7 +5,8 @@ export class MainGameScene extends Scene
     private player: GameObjects.Triangle;
     private playerMovementSpeed: number = 0.9;
     private playerRateOfFire: number = 0.5;
-    private lastShotTime: number = 0;
+    private playerScore: number;
+    private lastShotTime: number;
     private cursorKeys: Types.Input.Keyboard.CursorKeys;
     private enemyShootTimers: Map<GameObjects.GameObject, Phaser.Time.TimerEvent>;
     private bullets: Physics.Arcade.Group;
@@ -59,6 +60,8 @@ export class MainGameScene extends Scene
             }
             bullet.destroy();
             enemy.destroy();
+            this.playerScore++;
+            console.log("Score: " + this.playerScore);
         });
         this.physics.add.overlap(this.enemyBullets, this.player, (_bullet, _player) => {
             this.endGame();
@@ -75,6 +78,9 @@ export class MainGameScene extends Scene
             callbackScope: this,
             loop: true
         });
+
+        this.playerScore = 0;
+        this.lastShotTime = 0;
     }
 
     private endGame ()
