@@ -9,6 +9,7 @@ export class MainGameScene extends Scene
     private cursorKeys: Types.Input.Keyboard.CursorKeys;
     private bullets: Physics.Arcade.Group;
     private enemies: Physics.Arcade.Group;
+    private enemyBullets: Physics.Arcade.Group;
 
     constructor ()
     {
@@ -28,6 +29,11 @@ export class MainGameScene extends Scene
         this.cameras.main.setBackgroundColor(colorPalette[0]);
 
         this.player = this.add.triangle(this.cameras.main.centerX, this.cameras.main.height - 128, -1, 1, 1, 1, 0, -2, 0x247ba0).setScale(32).setDepth(100).setOrigin(0);
+        this.physics.add.existing(this.player);
+        const playerBody: Physics.Arcade.Body = this.player.body as Physics.Arcade.Body;
+        playerBody.allowGravity = false;
+        playerBody.setFriction(0, 0);
+        playerBody.setCircle(1, -1, -1); // Arcade physics only support circles or rectangle for collision shapes
 
         if (this.input.keyboard)
         {
@@ -41,9 +47,16 @@ export class MainGameScene extends Scene
         // Add physics groups and callbacks
         this.bullets = this.physics.add.group();
         this.enemies = this.physics.add.group();
+        this.enemyBullets = this.physics.add.group();
         this.physics.add.overlap(this.bullets, this.enemies, (bullet, enemy) => {
             bullet.destroy();
             enemy.destroy();
+        });
+        this.physics.add.overlap(this.enemyBullets, this.player, (_bullet, _player) => {
+            this.endGame();
+        });
+        this.physics.add.overlap(this.enemies, this.player, (_enemy, _player) => {
+            this.endGame();
         });
 
         // Spawn enemies indefinitely
@@ -53,6 +66,12 @@ export class MainGameScene extends Scene
             callbackScope: this,
             loop: true
         });
+    }
+
+    private endGame ()
+    {
+        this.scene.restart();
+        console.log("Game Over")
     }
 
     private spawnEnemy ()
@@ -72,22 +91,45 @@ export class MainGameScene extends Scene
         enemyBody.allowGravity = false;
         enemyBody.setFriction(0, 0);
         enemyBody.setVelocityY(256);
+
+        // Have enemy shoot every 2 to 3 seconds
+        this.time.addEvent({
+            delay: Phaser.Math.Between(2000, 3000),
+            callback: this.enemyShoot,
+            args: [enemy],
+            callbackScope: this,
+            loop: true
+        });
     }
 
-    update (_timeSinceLaunch: number, deltaTime: number)
+    private enemyShoot (enemy: GameObjects.Arc)
+    {
+        const bullet: GameObjects.Rectangle = this.add.rectangle(enemy.x, enemy.y + enemy.displayHeight / 2, 12, 12, 0xf25f5c).setOrigin(0.5);
+        this.enemyBullets.add(bullet);
+        this.physics.add.existing(bullet);
+        const bulletBody: Physics.Arcade.Body = bullet.body as Physics.Arcade.Body;
+        bulletBody.allowGravity = false;
+        bulletBody.setFriction(0, 0);
+        bulletBody.setVelocityY(512);
+    }
+
+    update (timeSinceLaunch: number, deltaTime: number)
     {
         // Press left or right arrow keys to move the player smoothly horizontally using deltaTime
-        if (this.cursorKeys.left.isDown)
+        if (this.player)
         {
-            this.player.x -= this.playerMovementSpeed * deltaTime;
-        }
-        else if (this.cursorKeys.right.isDown)
-        {
-            this.player.x += this.playerMovementSpeed * deltaTime;
+            if (this.cursorKeys.left.isDown)
+            {
+                (this.player.body as Physics.Arcade.Body).x -= this.playerMovementSpeed * deltaTime;
+            }
+            else if (this.cursorKeys.right.isDown)
+            {
+                (this.player.body as Physics.Arcade.Body).x += this.playerMovementSpeed * deltaTime;
+            }
         }
 
         // Press space to shoot
-        if (this.cursorKeys.space.isDown && _timeSinceLaunch - this.lastShotTime > this.playerRateOfFire * 1000)
+        if (this.cursorKeys.space.isDown && timeSinceLaunch - this.lastShotTime > this.playerRateOfFire * 1000)
         {
             const bulletPosX: number = this.player.x;
             const bulletPosY: number = this.player.y - this.player.displayHeight / 2;
@@ -99,7 +141,7 @@ export class MainGameScene extends Scene
             bulletBody.setFriction(0, 0);
             bulletBody.setVelocityY(-1024);
 
-            this.lastShotTime = _timeSinceLaunch;
+            this.lastShotTime = timeSinceLaunch;
         }
 
         // Stop player from going offscreen
@@ -116,6 +158,12 @@ export class MainGameScene extends Scene
             if ((enemy as GameObjects.Arc).y >= this.cameras.main.height + (enemy as GameObjects.Arc).displayHeight)
             {
                 enemy.destroy();
+            }
+        });
+        this.enemyBullets.getChildren().forEach(bullet => {
+            if ((bullet as GameObjects.Rectangle).y > this.cameras.main.height + (bullet as GameObjects.Rectangle).displayHeight)
+            {
+                bullet.destroy();
             }
         });
     }
