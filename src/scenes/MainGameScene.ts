@@ -8,6 +8,7 @@ export class MainGameScene extends Scene
     private playerScore: number;
     private lastShotTime: number;
     private cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
+    private enemyShootTimers: Map<GameObjects.GameObject, Phaser.Time.TimerEvent>;
     private bullets: Physics.Arcade.Group;
     private enemies: Physics.Arcade.Group;
     private enemyBullets: Physics.Arcade.Group;
@@ -50,6 +51,13 @@ export class MainGameScene extends Scene
         this.enemies = this.physics.add.group();
         this.enemyBullets = this.physics.add.group();
         this.physics.add.collider(this.bullets, this.enemies, (bullet, enemy) => {
+            const timer = this.enemyShootTimers.get(enemy as Phaser.Types.Physics.Arcade.GameObjectWithBody);
+            if (timer) {
+                timer.remove();
+            }
+            else {
+                console.error("Enemy shoot timer not found");
+            }
             bullet.destroy();
             enemy.destroy();
             this.playerScore++;
@@ -62,6 +70,7 @@ export class MainGameScene extends Scene
             this.endGame();
         });
 
+        this.enemyShootTimers = new Map();
         // Spawn enemies indefinitely
         this.time.addEvent({
             delay: 1500,
@@ -97,13 +106,14 @@ export class MainGameScene extends Scene
         enemyBody.setVelocityY(256);
 
         // Have enemy shoot every 2 to 3 seconds
-        this.time.addEvent({
+        let timer = this.time.addEvent({
             delay: Phaser.Math.Between(2000, 3000),
             callback: this.enemyShoot,
             args: [enemy],
             callbackScope: this,
             loop: true
         });
+        this.enemyShootTimers.set(enemy, timer);
     }
 
     private enemyShoot (enemy: GameObjects.Arc)
@@ -159,6 +169,14 @@ export class MainGameScene extends Scene
         this.enemies.getChildren().forEach(enemy => {
             if ((enemy as GameObjects.Arc).y >= this.cameras.main.height + (enemy as GameObjects.Arc).displayHeight)
             {
+                const timer = this.enemyShootTimers.get(enemy);
+                if (timer) {
+                    timer.remove();
+                }
+                else {
+                    console.error("Enemy shoot timer not found");
+                }
+
                 enemy.destroy();
             }
         });
