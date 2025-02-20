@@ -12,6 +12,8 @@ export class MainGameScene extends Scene
     private bullets: Physics.Arcade.Group;
     private enemies: Physics.Arcade.Group;
     private enemyBullets: Physics.Arcade.Group;
+    private bg: GameObjects.TileSprite;
+    private planet: GameObjects.Image;
 
     constructor ()
     {
@@ -21,6 +23,9 @@ export class MainGameScene extends Scene
     preload ()
     {
         this.load.setPath('assets');
+
+        this.load.image('bg', 'Backgrounds/darkPurple.png');
+        this.load.image('planet', 'Planets/planet00.png');
     }
 
     create ()
@@ -29,6 +34,9 @@ export class MainGameScene extends Scene
         const colorPalette: string[] = ["#50514f","#f25f5c","#ffe066",
             "#247ba0","#70c1b3"];
         this.cameras.main.setBackgroundColor(colorPalette[0]);
+
+        this.bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg').setOrigin(0).setTileScale(2);
+        this.planet = this.add.image(0, -512, 'planet').setOrigin(0);
 
         this.player = this.add.triangle(this.cameras.main.centerX, this.cameras.main.height - 128, -1, 1, 1, 1, 0, -2, 0x247ba0).setScale(32).setDepth(100).setOrigin(0);
         this.physics.add.existing(this.player);
@@ -131,6 +139,9 @@ export class MainGameScene extends Scene
 
     update (timeSinceLaunch: number, deltaTime: number)
     {
+        this.bg.tilePositionY -= 0.1 * deltaTime;
+        this.planet.y += 0.40 * deltaTime;
+
         // Press left or right arrow keys to move the player smoothly horizontally using deltaTime
         if (this.player)
         {
