@@ -13,6 +13,12 @@ const config: Types.Core.GameConfig = {
         mode: Scale.FIT,
         autoCenter: Scale.CENTER_BOTH
     },
+    physics: {
+        default: 'arcade',
+        arcade: {
+            debug: false,
+        }
+    },
     // fps: { forceSetTimeOut: true, target: 120 },
     scene: [
         MainGameScene
