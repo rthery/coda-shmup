@@ -1,9 +1,10 @@
 import { Scene, GameObjects, Physics, Types } from 'phaser';
+import { PlayerShipsData, PlayerShipData } from "../gameData/PlayerShipsData.ts";
 
 export class MainGameScene extends Scene
 {
     private player: GameObjects.Image;
-    private playerMovementSpeed: number = 0.9;
+    private playerShipData: PlayerShipData;
     private playerRateOfFire: number = 0.5;
     private playerScore: number;
     private lastShotTime: number;
@@ -27,6 +28,8 @@ export class MainGameScene extends Scene
         this.load.image('bg', 'Backgrounds/darkPurple.png');
         this.load.image('planet', 'Planets/planet00.png');
         this.load.atlasXML('sprites', 'Spritesheet/sheet.png', 'Spritesheet/sheet.xml');
+
+        this.load.json('playerShips', 'Data/playerShips.json');
     }
 
     create ()
@@ -39,7 +42,10 @@ export class MainGameScene extends Scene
         this.bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg').setOrigin(0).setTileScale(2);
         this.planet = this.add.image(0, -512, 'planet').setOrigin(0);
 
-        this.player = this.add.image(this.cameras.main.centerX, this.cameras.main.height - 128, 'sprites', 'playerShip3_blue.png').setDepth(100).setOrigin(0.5);
+        const playerShipsData = this.cache.json.get('playerShips') as PlayerShipsData;
+        this.playerShipData = playerShipsData[1];
+
+        this.player = this.add.image(this.cameras.main.centerX, this.cameras.main.height - 128, 'sprites', this.playerShipData.texture).setDepth(100).setOrigin(0.5);
         this.physics.add.existing(this.player);
         const playerBody: Physics.Arcade.Body = this.player.body as Physics.Arcade.Body;
         playerBody.allowGravity = false;
@@ -48,6 +54,9 @@ export class MainGameScene extends Scene
         if (this.input.keyboard)
         {
             this.cursorKeys = this.input.keyboard.createCursorKeys();
+            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE).on('down', () => this.selectPlayerShip(1));
+            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO).on('down', () => this.selectPlayerShip(2));
+            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE).on('down', () => this.selectPlayerShip(3));
         }
         else
         {
@@ -89,6 +98,14 @@ export class MainGameScene extends Scene
 
         this.playerScore = 0;
         this.lastShotTime = 0;
+    }
+
+    private selectPlayerShip (playerShipId: number)
+    {
+        const playerShipsData = this.cache.json.get('playerShips') as PlayerShipsData;
+        this.playerShipData = playerShipsData[playerShipId];
+
+        this.player.setTexture('sprites', this.playerShipData.texture);
     }
 
     private endGame ()
@@ -143,15 +160,15 @@ export class MainGameScene extends Scene
         this.planet.y += 0.40 * deltaTime;
 
         // Press left or right arrow keys to move the player smoothly horizontally using deltaTime
-        if (this.player)
+        if (this.player && this.playerShipData)
         {
             if (this.cursorKeys.left.isDown)
             {
-                (this.player.body as Physics.Arcade.Body).x -= this.playerMovementSpeed * deltaTime;
+                (this.player.body as Physics.Arcade.Body).x -= this.playerShipData.movementSpeed * deltaTime;
             }
             else if (this.cursorKeys.right.isDown)
             {
-                (this.player.body as Physics.Arcade.Body).x += this.playerMovementSpeed * deltaTime;
+                (this.player.body as Physics.Arcade.Body).x += this.playerShipData.movementSpeed * deltaTime;
             }
         }
 
