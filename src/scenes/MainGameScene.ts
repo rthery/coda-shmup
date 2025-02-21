@@ -89,15 +89,17 @@ export class MainGameScene extends Scene
         });
 
         // Create animation when enemy is about to shoot
-        this.anims.create({
-            key: 'ufoShoot',
-            frames: [
-                { key: 'sprites', frame: 'ufoRed.png' },
-                { key: 'sprites', frame: 'ufoRed-shoot0.png' },
-                { key: 'sprites', frame: 'ufoRed-shoot1.png' }
-            ],
-            frameRate: 4,
-        });
+        if (!this.anims.exists('ufoShoot')) {
+            this.anims.create({
+                key: 'ufoShoot',
+                frames: [
+                    { key: 'sprites', frame: 'ufoRed.png' },
+                    { key: 'sprites', frame: 'ufoRed-shoot0.png' },
+                    { key: 'sprites', frame: 'ufoRed-shoot1.png' }
+                ],
+                frameRate: 4,
+            });
+        }
 
         this.enemyShootTimers = new Map();
         // Spawn enemies indefinitely
