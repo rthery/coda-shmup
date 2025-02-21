@@ -26,7 +26,7 @@ export class MainGameScene extends Scene
 
         this.load.image('bg', 'Backgrounds/darkPurple.png');
         this.load.image('planet', 'Planets/planet00.png');
-        this.load.atlasXML('sprites', 'Spritesheet/sheet.png', 'Spritesheet/sheet.xml');
+        this.load.atlas('sprites', 'Spritesheet/gameSprites.png', 'Spritesheet/gameSprites.json');
 
         this.load.audio('sfx_laser1', 'Sounds/sfx_laser1.ogg');
         this.load.audio('sfx_laser2', 'Sounds/sfx_laser2.ogg');
@@ -89,6 +89,17 @@ export class MainGameScene extends Scene
             this.endGame();
         });
 
+        // Create animation when enemy is about to shoot
+        this.anims.create({
+            key: 'ufoShoot',
+            frames: [
+                { key: 'sprites', frame: 'ufoRed.png' },
+                { key: 'sprites', frame: 'ufoRed-shoot0.png' },
+                { key: 'sprites', frame: 'ufoRed-shoot1.png' }
+            ],
+            frameRate: 4,
+        });
+
         this.enemyShootTimers = new Map();
         // Spawn enemies indefinitely
         this.time.addEvent({
@@ -124,7 +135,7 @@ export class MainGameScene extends Scene
         }
 
         const enemySize: number = 32;
-        let enemy: GameObjects.Image = this.add.image(Phaser.Math.Between(enemySize, this.cameras.main.width - enemySize), -enemySize/2, "sprites", "ufoRed.png").setDepth(100);
+        let enemy: GameObjects.Sprite = this.add.sprite(Phaser.Math.Between(enemySize, this.cameras.main.width - enemySize), -enemySize/2, "sprites", "ufoRed.png").setDepth(100);
         this.enemies.add(enemy);
         this.physics.add.existing(enemy);
         let enemyBody: Physics.Arcade.Body = enemy.body as Physics.Arcade.Body;
@@ -143,17 +154,22 @@ export class MainGameScene extends Scene
         this.enemyShootTimers.set(enemy, timer);
     }
 
-    private enemyShoot (enemy: GameObjects.Arc)
+    private enemyShoot (enemy: GameObjects.Sprite)
     {
-        let bullet: GameObjects.Rectangle = this.add.rectangle(enemy.x, enemy.y + enemy.displayHeight / 2, 12, 12, 0xf25f5c).setOrigin(0.5);
-        this.enemyBullets.add(bullet);
-        this.physics.add.existing(bullet);
-        let bulletBody: Physics.Arcade.Body = bullet.body as Physics.Arcade.Body;
-        bulletBody.allowGravity = false;
-        bulletBody.setFriction(0, 0);
-        bulletBody.setVelocityY(512);
+        enemy.play('ufoShoot');
+        enemy.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+            enemy.setTexture('sprites', 'ufoRed.png');
 
-        this.sound.play('sfx_laser2');
+            let bullet: GameObjects.Rectangle = this.add.rectangle(enemy.x, enemy.y + enemy.displayHeight / 2, 12, 12, 0xf25f5c).setOrigin(0.5);
+            this.enemyBullets.add(bullet);
+            this.physics.add.existing(bullet);
+            let bulletBody: Physics.Arcade.Body = bullet.body as Physics.Arcade.Body;
+            bulletBody.allowGravity = false;
+            bulletBody.setFriction(0, 0);
+            bulletBody.setVelocityY(512);
+
+            this.sound.play('sfx_laser2');
+        });
     }
 
     update (timeSinceLaunch: number, deltaTime: number)
