@@ -27,6 +27,8 @@ export class MainGameScene extends Scene
         this.load.image('bg', 'Backgrounds/darkPurple.png');
         this.load.image('planet', 'Planets/planet00.png');
         this.load.atlasXML('sprites', 'Spritesheet/sheet.png', 'Spritesheet/sheet.xml');
+        this.load.audio('sfx_laser1', 'Sounds/sfx_laser1.ogg');
+        this.load.audio('sfx_laser2', 'Sounds/sfx_laser2.ogg');
     }
 
     create ()
@@ -133,6 +135,8 @@ export class MainGameScene extends Scene
         bulletBody.allowGravity = false;
         bulletBody.setFriction(0, 0);
         bulletBody.setVelocityY(512);
+
+        this.sound.play('sfx_laser2');
     }
 
     update (timeSinceLaunch: number, deltaTime: number)
@@ -163,6 +167,8 @@ export class MainGameScene extends Scene
             bulletBody.allowGravity = false;
             bulletBody.setFriction(0, 0);
             bulletBody.setVelocityY(-1024);
+
+            this.sound.play('sfx_laser1');
 
             this.lastShotTime = timeSinceLaunch;
         }
