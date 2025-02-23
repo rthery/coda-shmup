@@ -25,6 +25,7 @@ export class Bullet extends Phaser.GameObjects.Rectangle {
 
     public disable() {
         this.scene.physics.world.remove(this.arcadeBody);
+        this.arcadeBody.setEnable(false); // physics.world.remove doesn't actually disable the body, bug in Phaser or documentation outdated
         this.setActive(false);
         this.setVisible(false);
     }
