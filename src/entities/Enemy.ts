@@ -6,7 +6,9 @@ export class Enemy extends Entity {
     private shootTimer: Phaser.Time.TimerEvent;
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
-        this.addComponent(new Weapon(this.scene, bulletsGroup, this.scene.sound.add('sfx_laser2')));
+        this.angle = 90;
+
+        this.addComponent(new Weapon(this.scene, bulletsGroup, this.scene.sound.add('sfx_laser2'), 4, 12, 0xf25f5c, 512));
 
         this.shootTimerConfig = {
             delay: Phaser.Math.Between(2000, 3000),
@@ -47,7 +49,7 @@ export class Enemy extends Entity {
         this.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
             this.setTexture('sprites', 'ufoRed.png');
 
-            this.getComponent(Weapon)?.shoot(this.x, this.y + this.displayHeight / 2, 12, 12, 0xf25f5c, 512);
+            this.getComponent(Weapon)?.shoot(this);
         });
     }
 
