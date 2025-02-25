@@ -30,6 +30,8 @@ export class Enemy extends Entity {
                 frameRate: 4,
             });
         }
+
+        this.arcadeBody.setCircle(this.displayWidth / 2);
     }
 
     public enable(x: number, y: number) {
