@@ -3,10 +3,10 @@ import {Bullet} from "../entities/Bullet.ts";
 import {Enemy} from "../entities/Enemy.ts";
 import {Player} from "../entities/Player.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
+import {GameDataKeys} from "../GameDataKeys.ts";
 
 export class MainGameScene extends Scene {
     private player: Player;
-    private playerScore: number;
     private playerBullets: Physics.Arcade.Group;
     private enemies: Physics.Arcade.Group;
     private enemyBullets: Physics.Arcade.Group;
@@ -82,7 +82,11 @@ export class MainGameScene extends Scene {
 
         this.initGroupCollisions();
 
-        this.playerScore = 0;
+        this.data.set<number>(GameDataKeys.PLAYER_SCORE, 0);
+        this.data.events.on('changedata-' + GameDataKeys.PLAYER_SCORE,
+            (_: any, value: number) => {
+            console.log("Score: " + value);
+        });
     }
 
     private initGroupCollisions() {
@@ -90,8 +94,7 @@ export class MainGameScene extends Scene {
         this.physics.add.collider(this.playerBullets, this.enemies, (bullet, enemy) => {
             (bullet as Bullet).disable();
             (enemy as Enemy).disable();
-            this.playerScore++;
-            console.log("Score: " + this.playerScore);
+            this.data.inc(GameDataKeys.PLAYER_SCORE, 1);
         }, undefined, this);
         this.physics.add.collider(this.enemyBullets, this.player, (_bullet, _player) => {
             this.endGame();
