@@ -33,7 +33,8 @@ export class Player extends Entity {
         this.playerShipData = playerShipData;
         this.setTexture(this.texture.key, playerShipData.texture);
         this.body.setCircle(playerShipData.body.radius, playerShipData.body.offsetX, playerShipData.body.offsetY);
-        this.body.updateCenter();
+        this.arcadeBody.setCircle(this.playerShipData.body.radius,
+            this.playerShipData.body.offsetX, this.playerShipData.body.offsetY);
     }
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {

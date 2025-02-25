@@ -23,12 +23,11 @@ export class Weapon implements IComponent {
         const bullet: Bullet = this.bullets.get() as Bullet;
         if (bullet) {
             // Get forward vector of the source entity
-            const angle: number = source.rotation;
-            const forwardVectorX: number = Math.cos(angle);
-            const forwardVectorY: number = Math.sin(angle);
+            const forwardVectorX: number = Math.cos(source.rotation);
+            const forwardVectorY: number = Math.sin(source.rotation);
             const bulletVelocityX: number = forwardVectorX * this.bulletSpeed;
             const bulletVelocityY: number = forwardVectorY * this.bulletSpeed;
-            bullet.enable(source.x + forwardVectorX * source.body.radius, source.y + forwardVectorY * source.body.radius, this.bulletWidth, this.bulletHeight, this.bulletColor, bulletVelocityX, bulletVelocityY);
+            bullet.enable(source.x + forwardVectorX * source.arcadeBody.radius, source.y + forwardVectorY * source.arcadeBody.radius, this.bulletWidth, this.bulletHeight, this.bulletColor, bulletVelocityX, bulletVelocityY);
             this.shootSound.play();
         }
     }

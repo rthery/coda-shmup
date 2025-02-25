@@ -1,7 +1,7 @@
 import {Scene, Physics} from 'phaser';
 
 export class Entity extends Physics.Arcade.Sprite {
-    public override body: Physics.Arcade.Body;
+    public arcadeBody: Physics.Arcade.Body;
     private components: IComponent[] = [];
 
     constructor(scene: Scene, x: number, y: number, texture: string, frame?: string) {
@@ -10,9 +10,9 @@ export class Entity extends Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        this.body = this.body as Physics.Arcade.Body;
-        this.body.allowGravity = false;
-        this.body.setFriction(0, 0);
+        this.arcadeBody = this.body as Physics.Arcade.Body;
+        this.arcadeBody.allowGravity = false;
+        this.arcadeBody.setFriction(0, 0);
     }
 
     public addComponent<T extends IComponent>(component: T) {

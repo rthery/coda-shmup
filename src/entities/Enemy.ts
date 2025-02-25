@@ -36,7 +36,7 @@ export class Enemy extends Entity {
         this.enableBody(true, x, y - this.displayHeight, true, true);
         this.shootTimer.reset(this.shootTimerConfig);
         this.shootTimer.paused = false;
-        this.body.setVelocityY(256);
+        this.arcadeBody.setVelocityY(256);
     }
 
     public disable() {
