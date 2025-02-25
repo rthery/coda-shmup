@@ -63,7 +63,8 @@ export class MainGameScene extends Scene {
         GroupUtils.populate(256, this.enemyBullets);
 
         // Create entities
-        this.player = new Player(this, this.cameras.main.centerX, this.cameras.main.height - 128, 'sprites', '', this.playerBullets);
+        this.player = new Player(this, this.cameras.main.centerX, this.cameras.main.height - 128, 'sprites');
+        this.player.init(this.playerBullets);
 
         this.enemies = this.physics.add.group({
             classType: Enemy,

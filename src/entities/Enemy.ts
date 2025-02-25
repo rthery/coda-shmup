@@ -55,8 +55,8 @@ export class Enemy extends Entity {
         });
     }
 
-    protected override preUpdate(timeSinceLaunch: number, deltaTime: number) {
-        super.preUpdate(timeSinceLaunch, deltaTime)
+    preUpdate(timeSinceLaunch: number, deltaTime: number) {
+        super.preUpdate(timeSinceLaunch, deltaTime);
 
         // Destroy entities when out of screen
         if (this.y > this.scene.cameras.main.height + this.displayHeight) {

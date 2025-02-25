@@ -1,17 +1,14 @@
-import {Scene} from "phaser";
 import {Entity} from './Entity';
 import {Weapon} from '../components/Weapon.ts';
 
 export class Player extends Entity {
-    private readonly rateOfFire: number;
-    private readonly cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
+    private rateOfFire: number;
+    private cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
     private playerShipData: PlayerShipData;
     private lastShotTime: number;
 
-    constructor(scene: Scene, x: number, y: number, texture: string, playerShipData: PlayerShipData, bulletsGroup: Phaser.Physics.Arcade.Group) {
-        super(scene, x, y, texture, playerShipData.texture);
-
-        this.addComponent(new Weapon(scene, bulletsGroup, scene.sound.add('sfx_laser1'), 4, 12, 0xffe066, 1024));
+    public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
+        this.addComponent(new Weapon(this.scene, bulletsGroup, this.scene.sound.add('sfx_laser1'), 4, 12, 0xffe066, 1024));
 
         this.rateOfFire = 0.5;
         this.lastShotTime = 0;
