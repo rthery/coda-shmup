@@ -4,6 +4,7 @@ import {Enemy} from "../entities/Enemy.ts";
 import {Player} from "../entities/Player.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import {GameDataKeys} from "../GameDataKeys.ts";
+import {SceneNames} from "./SceneNames.ts";
 
 export class MainGameScene extends Scene {
     private player: Player;
@@ -15,7 +16,7 @@ export class MainGameScene extends Scene {
     private scoreText: GameObjects.Text;
 
     constructor() {
-        super('MainGameScene');
+        super(SceneNames.MAIN_GAME_SCENE);
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -116,8 +117,7 @@ export class MainGameScene extends Scene {
     }
 
     private endGame() {
-        this.scene.restart();
-        console.log("Game Over")
+        this.scene.start(SceneNames.GAME_OVER_SCENE);
     }
 
     private spawnEnemy() {
