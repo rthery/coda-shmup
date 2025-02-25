@@ -7,16 +7,13 @@ export default class GroupUtils {
             return;
         }
 
-        for (let i = 0; i < initialQuantity; i++) {
-            group.get();
-        }
-
-        // We disable them all immediately
-        if (group.classType && typeof group.classType.prototype.disable === 'function') {
-            group.children.each((item: Phaser.GameObjects.GameObject) => {
-                (item as any).disable();
-                return true;
-            });
+        const canBeDisabled: boolean = group.classType && typeof group.classType.prototype.disable === 'function';
+        for (let i: number = 0; i < initialQuantity; i++) {
+            const child: any = group.create();
+            if (canBeDisabled)
+            {
+                child.disable();
+            }
         }
     }
 }

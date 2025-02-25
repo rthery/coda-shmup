@@ -90,9 +90,9 @@ export class MainGameScene extends Scene {
 
         this.registry.set<number>(GameDataKeys.PLAYER_SCORE, 0);
         this.registry.events.on('changedata-' + GameDataKeys.PLAYER_SCORE, (_: any, value: number) => {
-                this.scoreText.setText(value.toString());
-                console.log("Score: " + value);
-            });
+            this.scoreText.setText(value.toString());
+            console.log("Score: " + value);
+        });
     }
 
     private initGroupCollisions() {
