@@ -1,4 +1,4 @@
-import {GameObjects, Scene} from "phaser";
+import {Scene} from "phaser";
 import {Entity} from './Entity';
 import {Weapon} from '../components/Weapon.ts';
 
@@ -7,8 +7,6 @@ export class Player extends Entity {
     private readonly cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
     private playerShipData: PlayerShipData;
     private lastShotTime: number;
-
-    private forwardDebugLine: GameObjects.Line;
 
     constructor(scene: Scene, x: number, y: number, texture: string, playerShipData: PlayerShipData, bulletsGroup: Phaser.Physics.Arcade.Group) {
         super(scene, x, y, texture, playerShipData.texture);
@@ -25,8 +23,6 @@ export class Player extends Entity {
         if (this.scene.input.keyboard) {
             this.cursorKeys = this.scene.input.keyboard.createCursorKeys();
         }
-
-        this.forwardDebugLine = this.scene.add.line(this.x, this.y, 0, 0, 0, 32, 0xff00ff).setOrigin(0, 0).setLineWidth(2);
     }
 
     public selectPlayerShip(playerShipDataId: number) {
@@ -64,10 +60,5 @@ export class Player extends Entity {
                 this.lastShotTime = timeSinceLaunch;
             }
         }
-
-        // Draw a debug line to show the player forward direction
-        this.forwardDebugLine.x = this.x;
-        this.forwardDebugLine.y = this.y;
-        this.forwardDebugLine.setTo(0, 0, Math.cos(this.rotation) * 64, Math.sin(this.rotation) * 64);
     }
 }
