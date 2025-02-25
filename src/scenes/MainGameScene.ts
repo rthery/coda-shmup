@@ -39,9 +39,9 @@ export class MainGameScene extends Scene {
         this.planet = this.add.image(0, -512, 'planet').setOrigin(0);
 
         if (this.input.keyboard) {
-            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE).on('down', () => this.selectPlayerShip(1));
-            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO).on('down', () => this.selectPlayerShip(2));
-            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE).on('down', () => this.selectPlayerShip(3));
+            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE).on('down', () => this.player.selectPlayerShip(1));
+            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO).on('down', () => this.player.selectPlayerShip(2));
+            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE).on('down', () => this.player.selectPlayerShip(3));
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R).on('down', () => this.scene.restart());
         } else {
             console.error('No keyboard input');
@@ -62,9 +62,8 @@ export class MainGameScene extends Scene {
         this.enemyBullets = this.physics.add.group(bulletGroupConfig);
         GroupUtils.populate(256, this.enemyBullets);
 
-
-        const playerShipsData = this.cache.json.get('playerShips') as PlayerShipsData;
-        this.player = new Player(this, this.cameras.main.centerX, this.cameras.main.height - 128, 'sprites', playerShipsData[1], this.playerBullets);
+        // Create entities
+        this.player = new Player(this, this.cameras.main.centerX, this.cameras.main.height - 128, 'sprites', '', this.playerBullets);
 
         this.enemies = this.physics.add.group({
             classType: Enemy,
@@ -109,11 +108,6 @@ export class MainGameScene extends Scene {
         this.physics.add.collider(this.enemies, this.player, (_enemy, _player) => {
             this.endGame();
         });
-    }
-
-    private selectPlayerShip(playerShipId: number) {
-        const playerShipsData = this.cache.json.get('playerShips') as PlayerShipsData;
-        this.player.setPlayerShipData(playerShipsData[playerShipId]);
     }
 
     private endGame() {

@@ -20,7 +20,7 @@ export class Player extends Entity {
         // Rotate the player ship to face upwards, allowing us to calculate its forward vector when shooting
         this.angle = -90;
 
-        this.setPlayerShipData(playerShipData);
+        this.selectPlayerShip(1);
 
         if (this.scene.input.keyboard) {
             this.cursorKeys = this.scene.input.keyboard.createCursorKeys();
@@ -29,10 +29,9 @@ export class Player extends Entity {
         this.forwardDebugLine = this.scene.add.line(this.x, this.y, 0, 0, 0, 32, 0xff00ff).setOrigin(0, 0).setLineWidth(2);
     }
 
-    public setPlayerShipData(playerShipData: PlayerShipData) {
-        this.playerShipData = playerShipData;
-        this.setTexture(this.texture.key, playerShipData.texture);
-        this.body.setCircle(playerShipData.body.radius, playerShipData.body.offsetX, playerShipData.body.offsetY);
+    public selectPlayerShip(playerShipDataId: number) {
+        this.playerShipData = (this.scene.cache.json.get('playerShips') as PlayerShipsData)[playerShipDataId];
+        this.setTexture(this.texture.key, this.playerShipData.texture);
         this.arcadeBody.setCircle(this.playerShipData.body.radius,
             this.playerShipData.body.offsetX, this.playerShipData.body.offsetY);
     }
