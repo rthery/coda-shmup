@@ -12,6 +12,7 @@ export class MainGameScene extends Scene {
     private enemyBullets: Physics.Arcade.Group;
     private bg: GameObjects.TileSprite;
     private planet: GameObjects.Image;
+    private scoreText: GameObjects.Text;
 
     constructor() {
         super('MainGameScene');
@@ -82,11 +83,16 @@ export class MainGameScene extends Scene {
 
         this.initGroupCollisions();
 
-        this.data.set<number>(GameDataKeys.PLAYER_SCORE, 0);
-        this.data.events.on('changedata-' + GameDataKeys.PLAYER_SCORE,
-            (_: any, value: number) => {
-            console.log("Score: " + value);
-        });
+        this.add.rectangle(this.cameras.main.centerX, 16, 256, 164, 0x000000, 0.5).setOrigin(0.5);
+        this.add.text(this.cameras.main.centerX, 32, "SCORE", {fontSize: '32px', align: 'center'}).setOrigin(0.5);
+        this.scoreText = this.add.text(this.cameras.main.centerX, 72, "0",
+            {fontSize: '32px', align: 'center'}).setOrigin(0.5);
+
+        this.registry.set<number>(GameDataKeys.PLAYER_SCORE, 0);
+        this.registry.events.on('changedata-' + GameDataKeys.PLAYER_SCORE, (_: any, value: number) => {
+                this.scoreText.setText(value.toString());
+                console.log("Score: " + value);
+            });
     }
 
     private initGroupCollisions() {
@@ -94,7 +100,7 @@ export class MainGameScene extends Scene {
         this.physics.add.collider(this.playerBullets, this.enemies, (bullet, enemy) => {
             (bullet as Bullet).disable();
             (enemy as Enemy).disable();
-            this.data.inc(GameDataKeys.PLAYER_SCORE, 1);
+            this.registry.inc(GameDataKeys.PLAYER_SCORE, 1);
         }, undefined, this);
         this.physics.add.collider(this.enemyBullets, this.player, (_bullet, _player) => {
             this.endGame();
