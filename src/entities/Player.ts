@@ -1,5 +1,6 @@
 import {Entity} from './Entity';
 import {Weapon} from '../components/Weapon.ts';
+import {Movement} from "../components/Movement.ts";
 
 export class Player extends Entity {
     private rateOfFire: number;
@@ -8,7 +9,8 @@ export class Player extends Entity {
     private lastShotTime: number;
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
-        this.addComponent(new Weapon(this.scene, bulletsGroup, this.scene.sound.add('sfx_laser1'), 4, 12, 0xffe066, 1024));
+        this.addComponent(new Weapon(bulletsGroup, this.scene.sound.add('sfx_laser1'), 4, 12, 0xffe066, 1024));
+        this.addComponent(new Movement());
 
         this.rateOfFire = 0.5;
         this.lastShotTime = 0;
@@ -27,6 +29,7 @@ export class Player extends Entity {
         this.setTexture(this.texture.key, this.playerShipData.texture);
         this.arcadeBody.setCircle(this.playerShipData.body.radius,
             this.playerShipData.body.offsetX, this.playerShipData.body.offsetY);
+        this.getComponent(Movement)?.setSpeed(this.playerShipData.movementSpeed);
     }
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
@@ -37,13 +40,13 @@ export class Player extends Entity {
             if (this.cursorKeys.shift.isDown) {
                 this.angle -= this.playerShipData.movementSpeed * deltaTime;
             } else {
-                this.x -= this.playerShipData.movementSpeed * deltaTime;
+                this.getComponent(Movement)?.moveHorizontally(this, -deltaTime);
             }
         } else if (this.cursorKeys.right.isDown) {
             if (this.cursorKeys.shift.isDown) {
                 this.angle += this.playerShipData.movementSpeed * deltaTime;
             } else {
-                this.x += this.playerShipData.movementSpeed * deltaTime;
+                this.getComponent(Movement)?.moveHorizontally(this, deltaTime);
             }
         }
 

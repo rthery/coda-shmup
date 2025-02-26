@@ -1,4 +1,4 @@
-import {Physics, Scene, Sound} from 'phaser';
+import {Physics, Sound} from 'phaser';
 import {Bullet} from "../entities/Bullet";
 import {Entity} from "../entities/Entity.ts";
 
@@ -10,7 +10,7 @@ export class Weapon implements IComponent {
     private readonly bulletColor: number;
     private readonly bulletSpeed: number;
 
-    constructor(_scene: Scene, bullets: Physics.Arcade.Group, shootSound: Sound.BaseSound, bulletWidth: number, bulletHeight: number, bulletColor: number, bulletSpeed: number) {
+    constructor(bullets: Physics.Arcade.Group, shootSound: Sound.BaseSound, bulletWidth: number, bulletHeight: number, bulletColor: number, bulletSpeed: number) {
         this.bullets = bullets;
         this.shootSound = shootSound;
         this.bulletWidth = bulletWidth;
