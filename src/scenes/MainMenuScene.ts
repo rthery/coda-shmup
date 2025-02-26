@@ -13,6 +13,8 @@ export class MainMenuScene extends Phaser.Scene {
 
         this.load.image('bg', 'Backgrounds/darkPurple.png');
         this.load.atlas('sprites', 'Spritesheet/gameSprites.png', 'Spritesheet/gameSprites.json');
+
+        this.load.font('future', 'Fonts/kenvector_future.ttf');
     }
 
     create() {
@@ -31,7 +33,9 @@ export class MainMenuScene extends Phaser.Scene {
             ease: 'Quad.easeInOut'
         });
 
-        this.add.text(this.cameras.main.centerX, 256, 'Main Menu', {fontSize: '32px', color: '#fff'}).setOrigin(0.5).setScale(2);
+        this.add.text(this.cameras.main.centerX, 256, 'Main Menu', {
+            fontSize: '32px', color: '#fff', fontFamily: 'future'
+        }).setOrigin(0.5).setScale(2);
         this.add.text(this.cameras.main.centerX, this.cameras.main.height - 256, 'Press SPACE to start', {fontSize: '16px', color: '#fff'}).setOrigin(0.5).setScale(2);
 
         this.input.keyboard?.once('keydown-SPACE', () => {
