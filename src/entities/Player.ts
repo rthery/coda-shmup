@@ -16,8 +16,7 @@ export class Player extends Entity {
 
         this.rateOfFire = 0.5;
         this.lastShotTime = 0;
-        // Rotate the player ship to face upwards, allowing us to calculate its forward vector when shooting
-        this.angle = -90;
+        this.angle = -90; // Rotate the player ship to face upwards, to calculate its forward vector when shooting
 
         this.selectPlayerShip(1);
 
@@ -33,8 +32,7 @@ export class Player extends Entity {
             this.playerShipData.body.offsetX, this.playerShipData.body.offsetY);
         this.getComponent(Movement)?.setSpeed(this.playerShipData.movementSpeed);
 
-        if (playerShipDataId == 1) // We only have an idle animation for the first ship for now
-        {
+        if (playerShipDataId == 1) { // We only have an idle animation for the first ship for now
             this.play('playerShipIdle');
         }
     }

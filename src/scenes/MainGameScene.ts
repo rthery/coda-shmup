@@ -67,6 +67,23 @@ export class MainGameScene extends Scene {
             console.error('No keyboard input');
         }
 
+        this.addBulletGroups();
+
+        this.addEntities();
+
+        this.addGroupCollisions();
+
+        this.addHUD();
+
+        // Set and track player score
+        this.registry.set<number>(GameDataKeys.PLAYER_SCORE, 0);
+        this.registry.events.on('changedata-' + GameDataKeys.PLAYER_SCORE, (_: any, value: number) => {
+            this.scoreText.setText(value.toString());
+            console.log("Score: " + value);
+        });
+    }
+
+    private addBulletGroups() {
         // noinspection JSUnusedGlobalSymbols
         const bulletGroupConfig = {
             classType: Bullet,
@@ -81,8 +98,10 @@ export class MainGameScene extends Scene {
 
         this.enemyBullets = this.physics.add.group(bulletGroupConfig);
         GroupUtils.populate(256, this.enemyBullets);
+    }
 
-        // Create entities
+    private addEntities()
+    {
         this.player = new Player(this, this.cameras.main.centerX, this.cameras.main.height - 128, 'sprites');
         this.player.init(this.playerBullets);
         this.player.getComponent(Health)?.once('death', this.endGame, this);
@@ -95,6 +114,7 @@ export class MainGameScene extends Scene {
                 (enemy as Enemy).init(this.enemyBullets);
             }
         });
+
         // Spawn enemies indefinitely
         this.time.addEvent({
             delay: 1500,
@@ -102,22 +122,9 @@ export class MainGameScene extends Scene {
             callbackScope: this,
             loop: true
         });
-
-        this.initGroupCollisions();
-
-        this.add.rectangle(this.cameras.main.centerX, 16, 256, 164, 0x000000, 0.5).setOrigin(0.5);
-        this.add.text(this.cameras.main.centerX, 32, "SCORE", {fontSize: '32px', align: 'center'}).setOrigin(0.5);
-        this.scoreText = this.add.text(this.cameras.main.centerX, 72, "0",
-            {fontSize: '32px', align: 'center'}).setOrigin(0.5);
-
-        this.registry.set<number>(GameDataKeys.PLAYER_SCORE, 0);
-        this.registry.events.on('changedata-' + GameDataKeys.PLAYER_SCORE, (_: any, value: number) => {
-            this.scoreText.setText(value.toString());
-            console.log("Score: " + value);
-        });
     }
 
-    private initGroupCollisions() {
+    private addGroupCollisions() {
         // Add collisions detection
         this.physics.add.collider(this.playerBullets, this.enemies, (bullet, enemy) => {
             (bullet as Bullet).disable();
@@ -137,6 +144,14 @@ export class MainGameScene extends Scene {
         });
     }
 
+    private addHUD()
+    {
+        this.add.rectangle(this.cameras.main.centerX, 16, 256, 164, 0x000000, 0.5).setOrigin(0.5).setDepth(500);
+        this.add.text(this.cameras.main.centerX, 32, "SCORE", {fontSize: '32px', align: 'center'}).setOrigin(0.5).setDepth(501);
+        this.scoreText = this.add.text(this.cameras.main.centerX, 72, "0",
+            {fontSize: '32px', align: 'center'}).setOrigin(0.5).setDepth(501);
+    }
+
     private endGame() {
         console.log("Game over");
 
@@ -149,6 +164,9 @@ export class MainGameScene extends Scene {
         }
 
         const enemy = this.enemies.get() as Enemy;
+        if (!enemy) {
+            return;
+        }
         enemy.enable(Phaser.Math.Between(64, this.cameras.main.width - 64), 0);
     }
 

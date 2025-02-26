@@ -8,8 +8,6 @@ export class Enemy extends Entity {
     private shootTimer: Phaser.Time.TimerEvent;
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
-        this.angle = 90;
-
         this.addComponent(new Weapon(bulletsGroup, this.scene.sound.add('sfx_laser2'), 4, 12, 0xf25f5c, 512));
         this.addComponent(new Movement(0.2));
         this.addComponent(new Health(1));
@@ -21,6 +19,7 @@ export class Enemy extends Entity {
             loop: true
         };
         this.shootTimer = this.scene.time.addEvent(this.shootTimerConfig);
+        this.angle = 90;
 
         // Create animation when enemy is about to shoot in the global animation manager
         if (!this.scene.anims.exists('ufoShoot')) {
@@ -65,11 +64,11 @@ export class Enemy extends Entity {
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
         super.preUpdate(timeSinceLaunch, deltaTime);
 
+        this.getComponent(Movement)?.moveVertically(this, deltaTime);
+
         // Destroy entities when out of screen
         if (this.y > this.scene.cameras.main.height + this.displayHeight) {
             this.disable();
         }
-
-        this.getComponent(Movement)?.moveVertically(this, deltaTime);
     }
 }
