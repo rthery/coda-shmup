@@ -5,6 +5,7 @@ import {Player} from "../entities/Player.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import {GameDataKeys} from "../GameDataKeys.ts";
 import {SceneNames} from "./SceneNames.ts";
+import {Health} from "../components/Health.ts";
 
 export class MainGameScene extends Scene {
     private player: Player;
@@ -84,6 +85,7 @@ export class MainGameScene extends Scene {
         // Create entities
         this.player = new Player(this, this.cameras.main.centerX, this.cameras.main.height - 128, 'sprites');
         this.player.init(this.playerBullets);
+        this.player.getComponent(Health)?.once('death', this.endGame, this);
 
         this.enemies = this.physics.add.group({
             classType: Enemy,
@@ -119,18 +121,25 @@ export class MainGameScene extends Scene {
         // Add collisions detection
         this.physics.add.collider(this.playerBullets, this.enemies, (bullet, enemy) => {
             (bullet as Bullet).disable();
-            (enemy as Enemy).disable();
+            (enemy as Enemy).getComponent(Health)?.inc(-1);
             this.registry.inc(GameDataKeys.PLAYER_SCORE, 1);
         }, undefined, this);
-        this.physics.add.collider(this.enemyBullets, this.player, (_bullet, _player) => {
-            this.endGame();
+        this.physics.add.collider(this.player, this.enemyBullets, (player, bullet) => {
+            (bullet as Bullet).disable();
+            (player as Player).getComponent(Health)?.inc(-1);
         }, undefined, this);
-        this.physics.add.collider(this.enemies, this.player, (_enemy, _player) => {
-            this.endGame();
+        this.physics.add.collider(this.player, this.enemies, (player, enemy) => {
+            const enemyHealth = (enemy as Enemy).getComponent(Health);
+            enemyHealth?.inc(enemyHealth?.getMax());
+
+            const playerHealth = (player as Player).getComponent(Health);
+            playerHealth?.inc(-1);
         });
     }
 
     private endGame() {
+        console.log("Game over");
+
         this.scene.start(SceneNames.GAME_OVER_SCENE);
     }
 

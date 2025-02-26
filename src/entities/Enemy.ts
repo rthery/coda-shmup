@@ -1,6 +1,7 @@
 import {Entity} from './Entity';
 import {Weapon} from '../components/Weapon.ts';
 import {Movement} from "../components/Movement.ts";
+import {Health} from "../components/Health.ts";
 
 export class Enemy extends Entity {
     private shootTimerConfig: Phaser.Types.Time.TimerEventConfig;
@@ -10,6 +11,8 @@ export class Enemy extends Entity {
         this.angle = 90;
 
         this.addComponent(new Weapon(bulletsGroup, this.scene.sound.add('sfx_laser2'), 4, 12, 0xf25f5c, 512));
+        this.addComponent(new Movement(0.2));
+        this.addComponent(new Health(1));
 
         this.shootTimerConfig = {
             delay: Phaser.Math.Between(2000, 3000),
@@ -39,7 +42,10 @@ export class Enemy extends Entity {
         this.enableBody(true, x, y - this.displayHeight, true, true);
         this.shootTimer.reset(this.shootTimerConfig);
         this.shootTimer.paused = false;
-        this.arcadeBody.setVelocityY(256);
+
+        this.getComponent(Health)?.once('death', () => {
+            this.disable();
+        });
     }
 
     public disable() {

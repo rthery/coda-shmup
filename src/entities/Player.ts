@@ -1,6 +1,7 @@
 import {Entity} from './Entity';
 import {Weapon} from '../components/Weapon.ts';
 import {Movement} from "../components/Movement.ts";
+import {Health} from "../components/Health.ts";
 
 export class Player extends Entity {
     private rateOfFire: number;
@@ -11,6 +12,7 @@ export class Player extends Entity {
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
         this.addComponent(new Weapon(bulletsGroup, this.scene.sound.add('sfx_laser1'), 4, 12, 0xffe066, 1024));
         this.addComponent(new Movement());
+        this.addComponent(new Health(1));
 
         this.rateOfFire = 0.5;
         this.lastShotTime = 0;
