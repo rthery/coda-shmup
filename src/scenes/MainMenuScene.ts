@@ -17,6 +17,7 @@ export class MainMenuScene extends Phaser.Scene {
         this.load.font('future', 'Fonts/kenvector_future.ttf');
     }
 
+    // noinspection JSUnusedGlobalSymbols
     create() {
         this.bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg').setOrigin(0).setTileScale(2);
 
@@ -24,8 +25,7 @@ export class MainMenuScene extends Phaser.Scene {
         this.playerShip = this.add.sprite(this.cameras.main.centerX - playerShipOffsetX, this.cameras.main.centerY, 'sprites', 'playerShip1_blue.png');
         this.playerShip.setAngle(-90);
 
-        if (!this.anims.exists('playerShipIdle'))
-        {
+        if (!this.anims.exists('playerShipIdle')) {
             this.anims.create({
                 key: 'playerShipIdle',
                 frames: [
@@ -47,10 +47,13 @@ export class MainMenuScene extends Phaser.Scene {
             ease: 'Quad.easeInOut'
         });
 
-        this.add.text(this.cameras.main.centerX, 256, 'Main Menu', {
+        this.add.text(this.cameras.main.centerX, 256, 'CODA SHUMP', {
             fontSize: '32px', color: '#fff', fontFamily: 'future'
         }).setOrigin(0.5).setScale(2);
-        this.add.text(this.cameras.main.centerX, this.cameras.main.height - 256, 'Press SPACE to start', {fontSize: '16px', color: '#fff'}).setOrigin(0.5).setScale(2);
+        this.add.text(this.cameras.main.centerX, this.cameras.main.height - 256, 'Press SPACE to start', {
+            fontSize: '32px',
+            color: '#fff'
+        }).setOrigin(0.5);
 
         this.input.keyboard?.once('keydown-SPACE', () => {
             this.scene.start(SceneNames.MAIN_GAME_SCENE);
