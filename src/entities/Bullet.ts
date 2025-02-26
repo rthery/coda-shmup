@@ -1,4 +1,4 @@
-export class Bullet extends Phaser.GameObjects.Rectangle {
+export default class Bullet extends Phaser.GameObjects.Rectangle {
     private _arcadeBody: Phaser.Physics.Arcade.Body;
 
     public init() {
