@@ -1,4 +1,5 @@
 import { Scene, GameObjects, Physics, Types } from 'phaser';
+import { Bullet } from "../entities/Bullet.ts";
 import { PlayerShipsData, PlayerShipData } from "../gameData/PlayerShipsData.ts";
 
 export class MainGameScene extends Scene
@@ -64,10 +65,24 @@ export class MainGameScene extends Scene
             console.error('No keyboard input');
         }
 
-        // Add physics groups and callbacks
-        this.bullets = this.physics.add.group();
         this.enemies = this.physics.add.group();
-        this.enemyBullets = this.physics.add.group();
+
+        // noinspection JSUnusedGlobalSymbols
+        const bulletGroupConfig = {
+            classType: Bullet,
+            maxSize: 256,
+            runChildUpdate: true,
+            createCallback: (bullet: GameObjects.GameObject) => {
+                (bullet as Bullet).init();
+            }
+        }
+        this.bullets = this.physics.add.group(bulletGroupConfig);
+        this.warmGroupItems(64, this.bullets);
+
+        this.enemyBullets = this.physics.add.group(bulletGroupConfig);
+        this.warmGroupItems(256, this.enemyBullets);
+
+        // Add collisions detection
         this.physics.add.overlap(this.bullets, this.enemies, (bullet, enemy) => {
             const timer = this.enemyShootTimers.get(enemy as Phaser.Types.Physics.Arcade.GameObjectWithBody);
             if (timer) {
@@ -76,7 +91,8 @@ export class MainGameScene extends Scene
             else {
                 console.error("Enemy shoot timer not found");
             }
-            bullet.destroy();
+
+            (bullet as Bullet).disable();
             enemy.destroy();
             this.playerScore++;
             console.log("Score: " + this.playerScore);
@@ -112,6 +128,25 @@ export class MainGameScene extends Scene
 
         this.playerScore = 0;
         this.lastShotTime = 0;
+    }
+
+    // Filled group with items to avoid lag spikes in case of many instantiation of items in the same frame
+    private warmGroupItems(initialQuantity: number, group: Physics.Arcade.Group) {
+        if (group.getLength() >= initialQuantity) {
+            return;
+        }
+
+        for (let i: number = 0; i < initialQuantity; i++) {
+            group.get();
+        }
+
+        // We disable them all immediately
+        if (group.classType && typeof group.classType.prototype.disable === 'function') {
+            group.children.each((item: GameObjects.GameObject) => {
+                (item as any).disable();
+                return true;
+            });
+        }
     }
 
     private selectPlayerShip (playerShipId: number)
@@ -163,13 +198,11 @@ export class MainGameScene extends Scene
         enemy.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
             enemy.setTexture('sprites', 'ufoRed.png');
 
-            const bullet: GameObjects.Rectangle = this.add.rectangle(enemy.x, enemy.y + enemy.displayHeight / 2, 12, 12, 0xf25f5c).setOrigin(0.5);
-            this.enemyBullets.add(bullet);
-            this.physics.add.existing(bullet);
-            const bulletBody: Physics.Arcade.Body = bullet.body as Physics.Arcade.Body;
-            bulletBody.allowGravity = false;
-            bulletBody.setFriction(0, 0);
-            bulletBody.setVelocityY(512);
+            const bullet: Bullet = this.enemyBullets.get() as Bullet;
+            if (bullet)
+            {
+                bullet.enable(enemy.x, enemy.y + enemy.displayHeight / 2, 12, 12, 0xf25f5c, 512);
+            }
         });
     }
 
@@ -194,29 +227,18 @@ export class MainGameScene extends Scene
         // Press space to shoot
         if (this.cursorKeys.space.isDown && timeSinceLaunch - this.lastShotTime > this.playerRateOfFire * 1000)
         {
-            const bulletPosX: number = this.player.x;
-            const bulletPosY: number = this.player.y - this.player.displayHeight / 2;
-            const bullet: GameObjects.Rectangle = this.add.rectangle(bulletPosX, bulletPosY, 4, 12, 0xffe066).setOrigin(0.5);
-            this.bullets.add(bullet);
-            this.physics.add.existing(bullet);
-            const bulletBody: Physics.Arcade.Body = bullet.body as Physics.Arcade.Body;
-            bulletBody.allowGravity = false;
-            bulletBody.setFriction(0, 0);
-            bulletBody.setVelocityY(-1024);
+            const bullet: Bullet = this.bullets.get() as Bullet;
+            if (bullet)
+            {
+                bullet.enable(this.player.x, this.player.y - this.player.displayHeight / 2, 4, 12, 0xffe066, -1024);
 
-            this.lastShotTime = timeSinceLaunch;
+                this.lastShotTime = timeSinceLaunch;}
         }
 
         // Stop player from going offscreen
         this.player.x = Phaser.Math.Clamp(this.player.x, this.player.displayWidth / 2, this.cameras.main.width - this.player.displayWidth / 2);
 
         // Destroy entities when out of screen
-        this.bullets.getChildren().forEach(bullet => {
-            if ((bullet as GameObjects.Rectangle).y < -(bullet as GameObjects.Rectangle).displayHeight)
-            {
-                bullet.destroy();
-            }
-        });
         this.enemies.getChildren().forEach(enemy => {
             if ((enemy as GameObjects.Arc).y >= this.cameras.main.height + (enemy as GameObjects.Arc).displayHeight)
             {
@@ -229,12 +251,6 @@ export class MainGameScene extends Scene
                 }
 
                 enemy.destroy();
-            }
-        });
-        this.enemyBullets.getChildren().forEach(bullet => {
-            if ((bullet as GameObjects.Rectangle).y > this.cameras.main.height + (bullet as GameObjects.Rectangle).displayHeight)
-            {
-                bullet.destroy();
             }
         });
     }
