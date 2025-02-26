@@ -32,6 +32,11 @@ export class Player extends Entity {
         this.arcadeBody.setCircle(this.playerShipData.body.radius,
             this.playerShipData.body.offsetX, this.playerShipData.body.offsetY);
         this.getComponent(Movement)?.setSpeed(this.playerShipData.movementSpeed);
+
+        if (playerShipDataId == 1) // We only have an idle animation for the first ship for now
+        {
+            this.play('playerShipIdle');
+        }
     }
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {

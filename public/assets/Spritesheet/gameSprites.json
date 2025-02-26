@@ -4,8 +4,8 @@
 			"image": "gameSprites",
 			"format": "RGBA8888",
 			"size": {
-				"w": 241,
-				"h": 273
+				"w": 329,
+				"h": 302
 			},
 			"scale": 1,
 			"frames": [
@@ -31,6 +31,48 @@
 					}
 				},
 				{
+					"filename": "playerShip1_blue-idle0.png",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 128,
+						"h": 99
+					},
+					"spriteSourceSize": {
+						"x": 13,
+						"y": 0,
+						"w": 88,
+						"h": 99
+					},
+					"frame": {
+						"x": 75,
+						"y": 0,
+						"w": 88,
+						"h": 99
+					}
+				},
+				{
+					"filename": "playerShip1_blue-idle1.png",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 128,
+						"h": 99
+					},
+					"spriteSourceSize": {
+						"x": 14,
+						"y": 0,
+						"w": 87,
+						"h": 99
+					},
+					"frame": {
+						"x": 0,
+						"y": 112,
+						"w": 87,
+						"h": 99
+					}
+				},
+				{
 					"filename": "playerShip1_blue.png",
 					"rotated": false,
 					"trimmed": false,
@@ -45,8 +87,8 @@
 						"h": 99
 					},
 					"frame": {
-						"x": 75,
-						"y": 0,
+						"x": 87,
+						"y": 99,
 						"w": 75,
 						"h": 99
 					}
@@ -66,8 +108,8 @@
 						"h": 98
 					},
 					"frame": {
-						"x": 75,
-						"y": 99,
+						"x": 163,
+						"y": 0,
 						"w": 75,
 						"h": 98
 					}
@@ -87,8 +129,8 @@
 						"h": 91
 					},
 					"frame": {
-						"x": 150,
-						"y": 0,
+						"x": 0,
+						"y": 211,
 						"w": 91,
 						"h": 91
 					}
@@ -108,8 +150,8 @@
 						"h": 91
 					},
 					"frame": {
-						"x": 150,
-						"y": 91,
+						"x": 91,
+						"y": 198,
 						"w": 91,
 						"h": 91
 					}
@@ -129,8 +171,8 @@
 						"h": 91
 					},
 					"frame": {
-						"x": 150,
-						"y": 182,
+						"x": 238,
+						"y": 0,
 						"w": 91,
 						"h": 91
 					}

@@ -2,7 +2,7 @@ import {SceneNames} from "./SceneNames.ts";
 
 export class MainMenuScene extends Phaser.Scene {
     private bg: Phaser.GameObjects.TileSprite;
-    private playerShip: Phaser.GameObjects.Image;
+    private playerShip: Phaser.GameObjects.Sprite;
 
     constructor() {
         super(SceneNames.MAIN_MENU_SCENE);
@@ -21,8 +21,22 @@ export class MainMenuScene extends Phaser.Scene {
         this.bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg').setOrigin(0).setTileScale(2);
 
         const playerShipOffsetX = 64;
-        this.playerShip = this.add.image(this.cameras.main.centerX - playerShipOffsetX, this.cameras.main.centerY, 'sprites', 'playerShip1_blue.png');
+        this.playerShip = this.add.sprite(this.cameras.main.centerX - playerShipOffsetX, this.cameras.main.centerY, 'sprites', 'playerShip1_blue.png');
         this.playerShip.setAngle(-90);
+
+        if (!this.anims.exists('playerShipIdle'))
+        {
+            this.anims.create({
+                key: 'playerShipIdle',
+                frames: [
+                    {key: 'sprites', frame: 'playerShip1_blue-idle0.png'},
+                    {key: 'sprites', frame: 'playerShip1_blue-idle1.png'},
+                ],
+                frameRate: 30,
+                repeat: -1
+            });
+        }
+        this.playerShip.play('playerShipIdle');
 
         this.tweens.add({
             targets: this.playerShip,
