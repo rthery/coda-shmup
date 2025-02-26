@@ -46,6 +46,7 @@ export class MainGameScene extends Scene {
         this.load.image('bg', 'Backgrounds/darkPurple.png');
         this.load.image('planet', 'Planets/planet00.png');
         this.load.atlas('sprites', 'Spritesheet/gameSprites.png', 'Spritesheet/gameSprites.json');
+        this.load.image('panel_glass_notch_bl', 'UI/panel_glass_notch_bl.png');
 
         this.load.audio('sfx_laser1', 'Sounds/sfx_laser1.ogg');
         this.load.audio('sfx_laser2', 'Sounds/sfx_laser2.ogg');
@@ -146,10 +147,9 @@ export class MainGameScene extends Scene {
 
     private addHUD()
     {
-        this.add.rectangle(this.cameras.main.centerX, 16, 256, 164, 0x000000, 0.5).setOrigin(0.5).setDepth(500);
-        this.add.text(this.cameras.main.centerX, 32, "SCORE", {fontSize: '32px', align: 'center'}).setOrigin(0.5).setDepth(501);
-        this.scoreText = this.add.text(this.cameras.main.centerX, 72, "0",
-            {fontSize: '32px', align: 'center'}).setOrigin(0.5).setDepth(501);
+        this.add.nineslice(this.cameras.main.width, 0, 'panel_glass_notch_bl', undefined, 256, 64, 16, 16, 16, 16).setOrigin(1, 0).setDepth(500);
+        this.add.rectangle(this.cameras.main.width - 12, 12, 256 - 24, 64 - 24, 0x000000, 0.15).setOrigin(1, 0).setDepth(501);
+        this.scoreText = this.add.text(this.cameras.main.width - 24, 16, "0", {fontSize: '32px', align: 'right', color: '#222', fontStyle: 'bold'}).setOrigin(1, 0).setDepth(502);
     }
 
     private endGame() {
