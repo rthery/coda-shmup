@@ -22,7 +22,7 @@ const config: Types.Core.GameConfig = {
             debug: false,
         }
     },
-    // fps: { forceSetTimeOut: true, target: 120 },
+    fps: { forceSetTimeOut: true, target: 60 },
     audio: {
         noAudio: false,
     },
