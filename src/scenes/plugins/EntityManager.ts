@@ -69,19 +69,19 @@ export class EntityManager extends Phaser.Events.EventEmitter {
 
     public addGroupCollisions() {
         // Add collisions detection
-        this._scene.physics.add.collider(this._playerBullets, this._enemies, (bullet, enemy) => {
+        this._scene.physics.add.overlap(this._playerBullets, this._enemies, (bullet, enemy) => {
             (bullet as Bullet).disable();
             (enemy as Enemy).getComponent(Health)?.inc(-1);
 
             this._scene.registry.inc(GameDataKeys.PLAYER_SCORE, 1);
         }, undefined, this);
-        this._scene.physics.add.collider(this._player, this._enemyBullets, (player, bullet) => {
+        this._scene.physics.add.overlap(this._player, this._enemyBullets, (player, bullet) => {
             (bullet as Bullet).disable();
             (player as Player).getComponent(Health)?.inc(-1);
         }, undefined, this);
-        this._scene.physics.add.collider(this._player, this._enemies, (player, enemy) => {
+        this._scene.physics.add.overlap(this._player, this._enemies, (player, enemy) => {
             const enemyHealth = (enemy as Enemy).getComponent(Health);
-            enemyHealth?.inc(enemyHealth?.getMax());
+            enemyHealth?.inc(-enemyHealth?.getMax());
 
             const playerHealth = (player as Player).getComponent(Health);
             playerHealth?.inc(-1);
