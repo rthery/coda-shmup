@@ -33,16 +33,17 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    needs: build
 
     steps:
       - name: Download build artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.9
         with:
           name: game-build
           path: dist/
 
       - name: Upload to itch.io
-        uses: manleydev/butler-publish-itchio-action@1.0.3
+        uses: yeslayla/butler-publish-itchio-action@v1.0.3
         env:
           BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
           CHANNEL: html5
