@@ -9,10 +9,36 @@ export class MainMenuScene extends Phaser.Scene {
     }
 
     preload() {
+        const width: number = this.cameras.main.width;
+        const y: number = this.cameras.main.centerY;
+
+        const progressBar = this.add.graphics();
+        const progressBox = this.add.graphics();
+        progressBox.fillStyle(0x222222, 0.8);
+        progressBox.fillRect(0, y, width, 64);
+        this.load.on('progress', function (value: number) { // 0-1
+            console.log(value);
+            progressBar.clear();
+            progressBar.fillStyle(0xffffff, 1);
+            progressBar.fillRect(0, y, width * value, 64);
+        });
+        this.load.on('complete', function () {
+            console.log('complete');
+            progressBar.destroy();
+            progressBox.destroy();
+        });
+
         this.load.setPath('assets');
 
         this.load.image('bg', 'Backgrounds/darkPurple.png');
+        this.load.image('planet', 'Planets/planet00.png');
         this.load.atlas('sprites', 'Spritesheet/gameSprites.png', 'Spritesheet/gameSprites.json');
+        this.load.image('panel_glass_notch_bl', 'UI/panel_glass_notch_bl.png');
+
+        this.load.audio('sfx_laser1', 'Sounds/sfx_laser1.ogg');
+        this.load.audio('sfx_laser2', 'Sounds/sfx_laser2.ogg');
+
+        this.load.json('playerShips', 'Data/playerShips.json');
 
         this.load.font('future', 'Fonts/kenvector_future.ttf');
     }
