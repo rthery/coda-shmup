@@ -25,9 +25,17 @@ export class MainGameScene extends Scene {
 
         this.entities.addPlayer();
         this.entities.player.getComponent(Health)?.once('death', this.endGame, this);
-
-        this.entities.addEnemies();
-        this.entities.addGroupCollisions();
+        this.entities.player.setPosition(this.cameras.main.centerX, this.cameras.main.height + this.entities.player.height);
+        this.tweens.add({
+            targets: this.entities.player,
+            y: this.cameras.main.height - 128,
+            duration: 500,
+            ease: Phaser.Math.Easing.Quadratic.Out,
+            onComplete: () => {
+                this.entities.addEnemies();
+                this.entities.addGroupCollisions();
+            }
+        });
 
         if (this.input.keyboard) {
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R).on('down', () => this.scene.restart());

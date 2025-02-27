@@ -82,7 +82,17 @@ export class MainMenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         this.input.keyboard?.once('keydown-SPACE', () => {
-            this.scene.start(SceneNames.MAIN_GAME_SCENE);
+            this.tweens.killTweensOf(this.playerShip);
+            this.tweens.add({
+                targets: this.playerShip,
+                x: this.cameras.main.centerX,
+                y: -this.playerShip.height,
+                duration: 1000,
+                ease: 'Quad.easeIn',
+                onComplete: () => {
+                    this.scene.start(SceneNames.MAIN_GAME_SCENE);
+                }
+            })
         });
     }
 
