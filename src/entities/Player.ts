@@ -22,6 +22,10 @@ export class Player extends Entity {
 
         if (this.scene.input.keyboard) {
             this.cursorKeys = this.scene.input.keyboard.createCursorKeys();
+
+            this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE).on('down', () => this.selectPlayerShip(1));
+            this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO).on('down', () => this.selectPlayerShip(2));
+            this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE).on('down', () => this.selectPlayerShip(3));
         }
     }
 
