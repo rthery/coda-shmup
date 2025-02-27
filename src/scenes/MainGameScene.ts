@@ -19,7 +19,8 @@ export class MainGameScene extends Scene {
 
     // noinspection JSUnusedGlobalSymbols
     create() {
-        this.bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg').setOrigin(0).setTileScale(2);
+        const bgMargin = 512;
+        this.bg = this.add.tileSprite(this.cameras.main.centerX, this.cameras.main.centerY, this.cameras.main.width + bgMargin, this.cameras.main.height + bgMargin, 'bg').setTileScale(2);
         this.planet = this.add.image(0, -512, 'planet').setOrigin(0);
 
         this.entities.addPlayer();

@@ -78,6 +78,8 @@ export class EntityManager extends Phaser.Events.EventEmitter {
         this._scene.physics.add.overlap(this._player, this._enemyBullets, (player, bullet) => {
             (bullet as Bullet).disable();
             (player as Player).getComponent(Health)?.inc(-1);
+
+            this._scene.cameras.main.shake(100, 0.01);
         }, undefined, this);
         this._scene.physics.add.overlap(this._player, this._enemies, (player, enemy) => {
             const enemyHealth = (enemy as Enemy).getComponent(Health);
@@ -85,6 +87,8 @@ export class EntityManager extends Phaser.Events.EventEmitter {
 
             const playerHealth = (player as Player).getComponent(Health);
             playerHealth?.inc(-1);
+
+            this._scene.cameras.main.shake(100, 0.03);
         });
     }
 
