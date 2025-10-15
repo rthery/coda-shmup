@@ -1,10 +1,10 @@
 import { Scene } from 'phaser';
 
-export class Game extends Scene
+export class MainGameScene extends Scene
 {
     constructor ()
     {
-        super('Game');
+        super('MainGameScene');
     }
 
     preload ()
