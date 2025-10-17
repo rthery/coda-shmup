@@ -1,4 +1,5 @@
 import {Scene, GameObjects, Physics} from 'phaser';
+import Health from "../components/Health.ts";
 import Bullet from "../entities/Bullet.ts";
 import Enemy from "../entities/Enemy.ts";
 import Player from "../entities/Player.ts";
@@ -62,6 +63,7 @@ export class MainGameScene extends Scene {
         // Create entities
         this.player = new Player(this, this.cameras.main.centerX, this.cameras.main.height - 128);
         this.player.init(this.playerBullets);
+        this.player.getComponent(Health)?.once(Health.DEATH_EVENT, this.endGame, this);
 
         this.enemies = this.physics.add.group({
             classType: Enemy,
@@ -88,15 +90,20 @@ export class MainGameScene extends Scene {
         // Add collisions detection
         this.physics.add.overlap(this.playerBullets, this.enemies, (bullet, enemy) => {
             (bullet as Bullet).disable();
-            (enemy as Enemy).disable();
+            (enemy as Enemy).getComponent(Health)?.damage((bullet as Bullet).damage);
             this.playerScore++;
             console.log("Score: " + this.playerScore);
         });
-        this.physics.add.overlap(this.enemyBullets, this.player, (_bullet, _player) => {
-            this.endGame();
+        this.physics.add.overlap(this.player, this.enemyBullets, (player, bullet) => {
+            (bullet as Bullet).disable();
+            (player as Player).getComponent(Health)?.damage((bullet as Bullet).damage);
         });
-        this.physics.add.overlap(this.enemies, this.player, (_enemy, _player) => {
-            this.endGame();
+        this.physics.add.overlap(this.player, this.enemies, (player, enemy) => {
+            const enemyHealth = (enemy as Enemy).getComponent(Health);
+            enemyHealth?.damage(enemyHealth?.max);
+
+            const playerHealth = (player as Player).getComponent(Health);
+            playerHealth?.damage(1);
         });
     }
 

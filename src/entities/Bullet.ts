@@ -1,5 +1,13 @@
+import {BulletData} from "../gameData/BulletData.ts";
+
 export default class Bullet extends Phaser.GameObjects.Rectangle {
     private _arcadeBody: Phaser.Physics.Arcade.Body;
+
+    private _damage: number = 0;
+
+    public get damage(): number {
+        return this._damage;
+    }
 
     public init() {
         this.scene.physics.add.existing(this);
@@ -9,18 +17,19 @@ export default class Bullet extends Phaser.GameObjects.Rectangle {
         this._arcadeBody.setFriction(0, 0);
     }
 
-    public enable(x: number, y: number, width: number, height: number, color: number, velocityX: number, velocityY: number) {
+    public enable(x: number, y: number, velocityX: number, velocityY: number, data: BulletData) {
         this.setPosition(x, y);
-        this.setSize(width, height);
+        this.setSize(data.width, data.height);
         this.setOrigin(0.5);
-        this.setFillStyle(color);
+        this.setFillStyle(data.color);
 
         this.scene.physics.world.add(this._arcadeBody);
         this.setActive(true);
         this.setVisible(true);
 
-        this._arcadeBody.setSize(width, height);
+        this._arcadeBody.setSize(data.width, data.height);
         this._arcadeBody.setVelocity(velocityX, velocityY);
+        this._damage = data.damage;
 
         // Rotate the bullet to face the direction it's moving
         this.setRotation(this._arcadeBody.velocity.angle());

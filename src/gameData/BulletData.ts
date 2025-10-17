@@ -3,4 +3,5 @@ export type BulletData = {
     height: number;
     color: number;
     speed: number;
+    damage: number;
 }

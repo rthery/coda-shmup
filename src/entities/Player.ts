@@ -2,6 +2,7 @@ import {Scene} from "phaser";
 import {PlayerShipData, PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import type {BulletData} from "../gameData/BulletData.ts";
 import Entity from './Entity.ts';
+import Health from "../components/Health.ts";
 import Movement from "../components/Movement.ts";
 import Weapon from "../components/Weapon.ts";
 
@@ -10,7 +11,8 @@ export default class Player extends Entity {
         width: 12,
         height: 4,
         color: 0xffe066,
-        speed: 1024
+        speed: 1024,
+        damage: 1
     };
 
     private readonly _cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -27,6 +29,7 @@ export default class Player extends Entity {
     }
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
+        this.addComponent(new Health(3));
         this.addComponent(new Movement());
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
 
@@ -36,6 +39,10 @@ export default class Player extends Entity {
 
         this._rateOfFire = 0.5;
         this._lastShotTime = 0;
+
+        this.getComponent(Health)?.on(Health.CHANGE_EVENT, () => {
+            console.log("Player health changed! Remaining health: " + this.getComponent(Health)?.current + "/" + this.getComponent(Health)?.max);
+        });
     }
 
     public selectPlayerShip(playerShipDataId: number) {
