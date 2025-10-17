@@ -4,10 +4,10 @@ import Bullet from "../entities/Bullet.ts";
 import Enemy from "../entities/Enemy.ts";
 import Player from "../entities/Player.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
+import RegistryConstants from "../RegistryConstants.ts";
 
 export class MainGameScene extends Scene {
     private player: Player;
-    private playerScore: number;
     private playerBullets: Physics.Arcade.Group;
     private enemies: Physics.Arcade.Group;
     private enemyBullets: Physics.Arcade.Group;
@@ -83,22 +83,27 @@ export class MainGameScene extends Scene {
 
         this.initGroupCollisions();
 
-        this.playerScore = 0;
+        this.registry.set(RegistryConstants.Keys.PLAYER_SCORE, 0);
+        this.registry.events.on(RegistryConstants.Events.PLAYER_SCORE_CHANGE, (_: any, value: number) => {
+            console.log("Score: " + value);
+        });
     }
 
     private initGroupCollisions() {
         // Add collisions detection
         this.physics.add.overlap(this.playerBullets, this.enemies, (bullet, enemy) => {
+            this.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
+
             (bullet as Bullet).disable();
             (enemy as Enemy).getComponent(Health)?.damage((bullet as Bullet).damage);
-            this.playerScore++;
-            console.log("Score: " + this.playerScore);
         });
         this.physics.add.overlap(this.player, this.enemyBullets, (player, bullet) => {
             (bullet as Bullet).disable();
             (player as Player).getComponent(Health)?.damage((bullet as Bullet).damage);
         });
         this.physics.add.overlap(this.player, this.enemies, (player, enemy) => {
+            this.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
+
             const enemyHealth = (enemy as Enemy).getComponent(Health);
             enemyHealth?.damage(enemyHealth?.max);
 
@@ -108,6 +113,13 @@ export class MainGameScene extends Scene {
     }
 
     private endGame() {
+        const bestScore: number = Number(this.registry.get(RegistryConstants.Keys.PLAYER_BEST_SCORE) ?? 0);
+        const currentScore: number = Number(this.registry.get(RegistryConstants.Keys.PLAYER_SCORE) ?? 0);
+        if (currentScore > bestScore) {
+            this.registry.set(RegistryConstants.Keys.PLAYER_BEST_SCORE, currentScore);
+            console.log("New Best Score: " + currentScore);
+        }
+
         this.scene.restart();
         console.log("Game Over")
     }
