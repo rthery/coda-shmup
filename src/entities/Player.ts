@@ -1,9 +1,17 @@
 import {Scene} from "phaser";
 import {PlayerShipData, PlayerShipsData} from "../gameData/PlayerShipsData.ts";
+import type {BulletData} from "../gameData/BulletData.ts";
 import Entity from './Entity.ts';
 import Weapon from "../components/Weapon.ts";
 
 export default class Player extends Entity {
+    private readonly _bulletData: BulletData = {
+        width: 12,
+        height: 4,
+        color: 0xffe066,
+        speed: 1024
+    };
+
     private readonly _cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
     private _playerShipData: PlayerShipData;
     private _rateOfFire: number;
@@ -18,7 +26,9 @@ export default class Player extends Entity {
     }
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
-        this.addComponent(new Weapon(bulletsGroup));
+        this.addComponent(new Weapon(bulletsGroup, this._bulletData));
+
+        this.angle = -90;
 
         this.selectPlayerShip(1);
 
@@ -31,6 +41,8 @@ export default class Player extends Entity {
         this._playerShipData = playerShipsData[playerShipDataId];
 
         this.setTexture('sprites', this._playerShipData.texture);
+        const bodyData = this._playerShipData.body;
+        this.arcadeBody.setCircle(bodyData.radius, bodyData.offsetX, bodyData.offsetY);
     }
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
@@ -38,9 +50,17 @@ export default class Player extends Entity {
 
         // Press left or right arrow keys to move the player smoothly horizontally using deltaTime
         if (this._cursorKeys.left.isDown) {
-            this.x -= this._playerShipData.movementSpeed * deltaTime;
+            if (this._cursorKeys.shift.isDown) {
+                this.angle -= this._playerShipData.movementSpeed * deltaTime;
+            } else {
+                this.x -= this._playerShipData.movementSpeed * deltaTime;
+            }
         } else if (this._cursorKeys.right.isDown) {
-            this.x += this._playerShipData.movementSpeed * deltaTime;
+            if (this._cursorKeys.shift.isDown) {
+                this.angle += this._playerShipData.movementSpeed * deltaTime;
+            } else {
+                this.x += this._playerShipData.movementSpeed * deltaTime;
+            }
         }
         // Stop player from going offscreen
         this.x = Phaser.Math.Clamp(this.x, this.displayWidth / 2, this.scene.cameras.main.width - this.displayWidth / 2);
@@ -48,8 +68,7 @@ export default class Player extends Entity {
         // Press space to shoot
         if (this._cursorKeys.space.isDown) {
             if (timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000) {
-                this.getComponent(Weapon)?.shoot(this.x, this.y - this.displayHeight / 2, 4, 12,
-                    0xffe066, -1024);
+                this.getComponent(Weapon)?.shoot(this);
 
                 this._lastShotTime = timeSinceLaunch;
             }

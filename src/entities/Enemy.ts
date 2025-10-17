@@ -1,12 +1,21 @@
+import type {BulletData} from '../gameData/BulletData.ts';
 import Entity from './Entity.ts';
 import Weapon from "../components/Weapon.ts";
 
 export default class Enemy extends Entity {
+    private readonly _bulletData: BulletData = {
+        width: 12,
+        height: 12,
+        color: 0xf25f5c,
+        speed: 512
+    };
     private _shootTimerConfig: Phaser.Types.Time.TimerEventConfig;
     private _shootTimer: Phaser.Time.TimerEvent;
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
-        this.addComponent(new Weapon(bulletsGroup));
+        this.addComponent(new Weapon(bulletsGroup, this._bulletData));
+
+        this.angle = 90;
 
         this._shootTimerConfig = {
             delay: Phaser.Math.Between(2000, 3000),
@@ -28,6 +37,8 @@ export default class Enemy extends Entity {
                 frameRate: 4,
             });
         }
+
+        this.arcadeBody.setCircle(this.displayWidth / 2);
     }
 
     public enable(x: number, y: number) {
@@ -49,8 +60,7 @@ export default class Enemy extends Entity {
         this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
             this.setTexture('sprites', 'ufoRed.png');
 
-            this.getComponent(Weapon)?.shoot(this.x, this.y + this.displayHeight / 2, 12, 12,
-                0xf25f5c, 512);
+            this.getComponent(Weapon)?.shoot(this);
         });
     }
 

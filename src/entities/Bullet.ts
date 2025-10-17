@@ -9,7 +9,7 @@ export default class Bullet extends Phaser.GameObjects.Rectangle {
         this._arcadeBody.setFriction(0, 0);
     }
 
-    public enable(x: number, y: number, width: number, height: number, color: number, initialVelocityY: number) {
+    public enable(x: number, y: number, width: number, height: number, color: number, velocityX: number, velocityY: number) {
         this.setPosition(x, y);
         this.setSize(width, height);
         this.setOrigin(0.5);
@@ -20,7 +20,13 @@ export default class Bullet extends Phaser.GameObjects.Rectangle {
         this.setVisible(true);
 
         this._arcadeBody.setSize(width, height);
-        this._arcadeBody.setVelocityY(initialVelocityY);
+        this._arcadeBody.setVelocity(velocityX, velocityY);
+
+        // Rotate the bullet to face the direction it's moving
+        this.setRotation(this._arcadeBody.velocity.angle());
+
+        // Maths way
+        // this.setRotation(Math.atan2(velocityY, velocityX));
     }
 
     public disable() {
