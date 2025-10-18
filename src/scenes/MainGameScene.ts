@@ -5,6 +5,8 @@ import Enemy from "../entities/Enemy.ts";
 import Player from "../entities/Player.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import RegistryConstants from "../RegistryConstants.ts";
+import SaveManager from "../managers/SaveManager.ts";
+import SaveConstants from "../SaveConstants.ts";
 
 export class MainGameScene extends Scene {
     private player: Player;
@@ -13,6 +15,7 @@ export class MainGameScene extends Scene {
     private enemyBullets: Physics.Arcade.Group;
     private bg: GameObjects.TileSprite;
     private planet: GameObjects.Image;
+    private saveManager: SaveManager;
 
     constructor() {
         super('MainGameScene');
@@ -31,6 +34,11 @@ export class MainGameScene extends Scene {
 
     // noinspection JSUnusedGlobalSymbols
     create() {
+        if (!this.saveManager) {
+            console.error('SaveManager plugin not found');
+        }
+        this.saveManager?.load();
+
         this.bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg').setOrigin(0).setTileScale(2);
         this.planet = this.add.image(0, -512, 'planet').setOrigin(0);
 
@@ -113,10 +121,10 @@ export class MainGameScene extends Scene {
     }
 
     private endGame() {
-        const bestScore: number = Number(this.registry.get(RegistryConstants.Keys.PLAYER_BEST_SCORE) ?? 0);
+        const bestScore: number = Number(this.saveManager.getData(SaveConstants.Keys.PLAYER_BEST_SCORE) ?? 0);
         const currentScore: number = Number(this.registry.get(RegistryConstants.Keys.PLAYER_SCORE) ?? 0);
         if (currentScore > bestScore) {
-            this.registry.set(RegistryConstants.Keys.PLAYER_BEST_SCORE, currentScore);
+            this.saveManager.setData(SaveConstants.Keys.PLAYER_BEST_SCORE, currentScore);
             console.log("New Best Score: " + currentScore);
         }
 
