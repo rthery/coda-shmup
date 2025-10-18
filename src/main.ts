@@ -1,5 +1,6 @@
 import {AUTO, Game, Scale, Types} from 'phaser';
 import {MainGameScene} from './scenes/MainGameScene.ts';
+import EntityManager from "./managers/EntityManager.ts";
 import SaveManager from "./managers/SaveManager.ts";
 
 // Find out more information about the Game Config at:
@@ -23,6 +24,9 @@ const config: Types.Core.GameConfig = {
     plugins: {
         global: [
             {key: SaveManager.PLUGIN_KEY, plugin: SaveManager, mapping: SaveManager.MAPPING_NAME}
+        ],
+        scene: [
+            {key: EntityManager.PLUGIN_KEY, plugin: EntityManager, mapping: EntityManager.MAPPING_NAME}
         ]
     },
     // fps: { forceSetTimeOut: true, target: 120 },
