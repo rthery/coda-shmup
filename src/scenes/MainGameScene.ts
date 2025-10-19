@@ -5,7 +5,7 @@ import SaveManager from "../managers/SaveManager.ts";
 import SaveConstants from "../SaveConstants.ts";
 import EntityManager from "../managers/EntityManager.ts";
 
-export class MainGameScene extends Scene {
+export default class MainGameScene extends Scene {
     private bg: GameObjects.TileSprite;
     private planet: GameObjects.Image;
     private saveManager: SaveManager;
@@ -52,9 +52,6 @@ export class MainGameScene extends Scene {
         }
 
         this.registry.set(RegistryConstants.Keys.PLAYER_SCORE, 0);
-        this.registry.events.on(RegistryConstants.Events.PLAYER_SCORE_CHANGE, (_: any, value: number) => {
-            console.log("Score: " + value);
-        });
     }
 
     private endGame() {

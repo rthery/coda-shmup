@@ -1,5 +1,6 @@
 import {AUTO, Game, Scale, Types} from 'phaser';
-import {MainGameScene} from './scenes/MainGameScene.ts';
+import MainGameScene from './scenes/MainGameScene.ts';
+import MainUIScene from "./scenes/MainUIScene.ts";
 import EntityManager from "./managers/EntityManager.ts";
 import SaveManager from "./managers/SaveManager.ts";
 
@@ -31,7 +32,8 @@ const config: Types.Core.GameConfig = {
     },
     // fps: { forceSetTimeOut: true, target: 120 },
     scene: [
-        MainGameScene
+        MainGameScene,
+        MainUIScene
     ]
 };
 
