@@ -1,5 +1,6 @@
 import type {BulletData} from '../gameData/BulletData.ts';
 import Entity from './Entity.ts';
+import Movement from "../components/Movement.ts";
 import Weapon from "../components/Weapon.ts";
 
 export default class Enemy extends Entity {
@@ -13,6 +14,7 @@ export default class Enemy extends Entity {
     private _shootTimer: Phaser.Time.TimerEvent;
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
+        this.addComponent(new Movement(0.2));
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
 
         this.angle = 90;
@@ -44,7 +46,6 @@ export default class Enemy extends Entity {
     public enable(x: number, y: number) {
         this.enableBody(true, x, y - this.displayHeight, true, true);
         this._shootTimer.reset(this._shootTimerConfig);
-        this.arcadeBody.setVelocityY(256);
     }
 
     public disable() {
@@ -71,5 +72,7 @@ export default class Enemy extends Entity {
         if (this.y > this.scene.cameras.main.height + this.displayHeight) {
             this.disable();
         }
+
+        this.getComponent(Movement)?.moveVertically(this, deltaTime);
     }
 }

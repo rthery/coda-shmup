@@ -2,6 +2,7 @@ import {Scene} from "phaser";
 import {PlayerShipData, PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import type {BulletData} from "../gameData/BulletData.ts";
 import Entity from './Entity.ts';
+import Movement from "../components/Movement.ts";
 import Weapon from "../components/Weapon.ts";
 
 export default class Player extends Entity {
@@ -26,6 +27,7 @@ export default class Player extends Entity {
     }
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
+        this.addComponent(new Movement());
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
 
         this.angle = -90;
@@ -43,6 +45,8 @@ export default class Player extends Entity {
         this.setTexture('sprites', this._playerShipData.texture);
         const bodyData = this._playerShipData.body;
         this.arcadeBody.setCircle(bodyData.radius, bodyData.offsetX, bodyData.offsetY);
+
+        this.getComponent(Movement)?.setSpeed(this._playerShipData.movementSpeed);
     }
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
@@ -53,13 +57,13 @@ export default class Player extends Entity {
             if (this._cursorKeys.shift.isDown) {
                 this.angle -= this._playerShipData.movementSpeed * deltaTime;
             } else {
-                this.x -= this._playerShipData.movementSpeed * deltaTime;
+                this.getComponent(Movement)?.moveHorizontally(this, -deltaTime);
             }
         } else if (this._cursorKeys.right.isDown) {
             if (this._cursorKeys.shift.isDown) {
                 this.angle += this._playerShipData.movementSpeed * deltaTime;
             } else {
-                this.x += this._playerShipData.movementSpeed * deltaTime;
+                this.getComponent(Movement)?.moveHorizontally(this, deltaTime);
             }
         }
         // Stop player from going offscreen
