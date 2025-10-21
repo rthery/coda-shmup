@@ -4,6 +4,7 @@ import RegistryConstants from "../RegistryConstants.ts";
 import SaveManager from "../managers/SaveManager.ts";
 import SaveConstants from "../SaveConstants.ts";
 import EntityManager from "../managers/EntityManager.ts";
+import GameConstants from "../GameConstants.ts";
 
 export default class MainGameScene extends Scene {
     private bg: GameObjects.TileSprite;
@@ -12,7 +13,7 @@ export default class MainGameScene extends Scene {
     private entityManager: EntityManager;
 
     constructor() {
-        super('MainGameScene');
+        super(GameConstants.SceneKeys.MAIN_GAME);
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -52,6 +53,8 @@ export default class MainGameScene extends Scene {
         }
 
         this.registry.set(RegistryConstants.Keys.PLAYER_SCORE, 0);
+
+        console.log("MainGameScene created");
     }
 
     private endGame() {
@@ -62,8 +65,7 @@ export default class MainGameScene extends Scene {
             console.log("New Best Score: " + currentScore);
         }
 
-        this.scene.restart();
-        console.log("Game Over")
+        this.scene.start(GameConstants.SceneKeys.GAME_OVER);
     }
 
     update(_timeSinceLaunch: number, deltaTime: number) {

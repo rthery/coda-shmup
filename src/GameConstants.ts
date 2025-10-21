@@ -3,4 +3,11 @@ export default class GameConstants {
         PLAYER_SPAWNED_EVENT: "playerSpawned",
         ENEMY_SPAWNED_EVENT: "enemySpawned",
     } as const);
+
+    public static readonly SceneKeys = Object.freeze({
+        HOME: "HomeScene",
+        MAIN_GAME: "MainGameScene",
+        MAIN_UI: "MainUIScene",
+        GAME_OVER: "GameOverScene",
+    } as const);
 }
