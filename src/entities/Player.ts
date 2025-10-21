@@ -1,7 +1,7 @@
 import {Scene} from "phaser";
 import {PlayerShipData, PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import Entity from './Entity.ts';
-import Bullet from "./Bullet.ts";
+import Weapon from "../components/Weapon.ts";
 
 export default class Player extends Entity {
     private readonly _cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -18,7 +18,7 @@ export default class Player extends Entity {
     }
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
-        this.bullets = bulletsGroup;
+        this.addComponent(new Weapon(bulletsGroup));
 
         this.selectPlayerShip(1);
 
@@ -48,12 +48,10 @@ export default class Player extends Entity {
         // Press space to shoot
         if (this._cursorKeys.space.isDown) {
             if (timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000) {
-                const bullet: Bullet = this.bullets.get() as Bullet;
-                if (bullet) {
-                    bullet.enable(this.x, this.y - this.displayHeight / 2, 4, 12, 0xffe066, -1024);
+                this.getComponent(Weapon)?.shoot(this.x, this.y - this.displayHeight / 2, 4, 12,
+                    0xffe066, -1024);
 
-                    this._lastShotTime = timeSinceLaunch;
-                }
+                this._lastShotTime = timeSinceLaunch;
             }
         }
     }

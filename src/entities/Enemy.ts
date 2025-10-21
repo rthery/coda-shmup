@@ -1,12 +1,12 @@
 import Entity from './Entity.ts';
-import Bullet from "./Bullet.ts";
+import Weapon from "../components/Weapon.ts";
 
 export default class Enemy extends Entity {
     private _shootTimerConfig: Phaser.Types.Time.TimerEventConfig;
     private _shootTimer: Phaser.Time.TimerEvent;
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
-        this.bullets = bulletsGroup;
+        this.addComponent(new Weapon(bulletsGroup));
 
         this._shootTimerConfig = {
             delay: Phaser.Math.Between(2000, 3000),
@@ -49,10 +49,8 @@ export default class Enemy extends Entity {
         this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
             this.setTexture('sprites', 'ufoRed.png');
 
-            const bullet: Bullet = this.bullets.get() as Bullet;
-            if (bullet) {
-                bullet.enable(this.x, this.y + this.displayHeight / 2, 12, 12, 0xf25f5c, 512);
-            }
+            this.getComponent(Weapon)?.shoot(this.x, this.y + this.displayHeight / 2, 12, 12,
+                0xf25f5c, 512);
         });
     }
 
