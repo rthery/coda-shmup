@@ -17,17 +17,6 @@ export default class MainGameScene extends Scene {
     }
 
     // noinspection JSUnusedGlobalSymbols
-    preload() {
-        this.load.setPath('assets');
-
-        this.load.image('bg', 'Backgrounds/darkPurple.png');
-        this.load.image('planet', 'Planets/planet00.png');
-        this.load.atlas('sprites', 'Spritesheet/gameSprites.png', 'Spritesheet/gameSprites.json');
-
-        this.load.json('playerShips', 'Data/playerShips.json');
-    }
-
-    // noinspection JSUnusedGlobalSymbols
     create() {
         if (!this.saveManager) {
             console.error('SaveManager plugin not found');
