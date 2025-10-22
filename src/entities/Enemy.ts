@@ -51,8 +51,22 @@ export default class Enemy extends Entity {
         this._shootTimer.reset(this._shootTimerConfig);
 
         const health = this.getComponent(Health);
-        health?.once(Health.DEATH_EVENT, () => {
-            this.disable();
+        health?.on(Health.CHANGE_EVENT, () => {
+            this.setTintFill(0xffffff);
+
+            if (health?.current == 0)
+            {
+                this.disableBody();
+            }
+
+            this.scene.time.delayedCall(50, () => {
+                this.clearTint();
+
+                if (health?.current == 0)
+                {
+                    this.disable();
+                }
+            });
         });
 
         // Restore health, in case the enemy is reused from the pool, without emitting events
@@ -84,6 +98,9 @@ export default class Enemy extends Entity {
             this.disable();
         }
 
-        this.getComponent(Movement)?.moveVertically(this, deltaTime);
+        if (!this.isTinted)
+            this.getComponent(Movement)?.moveVertically(this, deltaTime);
+        else
+            this.getComponent(Movement)?.moveVertically(this, deltaTime * 0.5);
     }
 }

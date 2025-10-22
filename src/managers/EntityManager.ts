@@ -93,7 +93,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
             this.scene?.cameras.main.shake(100, 0.01);
         });
 
-        this.scene!.physics.add.overlap(this._player, this._enemies, (player, enemy) => {
+        this.scene!.physics.add.overlap(this._player, this._enemies, undefined, (player, enemy) => {
             this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
 
             const enemyHealth = (enemy as Enemy).getComponent(Health);
@@ -103,6 +103,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
             playerHealth?.damage(1);
 
             this.scene?.cameras.main.shake(100, 0.03);
+
+            return true;
         });
 
         console.log("[EntityManager] Group collisions initialized");

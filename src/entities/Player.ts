@@ -45,7 +45,11 @@ export default class Player extends Entity {
         this._lastShotTime = 0;
 
         this.getComponent(Health)?.on(Health.CHANGE_EVENT, () => {
-            console.log("Player health changed! Remaining health: " + this.getComponent(Health)?.current + "/" + this.getComponent(Health)?.max);
+            this.arcadeBody.setEnable(false);
+
+            this.scene.time.delayedCall(50, () => {
+                this.arcadeBody.setEnable(true);
+            });
         });
     }
 
