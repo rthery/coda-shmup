@@ -5,8 +5,8 @@ import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
 
 export default class MainUIScene extends Scene {
-    private _playerHealthText: GameObjects.Text;
-    private _scoreText: GameObjects.Text;
+    private _playerHealthText: GameObjects.BitmapText;
+    private _scoreText: GameObjects.BitmapText;
 
     constructor() {
         super(GameConstants.SceneKeys.MAIN_UI);
@@ -25,11 +25,17 @@ export default class MainUIScene extends Scene {
 
     // noinspection JSUnusedGlobalSymbols
     create() {
-        const textStyle = {fontSize: "32px", color: '#FFFFFF'};
-        this._playerHealthText = this.add.text(16, 16, "HP: ?", textStyle);
+        const playerHealthIcon = this.add.image(64, 64, "sprites", "playerLife1_blue.png")
+            .setOrigin(0, 0).setScale(1.5);
+        const playerHealthTextX = playerHealthIcon.x + playerHealthIcon.displayWidth + 16;
+        this._playerHealthText = this.add.bitmapText(playerHealthTextX, 64, "future-bmp", "x0", 128);
 
-        const scoreStr: string = "Score: " + (this.registry.get(RegistryConstants.Keys.PLAYER_SCORE) || "0");
-        this._scoreText = this.add.text(this.scale.width - 16, 16, scoreStr, textStyle).setOrigin(1, 0);
+        let scoreStr: string = "".padStart(GameConstants.MAX_SCORE_DIGITS, "0");
+        if (this.registry.has(RegistryConstants.Keys.PLAYER_SCORE))
+            scoreStr = this.registry.get(RegistryConstants.Keys.PLAYER_SCORE).toString()
+                .padStart(GameConstants.MAX_SCORE_DIGITS, "0");
+        this._scoreText = this.add.bitmapText(this.scale.width - 64, 64, "future-bmp", scoreStr, 128)
+            .setOrigin(1, 0);
 
         this.scene.bringToTop();
 
@@ -37,14 +43,15 @@ export default class MainUIScene extends Scene {
     }
 
     private onPlayerScoreChanged(_: any, value: number) {
-        this._scoreText.setText("Score: " + value);
+        const scoreStr: string = value.toString().padStart(GameConstants.MAX_SCORE_DIGITS, "0");
+        this._scoreText.setText(scoreStr);
     }
 
     private onPlayerSpawned(player: Player) {
-        this._playerHealthText.setText("HP: " + player.getComponent(Health)?.current);
+        this._playerHealthText.setText("x" + player.getComponent(Health)?.current);
 
         player.getComponent(Health)?.on(Health.CHANGE_EVENT, (current: number) => {
-            this._playerHealthText.setText("HP: " + current);
+            this._playerHealthText.setText("x" + current);
         }, this);
     }
 }

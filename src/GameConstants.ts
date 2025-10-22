@@ -10,4 +10,6 @@ export default class GameConstants {
         MAIN_UI: "MainUIScene",
         GAME_OVER: "GameOverScene",
     } as const);
+
+    public static readonly MAX_SCORE_DIGITS: number = 6;
 }
