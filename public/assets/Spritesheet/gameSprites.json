@@ -155,6 +155,69 @@
 						"w": 33,
 						"h": 26
 					}
+				},
+				{
+					"filename": "star1.png",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 25,
+						"h": 24
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 25,
+						"h": 24
+					},
+					"frame": {
+						"x": 75,
+						"y": 208,
+						"w": 25,
+						"h": 24
+					}
+				},
+				{
+					"filename": "star2.png",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 25,
+						"h": 24
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 25,
+						"h": 24
+					},
+					"frame": {
+						"x": 75,
+						"y": 232,
+						"w": 25,
+						"h": 24
+					}
+				},
+				{
+					"filename": "star3.png",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 24,
+						"h": 24
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 24,
+						"h": 24
+					},
+					"frame": {
+						"x": 75,
+						"y": 256,
+						"w": 24,
+						"h": 24
+					}
 				}
 			]
 		}
