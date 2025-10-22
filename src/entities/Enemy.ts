@@ -87,6 +87,7 @@ export default class Enemy extends Entity {
             this.setTexture('sprites', 'ufoRed.png');
 
             this.getComponent(Weapon)?.shoot(this);
+            this.scene.sound.play('sfx_laser2');
         });
     }
 

@@ -88,6 +88,7 @@ export default class Player extends Entity {
         if (this._cursorKeys.space.isDown) {
             if (timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000) {
                 this.getComponent(Weapon)?.shoot(this);
+                this.scene.sound.play('sfx_laser1');
 
                 this._lastShotTime = timeSinceLaunch;
             }
