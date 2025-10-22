@@ -33,13 +33,13 @@ export default class HomeScene extends Phaser.Scene {
         this.load.image('bg', 'Backgrounds/darkPurple.png');
         this.load.image('planet', 'Planets/planet00.png');
         this.load.atlas('sprites', 'Spritesheet/gameSprites.png', 'Spritesheet/gameSprites.json');
-
+        this.load.font('future', 'Fonts/kenvector_future.ttf');
         this.load.json('playerShips', 'Data/playerShips.json');
     }
 
     create() {
         this.add.text(this.scale.width / 2, this.scale.width / 2, 'CODA SHMUP',
-            {fontSize: '64px', color: '#fff'}).setOrigin(0.5);
+            {fontSize: '72px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
         this.add.text(this.scale.width / 2, this.scale.width / 2 + 72, 'Press SPACE to start',
             {fontSize: '32px', color: '#fff'}).setOrigin(0.5);
 
