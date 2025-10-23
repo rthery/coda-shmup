@@ -6,11 +6,16 @@ import Weapon from "../components/Weapon.ts";
 
 export default class Enemy extends Entity {
     private readonly _bulletData: BulletData = {
-        width: 12,
-        height: 12,
-        color: 0xf25f5c,
+        scale: 1.5,
+        texture: "laserRed03.png",
+        blink: false,
         speed: 512,
         damage: 1,
+        body: {
+            radius: 5,
+            offsetX: 32,
+            offsetY: -5
+        }
     };
     private _shootTimerConfig: Phaser.Types.Time.TimerEventConfig;
     private _shootTimer: Phaser.Time.TimerEvent;
@@ -51,19 +56,17 @@ export default class Enemy extends Entity {
         this._shootTimer.reset(this._shootTimerConfig);
 
         const health = this.getComponent(Health);
-        health?.on(Health.CHANGE_EVENT, () => {
+        health?.on(Health.CHANGE_EVENT, (currentHealth: number) => {
             this.setTintFill(0xffffff);
 
-            if (health?.current == 0)
-            {
+            if (currentHealth == 0) {
                 this.disableBody();
             }
 
             this.scene.time.delayedCall(50, () => {
                 this.clearTint();
 
-                if (health?.current == 0)
-                {
+                if (currentHealth == 0) {
                     this.disable();
                 }
             });
@@ -94,7 +97,6 @@ export default class Enemy extends Entity {
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
         super.preUpdate(timeSinceLaunch, deltaTime)
 
-        // Destroy entities when out of screen
         if (this.y > this.scene.cameras.main.height + this.displayHeight) {
             this.disable();
         }
