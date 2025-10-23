@@ -8,11 +8,16 @@ import Weapon from "../components/Weapon.ts";
 
 export default class Player extends Entity {
     private readonly _bulletData: BulletData = {
-        width: 12,
-        height: 4,
-        color: 0xffe066,
+        scale: 2.5,
+        texture: "laserBlue01.png",
+        blink: true,
         speed: 1024,
-        damage: 1
+        damage: 1,
+        body: {
+            radius: 5,
+            offsetX: 49,
+            offsetY: 5
+        }
     };
 
     private readonly _cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
