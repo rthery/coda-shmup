@@ -26,7 +26,7 @@ export default class MainGameScene extends Scene {
         const bgMargin = 512;
         this.bg = this.add.tileSprite(this.cameras.main.centerX, this.cameras.main.centerY,
             this.cameras.main.width + bgMargin, this.cameras.main.height + bgMargin, 'bg').setTileScale(2);
-        this.planet = this.add.image(0, -512, 'planet').setOrigin(0);
+        this.planet = this.add.image(0, -512, 'planet').setOrigin(0).setScale(5);
 
         if (!this.entityManager) {
             console.error('EntityManager plugin not found');
@@ -62,5 +62,9 @@ export default class MainGameScene extends Scene {
     update(_timeSinceLaunch: number, deltaTime: number) {
         this.bg.tilePositionY -= 0.1 * deltaTime;
         this.planet.y += 0.40 * deltaTime;
+
+        if (this.planet.y - this.planet.displayHeight >= this.cameras.main.height) {
+            this.planet.destroy(true);
+        }
     }
 }
