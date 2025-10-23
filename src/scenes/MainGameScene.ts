@@ -62,5 +62,9 @@ export default class MainGameScene extends Scene {
     update(_timeSinceLaunch: number, deltaTime: number) {
         this.bg.tilePositionY -= 0.1 * deltaTime;
         this.planet.y += 0.40 * deltaTime;
+
+        if (this.planet.y - this.planet.displayHeight >= this.cameras.main.height) {
+            this.planet.destroy(true);
+        }
     }
 }
