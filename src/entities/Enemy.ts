@@ -56,20 +56,8 @@ export default class Enemy extends Entity {
         this._shootTimer.reset(this._shootTimerConfig);
 
         const health = this.getComponent(Health);
-        health?.on(Health.CHANGE_EVENT, (currentHealth: number) => {
-            this.setTintFill(0xffffff);
-
-            if (currentHealth == 0) {
-                this.disableBody();
-            }
-
-            this.scene.time.delayedCall(50, () => {
-                this.clearTint();
-
-                if (currentHealth == 0) {
-                    this.disable();
-                }
-            });
+        health?.on(Health.DEATH_EVENT, () => {
+            this.disable();
         });
 
         // Restore health, in case the enemy is reused from the pool, without emitting events
