@@ -29,7 +29,13 @@ export default class Health extends Phaser.Events.EventEmitter implements ICompo
 
     public damage(amount: number, emitEvents: boolean = true): void {
         if (!this.enabled || amount <= 0) return;
-        this.adjust(-amount, emitEvents);
+
+        this._entity.setTintFill(0xffffff);
+        this._entity.scene.time.delayedCall(50, () => {
+            this._entity.clearTint();
+
+            this.adjust(-amount, emitEvents);
+        });
     }
 
     public heal(amount: number, emitEvents: boolean = true): void {
