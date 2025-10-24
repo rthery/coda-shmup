@@ -34,8 +34,6 @@ export default class MainGameScene extends Scene {
 
         const player = this.entityManager.initAndSpawnPlayer();
         player.getComponent(Health)?.once(Health.DEATH_EVENT, this.endGame, this);
-        this.entityManager.initEnemies();
-        this.entityManager.initGroupCollisions();
 
         if (this.input.keyboard) {
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R).on('down', () => this.scene.restart());
@@ -59,7 +57,9 @@ export default class MainGameScene extends Scene {
         this.scene.start(GameConstants.SceneKeys.GAME_OVER);
     }
 
-    update(_timeSinceLaunch: number, deltaTime: number) {
+    update(timeSinceLaunch: number, deltaTime: number) {
+        super.update(timeSinceLaunch, deltaTime);
+
         this.bg.tilePositionY -= 0.1 * deltaTime;
         this.planet.y += 0.40 * deltaTime;
 
