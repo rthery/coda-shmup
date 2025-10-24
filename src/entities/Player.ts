@@ -8,7 +8,7 @@ import Weapon from "../components/Weapon.ts";
 
 export default class Player extends Entity {
     private readonly _bulletData: BulletData = {
-        scale: 2.5,
+        scale: 1.8,
         texture: "laserBlue01.png",
         blink: true,
         speed: 1024,
