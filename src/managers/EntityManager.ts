@@ -11,6 +11,14 @@ export default class EntityManager extends Plugins.ScenePlugin {
     public static readonly PLUGIN_KEY: string = 'EntityManager';
     public static readonly MAPPING_NAME: string = 'entityManager';
 
+    private static readonly ENTITIES_DEPTHS = {
+        PLAYER: 100,
+        PLAYER_BULLETS: 90,
+        ENEMIES: 80,
+        ENEMY_BULLETS: 70,
+        EFFECTS: 60
+    }
+
     // noinspection JSUnusedGlobalSymbols
     private readonly bulletGroupConfig = {
         classType: Bullet,
@@ -25,6 +33,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private _playerBullets: Physics.Arcade.Group;
     private _enemies: Physics.Arcade.Group;
     private _enemyBullets: Physics.Arcade.Group;
+    private _explosionFX: GameObjects.Particles.ParticleEmitter;
 
     constructor(scene: Scene, pluginManager: Plugins.PluginManager) {
         super(scene, pluginManager, EntityManager.PLUGIN_KEY);
@@ -40,9 +49,12 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
     public initAndSpawnPlayer(): Player {
         this._playerBullets = this.scene!.physics.add.group(this.bulletGroupConfig);
+        this._playerBullets.setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER_BULLETS);
         GroupUtils.populate(64, this._playerBullets);
 
+
         this._player = new Player(this.scene!, this.scene!.cameras.main.centerX, this.scene!.cameras.main.height - 128);
+        this._player.setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER);
         this._player.init(this._playerBullets);
 
         console.log("[EntityManager] Player spawned");
@@ -54,6 +66,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
     public initEnemies(): Physics.Arcade.Group {
         this._enemyBullets = this.scene!.physics.add.group(this.bulletGroupConfig);
+        this._enemyBullets.setDepth(EntityManager.ENTITIES_DEPTHS.ENEMY_BULLETS);
         GroupUtils.populate(256, this._enemyBullets);
 
         this._enemies = this.scene!.physics.add.group({
@@ -64,6 +77,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
                 (enemy as Enemy).init(this._enemyBullets);
             }
         });
+        this._enemies.setDepth(EntityManager.ENTITIES_DEPTHS.ENEMIES);
 
         // Spawn enemies indefinitely
         this.scene!.time.addEvent({
@@ -72,6 +86,21 @@ export default class EntityManager extends Plugins.ScenePlugin {
             callbackScope: this,
             loop: true
         });
+
+        const explosionParticlesAcceleration = 2048;
+        this._explosionFX = this.scene!.add.particles(0, 0, 'shapes', {
+            frame: ['smoke_11'],
+            lifespan: 600,
+            accelerationX: {random: [-explosionParticlesAcceleration, explosionParticlesAcceleration], ease: 'Power3'},
+            accelerationY: {random: [-explosionParticlesAcceleration, -100], ease: 'Power3'},
+            alpha: {start: 1, end: 0, ease: 'Power1'},
+            scale: {random: [0.1, 2]},
+            color: [0x90A4AE],
+            blendMode: 'ADD',
+            timeScale: 1.5,
+            emitting: false
+        })
+        this._explosionFX.setDepth(EntityManager.ENTITIES_DEPTHS.EFFECTS);
 
         console.log("[EntityManager] Enemies initialized");
 
@@ -93,7 +122,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
             this.scene?.cameras.main.shake(100, 0.01);
         });
 
-        this.scene!.physics.add.overlap(this._player, this._enemies, undefined, (player, enemy) => {
+        this.scene!.physics.add.overlap(this._player, this._enemies, (player, enemy) => {
             this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
 
             const enemyHealth = (enemy as Enemy).getComponent(Health);
@@ -103,8 +132,6 @@ export default class EntityManager extends Plugins.ScenePlugin {
             playerHealth?.damage(1);
 
             this.scene?.cameras.main.shake(100, 0.03);
-
-            return true;
         });
 
         console.log("[EntityManager] Group collisions initialized");
@@ -123,6 +150,10 @@ export default class EntityManager extends Plugins.ScenePlugin {
         enemy.enable(Phaser.Math.Between(64, this.scene!.cameras.main.width - 64), 0);
 
         this.game!.events.emit(GameConstants.Events.ENEMY_SPAWNED_EVENT, enemy);
+
+        enemy.getComponent(Health)?.once(Health.DEATH_START_EVENT, () => {
+            this._explosionFX.explode(12, enemy.x, enemy.y);
+        })
 
         console.log("[EntityManager] Enemy spawned");
     }
