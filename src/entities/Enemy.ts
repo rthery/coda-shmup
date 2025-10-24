@@ -56,7 +56,7 @@ export default class Enemy extends Entity {
         this._shootTimer.reset(this._shootTimerConfig);
 
         const health = this.getComponent(Health);
-        health?.on(Health.DEATH_EVENT, () => {
+        health?.once(Health.DEATH_EVENT, () => {
             this.disable();
         });
 
