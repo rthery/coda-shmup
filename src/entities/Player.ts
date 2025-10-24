@@ -5,6 +5,7 @@ import Entity from './Entity.ts';
 import Health from "../components/Health.ts";
 import Movement from "../components/Movement.ts";
 import Weapon from "../components/Weapon.ts";
+import Invulnerability from "../components/Invulnerability.ts";
 
 export default class Player extends Entity {
     private readonly _bulletData: BulletData = {
@@ -39,6 +40,7 @@ export default class Player extends Entity {
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
         this.addComponent(new Health(3, this));
+        this.addComponent(new Invulnerability(250, this));
         this.addComponent(new Movement());
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
 
