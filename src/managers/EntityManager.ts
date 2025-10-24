@@ -52,10 +52,22 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this._playerBullets.setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER_BULLETS);
         GroupUtils.populate(64, this._playerBullets);
 
-
-        this._player = new Player(this.scene!, this.scene!.cameras.main.centerX, this.scene!.cameras.main.height - 128);
+        this._player = new Player(this.scene!, 0, 0);
         this._player.setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER);
         this._player.init(this._playerBullets);
+        const playerStartX: number = this.scene!.cameras.main.centerX;
+        const playerStartY: number = this.scene!.cameras.main.height + this._player.height;
+        this._player.setPosition(playerStartX, playerStartY);
+        this.scene!.tweens.add({
+            targets: this._player,
+            y: this.scene!.cameras.main.height - 128,
+            duration: 500,
+            ease: Phaser.Math.Easing.Quadratic.Out,
+            onComplete: () => {
+                this.initEnemies();
+                this.initGroupCollisions();
+            }
+        });
 
         console.log("[EntityManager] Player spawned");
 
