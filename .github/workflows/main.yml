@@ -19,6 +19,16 @@ jobs:
         with:
           node-version: '22.x'
 
+      - name: Install image optimization tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y optipng
+
+      - name: Optimize PNGs in public/assets (lossless)
+        run: |
+          echo "Optimizing PNGs in public/assets (lossless with optipng)"
+          find public/assets -type f -iname '*.png' -print0 | xargs -0 -n1 -P4 optipng -o7 -strip all || true
+
       - name: Install dependencies for CI
         run: npm ci
 
