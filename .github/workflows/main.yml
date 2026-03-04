@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev
   workflow_dispatch:
 
 jobs:
@@ -41,9 +42,13 @@ jobs:
           name: game-build
           path: dist/
 
-  deploy:
+  deploy_itch:
+    environment:
+      name: itchio
+      url: https://${{ vars.ITCH_USER }}.itch.io/${{ github.event.repository.name }}
     runs-on: ubuntu-latest
     needs: build
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Download build artifact
@@ -60,3 +65,35 @@ jobs:
           ITCH_GAME: ${{ github.event.repository.name }}
           ITCH_USER: ${{ vars.ITCH_USER }}
           PACKAGE: dist/
+
+  deploy_pages:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    needs: build
+    if: github.ref == 'refs/heads/dev'
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4.1.9
+        with:
+          name: game-build
+          path: dist/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
