@@ -105,7 +105,7 @@ export default class Enemy extends Entity {
         this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
             this.setTexture('sprites', 'ufoRed.png');
 
-            this.getComponent(Weapon)?.shoot(this);
+            this.getComponent(Weapon)?.spreadShoot(this, 10, 180);
             this.scene.sound.play('sfx_laser2');
         });
     }

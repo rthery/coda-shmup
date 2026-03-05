@@ -43,4 +43,26 @@ export default class Weapon implements IComponent {
             //     bulletVelocityX, bulletVelocityY, this._bulletData);
         }
     }
+
+    public spreadShoot(source: Entity, bulletsQuantity: number, shotArc: number) {
+        if (!this.enabled)
+            return;
+
+        if(!this._bullets)
+            return;
+
+        const shotSpacing: number = shotArc / (bulletsQuantity - 1);
+        let shotAngle: number = source.angle + shotArc/2
+
+        for(let i: number = 0; i < bulletsQuantity; i++) {
+            const sourceForward: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0).rotate(shotAngle * (Phaser.Math.PI2 / 360));
+            const bulletVelocity: Phaser.Math.Vector2 = sourceForward.clone().scale(this._bulletData.speed);
+            const bullet: Bullet = this._bullets.get() as Bullet;
+            bullet.enable(source.x + sourceForward.x * source.arcadeBody.radius, source.y + sourceForward.y * source.arcadeBody.radius,
+                bulletVelocity.x, bulletVelocity.y, this._bulletData);
+
+            shotAngle -= shotSpacing
+        }
+        
+    }
 }
