@@ -4,6 +4,8 @@ import GameConstants from "../GameConstants.ts";
 export default class HomeScene extends Phaser.Scene {
     private _bg: Phaser.GameObjects.TileSprite;
     private _playerShip: Phaser.GameObjects.Image;
+    private _startPrompt: Phaser.GameObjects.Text;
+    private _isMobile: boolean;
 
     constructor() {
         super(GameConstants.SceneKeys.HOME);
@@ -17,16 +19,14 @@ export default class HomeScene extends Phaser.Scene {
         const progressBox = this.add.graphics();
         progressBox.fillStyle(0x222222, 0.8);
         progressBox.fillRect(0, y, width, 64);
-        this.load.on(Loader.Events.PROGRESS, function (value: number) { // 0-1
+        this.load.on(Loader.Events.PROGRESS, function (value: number) {
             console.log("Loading : " + value);
-
             progressBar.clear();
             progressBar.fillStyle(0xffffff, 1);
             progressBar.fillRect(0, y, width * value, 64);
         });
         this.load.on(Loader.Events.COMPLETE, function () {
             console.log("Loading complete");
-
             progressBar.destroy();
             progressBox.destroy();
         });
@@ -45,6 +45,9 @@ export default class HomeScene extends Phaser.Scene {
     }
 
     create() {
+        const os = this.sys.game.device.os;
+        this._isMobile = os.android || os.iOS || os.iPad || os.iPhone;
+
         this._bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg')
             .setOrigin(0).setTileScale(2);
 
@@ -63,30 +66,54 @@ export default class HomeScene extends Phaser.Scene {
 
         this.add.text(this.scale.width / 2, 512, 'CODA SHMUP',
             {fontSize: '72px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
-        this.add.text(this.scale.width / 2, this.scale.height - 256, 'Press SPACE to start',
-            {fontSize: '32px', color: '#fff'}).setOrigin(0.5);
 
-        this.input.keyboard?.once('keydown-SPACE', () => {
-            this.tweens.killTweensOf(this._playerShip);
-            this.tweens.add({
-                targets: this._playerShip,
-                x: this.cameras.main.centerX,
-                y: -this._playerShip.height,
-                duration: 600,
-                ease: 'Quad.easeIn',
-                onComplete: () => {
-                    this.scene.launch(GameConstants.SceneKeys.MAIN_UI);
-                    this.scene.start(GameConstants.SceneKeys.MAIN_GAME);
-                }
-            })
-        });
+        this._startPrompt = this.add.text(
+            this.scale.width / 2,
+            this.scale.height - 256,
+            this._isMobile ? 'Tap to start' : 'Press SPACE to start',
+            {fontSize: '32px', color: '#fff'}
+        ).setOrigin(0.5);
+
+        if (this._isMobile) {
+            this.input.once('pointerdown', () => this._startGame());
+        } else {
+            this.input.keyboard?.once('keydown-SPACE', () => this._startGame());
+
+            // Fallback: touchscreen laptop touching the screen
+            this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+                if (pointer.wasTouch) this._startPrompt.setText('Tap to start');
+            });
+            this.input.keyboard?.on('keydown', () => {
+                this._startPrompt.setText('Press SPACE to start');
+            });
+            this.input.once('pointerdown', (pointer: Phaser.Input.Pointer) => {
+                if (pointer.wasTouch) this._startGame();
+            });
+        }
 
         console.log("HomeScene created");
     }
 
+    private _startGame() {
+        this.input.keyboard?.removeAllListeners();
+        this.input.removeAllListeners();
+
+        this.tweens.killTweensOf(this._playerShip);
+        this.tweens.add({
+            targets: this._playerShip,
+            x: this.cameras.main.centerX,
+            y: -this._playerShip.height,
+            duration: 600,
+            ease: 'Quad.easeIn',
+            onComplete: () => {
+                this.scene.launch(GameConstants.SceneKeys.MAIN_UI);
+                this.scene.start(GameConstants.SceneKeys.MAIN_GAME);
+            }
+        });
+    }
+
     update(timeSinceLaunch: number, deltaTime: number) {
         super.update(timeSinceLaunch, deltaTime);
-
         this._bg.tilePositionY -= 0.1 * deltaTime;
     }
 }

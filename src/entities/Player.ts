@@ -26,6 +26,11 @@ export default class Player extends Entity {
     private _rateOfFire: number;
     private _lastShotTime: number;
 
+    // Touch state
+    private _touchLeft: boolean = false;
+    private _touchRight: boolean = false;
+    private _isTouchDevice: boolean = false;
+
     constructor(scene: Scene, x: number, y: number) {
         super(scene, x, y, 'sprites');
 
@@ -36,6 +41,61 @@ export default class Player extends Entity {
             this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.TWO).on('down', () => this.selectPlayerShip(2));
             this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.THREE).on('down', () => this.selectPlayerShip(3));
         }
+
+        this._setupTouchInput();
+    }
+
+    private _setupTouchInput() {
+        this.scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            if (!pointer.wasTouch) return;
+            this._isTouchDevice = true;
+            this._updateTouchDirection(pointer);
+        });
+
+        this.scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+            if (!pointer.isDown || !pointer.wasTouch) return;
+            this._updateTouchDirection(pointer);
+        });
+
+        this.scene.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+            if (!pointer.wasTouch) return;
+            this._clearTouchForPointer(pointer.id);
+        });
+
+        this.scene.input.on('pointerupoutside', (pointer: Phaser.Input.Pointer) => {
+            if (!pointer.wasTouch) return;
+            this._clearTouchForPointer(pointer.id);
+        });
+
+        this.scene.input.keyboard?.on('keydown', () => {
+            this._isTouchDevice = false;
+            this._touchLeft = false;
+            this._touchRight = false;
+        });
+    }
+
+    private _updateTouchDirection(pointer: Phaser.Input.Pointer) {
+        const screenMidX = this.scene.cameras.main.width / 2;
+        // Track per-pointer so two-finger touch works correctly
+        if (pointer.x < screenMidX) {
+            this._touchLeft = true;
+        } else {
+            this._touchRight = true;
+        }
+    }
+
+    private _clearTouchForPointer(pointerId: number) {
+        // Re-evaluate active pointers to set touch state correctly
+        this._touchLeft = false;
+        this._touchRight = false;
+
+        const screenMidX = this.scene.cameras.main.width / 2;
+        this.scene.input.manager.pointers.forEach((p: Phaser.Input.Pointer) => {
+            if (p.id !== pointerId && p.isDown && p.wasTouch) {
+                if (p.x < screenMidX) this._touchLeft = true;
+                else this._touchRight = true;
+            }
+        });
     }
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
@@ -74,29 +134,31 @@ export default class Player extends Entity {
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
         super.preUpdate(timeSinceLaunch, deltaTime);
 
-        // Press left or right arrow keys to move the player smoothly horizontally using deltaTime
-        if (this._cursorKeys.left.isDown) {
-            if (this._cursorKeys.shift.isDown) {
+        const movingLeft  = this._cursorKeys?.left.isDown  || this._touchLeft;
+        const movingRight = this._cursorKeys?.right.isDown || this._touchRight;
+
+        if (movingLeft) {
+            if (this._cursorKeys?.shift.isDown) {
                 this.angle -= this._playerShipData.movementSpeed * deltaTime;
             } else {
                 this.getComponent(Movement)?.moveHorizontally(this, -deltaTime);
             }
-        } else if (this._cursorKeys.right.isDown) {
-            if (this._cursorKeys.shift.isDown) {
+        } else if (movingRight) {
+            if (this._cursorKeys?.shift.isDown) {
                 this.angle += this._playerShipData.movementSpeed * deltaTime;
             } else {
                 this.getComponent(Movement)?.moveHorizontally(this, deltaTime);
             }
         }
-        // Stop player from going offscreen
+
         this.x = Phaser.Math.Clamp(this.x, this.displayWidth / 2, this.scene.cameras.main.width - this.displayWidth / 2);
 
-        // Press space to shoot
-        if (this._cursorKeys.space.isDown) {
+        // Keyboard: shoot on space. Touch: shoot automatically.
+        const shouldShoot = this._cursorKeys?.space.isDown || this._isTouchDevice;
+        if (shouldShoot) {
             if (timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000) {
                 this.getComponent(Weapon)?.shoot(this);
                 this.scene.sound.play('sfx_laser1');
-
                 this._lastShotTime = timeSinceLaunch;
             }
         }
