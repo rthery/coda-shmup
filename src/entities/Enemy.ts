@@ -14,8 +14,24 @@ export default class Enemy extends Entity {
     };
     private _shootTimerConfig: Phaser.Types.Time.TimerEventConfig;
     private _shootTimer: Phaser.Time.TimerEvent;
-    public internTimer: number;
-    public startX: number;
+    private _internTimer: number;
+    private _startX: number;
+
+    public getInterTimer() {
+        return this._internTimer;
+    }
+
+    public getStartX() {
+        return this._startX;
+    }
+
+    public setInternTimer(internTimer: number) {
+        this._internTimer = internTimer
+    }
+
+    public setStartX(startX: number) {
+        this._startX = startX;
+    }
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
         this.addComponent(new Health(1, this));
@@ -51,8 +67,8 @@ export default class Enemy extends Entity {
     public enable(x: number, y: number) {
         this.enableBody(true, x, y - this.displayHeight, true, true);
         this._shootTimer.reset(this._shootTimerConfig);
-        this.startX = this.x;
-        this.internTimer = 0;
+        this._startX = this.x;
+        this._internTimer = 0;
         const health = this.getComponent(Health);
         health?.on(Health.CHANGE_EVENT, () => {
             this.setTintFill(0xffffff);

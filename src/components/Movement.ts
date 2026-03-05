@@ -38,11 +38,15 @@ export default class Movement implements IComponent {
     public moveSinusoidally(enemy: Enemy, deltaTime: number, amplitude: number, frequency: number) {
         if(!this.enabled)
             return;
+        let internTimer: number = enemy.getInterTimer();
+        let startX: number = enemy.getStartX();
 
-        enemy.internTimer += deltaTime;
+        internTimer += deltaTime;
         enemy.y += this._speed * deltaTime;
         
-        enemy.x = enemy.startX + amplitude * Math.sin(enemy.internTimer * frequency);
+        enemy.x = startX + amplitude * Math.sin(internTimer * frequency);
 
+        enemy.setInternTimer(internTimer);
+        enemy.setStartX(startX);
     }
 }
