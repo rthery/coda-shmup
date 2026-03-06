@@ -1,0 +1,23 @@
+{
+  "1": {
+    "type": "base",
+    "texture": "ufoRed",
+    "health": 1,
+    "movementSpeed": 0.2,
+    "movementAmplitude": 0,
+    "movementFrequency": 0,
+    "shotRate": 1,
+    "shotAngleZone": 1
+
+  },
+  "2": {
+    "type": "spread",
+    "texture": "ufoRedSpread",
+    "health": 2,
+    "movementSpeed": 0.1,
+    "movementAmplitude": 80,
+    "movementFrequency": 0.003,
+    "shotRate": 5,
+    "shotAngleZone": 90
+  }
+}
