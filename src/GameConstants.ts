@@ -11,5 +11,6 @@ export default class GameConstants {
         GAME_OVER: "GameOverScene",
     } as const);
 
+    public static readonly START_DELAY: number = 500; // ms
     public static readonly MAX_SCORE_DIGITS: number = 6;
 }

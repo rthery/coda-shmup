@@ -61,13 +61,17 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this.scene!.tweens.add({
             targets: this._player,
             y: this.scene!.cameras.main.height - 128,
-            duration: 500,
+            duration: GameConstants.START_DELAY,
             ease: Phaser.Math.Easing.Quadratic.Out,
             onComplete: () => {
                 this.initEnemies();
                 this.initGroupCollisions();
             }
         });
+        });
+
+        this.initEnemies();
+        this.initGroupCollisions();
 
         console.log("[EntityManager] Player spawned");
 
@@ -91,8 +95,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
         });
         this._enemies.setDepth(EntityManager.ENTITIES_DEPTHS.ENEMIES);
 
-        // Spawn enemies indefinitely
         this.scene!.time.addEvent({
+            startAt: GameConstants.START_DELAY,
             delay: 1500,
             callback: this.spawnEnemy,
             callbackScope: this,
