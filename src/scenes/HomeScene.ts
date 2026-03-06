@@ -45,6 +45,8 @@ export default class HomeScene extends Phaser.Scene {
     }
 
     create() {
+        console.log(this.sys.game.renderer.type === Phaser.WEBGL ? 'WebGL' : 'Canvas');
+
         const os = this.sys.game.device.os;
         this._isMobile = os.android || os.iOS || os.iPad || os.iPhone;
 
