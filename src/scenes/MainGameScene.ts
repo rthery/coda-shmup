@@ -35,12 +35,6 @@ export default class MainGameScene extends Scene {
         const player = this.entityManager.initAndSpawnPlayer();
         player.getComponent(Health)?.once(Health.DEATH_EVENT, this.endGame, this);
 
-        if (this.input.keyboard) {
-            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R).on('down', () => this.scene.restart());
-        } else {
-            console.error('No keyboard input');
-        }
-
         this.registry.set(RegistryConstants.Keys.PLAYER_SCORE, 0);
 
         console.log("MainGameScene created");
@@ -65,6 +59,10 @@ export default class MainGameScene extends Scene {
 
         if (this.planet.y - this.planet.displayHeight >= this.cameras.main.height) {
             this.planet.destroy(true);
+        }
+
+        if (this.gameInputManager.restartJustPressed()) {
+            this.scene.restart();
         }
     }
 }

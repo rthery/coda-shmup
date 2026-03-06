@@ -1,11 +1,12 @@
 import {Loader} from "phaser";
 import GameConstants from "../GameConstants.ts";
+import type {InputType} from "../managers/GameInputManager.ts";
 
 export default class HomeScene extends Phaser.Scene {
     private _bg: Phaser.GameObjects.TileSprite;
     private _playerShip: Phaser.GameObjects.Image;
     private _startPrompt: Phaser.GameObjects.Text;
-    private _isMobile: boolean;
+    private _started: boolean = false;
 
     constructor() {
         super(GameConstants.SceneKeys.HOME);
@@ -47,8 +48,7 @@ export default class HomeScene extends Phaser.Scene {
     create() {
         console.log(this.sys.game.renderer.type === Phaser.WEBGL ? 'WebGL' : 'Canvas');
 
-        const os = this.sys.game.device.os;
-        this._isMobile = os.android || os.iOS || os.iPad || os.iPhone;
+        this._started = false;
 
         this._bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg')
             .setOrigin(0).setTileScale(2);
@@ -72,33 +72,34 @@ export default class HomeScene extends Phaser.Scene {
         this._startPrompt = this.add.text(
             this.scale.width / 2,
             this.scale.height - 256,
-            this._isMobile ? 'Tap to start' : 'Press SPACE to start',
+            this._getPromptText(this.gameInputManager.activeInputType),
             {fontSize: '32px', color: '#fff'}
         ).setOrigin(0.5);
 
-        if (this._isMobile) {
-            this.input.once('pointerdown', () => this._startGame());
-        } else {
-            this.input.keyboard?.once('keydown-SPACE', () => this._startGame());
-
-            // Fallback: touchscreen laptop touching the screen
-            this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-                if (pointer.wasTouch) this._startPrompt.setText('Tap to start');
-            });
-            this.input.keyboard?.on('keydown', () => {
-                this._startPrompt.setText('Press SPACE to start');
-            });
-            this.input.once('pointerdown', (pointer: Phaser.Input.Pointer) => {
-                if (pointer.wasTouch) this._startGame();
-            });
-        }
+        this.game.events.on('input-type-changed', this._onInputTypeChanged, this);
+        this.events.once('shutdown', () => {
+            this.game.events.off('input-type-changed', this._onInputTypeChanged, this);
+        });
 
         console.log("HomeScene created");
     }
 
-    private _startGame() {
-        this.input.keyboard?.removeAllListeners();
-        this.input.removeAllListeners();
+    private _onInputTypeChanged(type: InputType): void {
+        if (!this._started) {
+            this._startPrompt.setText(this._getPromptText(type));
+        }
+    }
+
+    private _getPromptText(type: InputType): string {
+        switch (type) {
+            case 'touch': return 'Tap to start';
+            case 'gamepad': return 'Press A or START';
+            default: return 'Press SPACE to start';
+        }
+    }
+
+    private _startGame(): void {
+        this._started = true;
 
         this.tweens.killTweensOf(this._playerShip);
         this.tweens.add({
@@ -117,5 +118,9 @@ export default class HomeScene extends Phaser.Scene {
     update(timeSinceLaunch: number, deltaTime: number) {
         super.update(timeSinceLaunch, deltaTime);
         this._bg.tilePositionY -= 0.1 * deltaTime;
+
+        if (!this._started && this.gameInputManager.confirmJustPressed()) {
+            this._startGame();
+        }
     }
 }

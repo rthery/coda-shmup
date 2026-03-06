@@ -1,7 +1,11 @@
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
+import type {InputType} from "../managers/GameInputManager.ts";
 
 export default class GameOverScene extends Phaser.Scene {
+    private _promptText: Phaser.GameObjects.Text;
+    private _started: boolean = false;
+
     constructor() {
         super(GameConstants.SceneKeys.GAME_OVER);
     }
@@ -9,8 +13,7 @@ export default class GameOverScene extends Phaser.Scene {
     create() {
         this.scene.stop(GameConstants.SceneKeys.MAIN_UI);
 
-        const os = this.sys.game.device.os;
-        const isMobile = os.android || os.iOS || os.iPad || os.iPhone;
+        this._started = false;
 
         const screenCenterX: number = this.scale.width / 2;
         this.add.text(screenCenterX, this.scale.width / 2, 'GAME OVER',
@@ -20,36 +23,39 @@ export default class GameOverScene extends Phaser.Scene {
         this.add.text(screenCenterX, 72, this.registry.get(RegistryConstants.Keys.PLAYER_SCORE).toString(),
             {fontSize: '32px', color: '#fff', align: 'center'}).setOrigin(0.5);
 
-        const promptText = this.add.text(
+        this._promptText = this.add.text(
             screenCenterX,
             this.scale.height - 256,
-            isMobile ? 'Tap to play again' : 'Press SPACE to play again',
+            this._getPromptText(this.gameInputManager.activeInputType),
             {fontSize: '32px', color: '#fff', align: 'center'}
         ).setOrigin(0.5);
 
-        const goHome = () => {
-            this.input.keyboard?.removeAllListeners();
-            this.input.removeAllListeners();
-            this.scene.start(GameConstants.SceneKeys.HOME);
-        };
-
-        if (isMobile) {
-            this.input.once('pointerdown', () => goHome());
-        } else {
-            this.input.keyboard?.once('keydown-SPACE', () => goHome());
-
-            // Touchscreen laptop fallback
-            this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-                if (pointer.wasTouch) promptText.setText('Tap to play again');
-            });
-            this.input.keyboard?.on('keydown', () => {
-                promptText.setText('Press SPACE to play again');
-            });
-            this.input.once('pointerdown', (pointer: Phaser.Input.Pointer) => {
-                if (pointer.wasTouch) goHome();
-            });
-        }
+        this.game.events.on('input-type-changed', this._onInputTypeChanged, this);
+        this.events.once('shutdown', () => {
+            this.game.events.off('input-type-changed', this._onInputTypeChanged, this);
+        });
 
         console.log("GameOverScene created");
+    }
+
+    private _onInputTypeChanged(type: InputType): void {
+        if (!this._started) {
+            this._promptText.setText(this._getPromptText(type));
+        }
+    }
+
+    private _getPromptText(type: InputType): string {
+        switch (type) {
+            case 'touch': return 'Tap to play again';
+            case 'gamepad': return 'Press A or START to play again';
+            default: return 'Press SPACE to play again';
+        }
+    }
+
+    update() {
+        if (!this._started && this.gameInputManager.confirmJustPressed()) {
+            this._started = true;
+            this.scene.start(GameConstants.SceneKeys.HOME);
+        }
     }
 }
