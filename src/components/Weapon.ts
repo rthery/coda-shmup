@@ -34,6 +34,13 @@ export default class Weapon implements IComponent {
             bullet.enable(source.x + sourceForward.x * source.arcadeBody.radius, source.y + sourceForward.y * source.arcadeBody.radius,
                 bulletVelocity.x, bulletVelocity.y, this._bulletData);
 
+            source.scene.tweens.add({
+                targets: bullet,
+                alpha: [0, 1],
+                scaleY: [0.5, this._bulletData.scale],
+                duration: 300,
+            });
+
             // Maths way
             // const forwardVectorX: number = Math.cos(source.rotation);
             // const forwardVectorY: number = Math.sin(source.rotation);
