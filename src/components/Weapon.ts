@@ -55,7 +55,7 @@ export default class Weapon implements IComponent {
         let shotAngle: number = source.angle + shotArc/2
 
         for(let i: number = 0; i < bulletsQuantity; i++) {
-            const sourceForward: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0).rotate(shotAngle * (Phaser.Math.PI2 / 360));
+            const sourceForward: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0).rotate(Phaser.Math.DegToRad(shotAngle));
             const bulletVelocity: Phaser.Math.Vector2 = sourceForward.clone().scale(this._bulletData.speed);
             const bullet: Bullet = this._bullets.get() as Bullet;
             bullet.enable(source.x + sourceForward.x * source.arcadeBody.radius, source.y + sourceForward.y * source.arcadeBody.radius,
