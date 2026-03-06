@@ -5,12 +5,12 @@
 			"format": "RGBA8888",
 			"size": {
 				"w": 166,
-				"h": 400
+				"h": 656
 			},
 			"scale": 1,
 			"frames": [
 				{
-					"filename": "playerShip2_blue.png",
+					"filename": "playerShip2_blue",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -31,7 +31,7 @@
 					}
 				},
 				{
-					"filename": "playerShip1_blue.png",
+					"filename": "playerShip1_blue",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -52,7 +52,7 @@
 					}
 				},
 				{
-					"filename": "playerShip3_blue.png",
+					"filename": "playerShip3_blue",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -73,7 +73,7 @@
 					}
 				},
 				{
-					"filename": "ufoRed-shoot0.png",
+					"filename": "ufoRed-shoot0",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -94,7 +94,7 @@
 					}
 				},
 				{
-					"filename": "ufoRed-shoot1.png",
+					"filename": "ufoRed-shoot1",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -115,7 +115,7 @@
 					}
 				},
 				{
-					"filename": "ufoRed.png",
+					"filename": "ufoRed",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -136,70 +136,133 @@
 					}
 				},
 				{
-					"filename": "playerLife1_blue.png",
+					"filename": "ufoRedSpread-shoot0",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 33,
-						"h": 26
+						"w": 91,
+						"h": 91
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 33,
-						"h": 26
+						"w": 91,
+						"h": 91
 					},
 					"frame": {
 						"x": 75,
 						"y": 182,
+						"w": 91,
+						"h": 91
+					}
+				},
+				{
+					"filename": "ufoRedSpread-shoot1",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 91,
+						"h": 91
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 91,
+						"h": 91
+					},
+					"frame": {
+						"x": 0,
+						"y": 400,
+						"w": 91,
+						"h": 91
+					}
+				},
+				{
+					"filename": "ufoRedSpread",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 91,
+						"h": 91
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 91,
+						"h": 91
+					},
+					"frame": {
+						"x": 0,
+						"y": 491,
+						"w": 91,
+						"h": 91
+					}
+				},
+				{
+					"filename": "playerLife1_blue",
+					"rotated": true,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 33,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 33,
+						"h": 26
+					},
+					"frame": {
+						"x": 75,
+						"y": 273,
 						"w": 33,
 						"h": 26
 					}
 				},
 				{
-					"filename": "star1.png",
+					"filename": "star1",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 25,
-						"h": 24
+						"w": 24,
+						"h": 25
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 25,
-						"h": 24
+						"w": 24,
+						"h": 25
 					},
 					"frame": {
-						"x": 75,
-						"y": 208,
-						"w": 25,
-						"h": 24
+						"x": 0,
+						"y": 582,
+						"w": 24,
+						"h": 25
 					}
 				},
 				{
-					"filename": "star2.png",
+					"filename": "star2",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 25,
-						"h": 24
+						"w": 24,
+						"h": 25
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 25,
-						"h": 24
+						"w": 24,
+						"h": 25
 					},
 					"frame": {
-						"x": 75,
-						"y": 232,
-						"w": 25,
-						"h": 24
+						"x": 0,
+						"y": 607,
+						"w": 24,
+						"h": 25
 					}
 				},
 				{
-					"filename": "star3.png",
+					"filename": "star3",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -213,8 +276,8 @@
 						"h": 24
 					},
 					"frame": {
-						"x": 75,
-						"y": 256,
+						"x": 0,
+						"y": 632,
 						"w": 24,
 						"h": 24
 					}

@@ -50,7 +50,7 @@ export default class Health extends Phaser.Events.EventEmitter implements ICompo
             if (this._current <= 0 && prev > 0) {
                 const scene = this._entity.scene;
                 const explosion = scene.add.image(this._entity.x, this._entity.y, "sprites",
-                    "star1.png");
+                    "star1");
 
                 scene.tweens.add({
                     targets: explosion,

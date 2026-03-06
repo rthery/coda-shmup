@@ -25,7 +25,7 @@ export default class MainUIScene extends Scene {
 
     // noinspection JSUnusedGlobalSymbols
     create() {
-        const playerHealthIcon = this.add.image(64, 64, "sprites", "playerLife1_blue.png")
+        const playerHealthIcon = this.add.image(64, 64, "sprites", "playerLife1_blue")
             .setOrigin(0, 0).setScale(1.5);
         const playerHealthTextX = playerHealthIcon.x + playerHealthIcon.displayWidth + 16;
         this._playerHealthText = this.add.bitmapText(playerHealthTextX, 64, "future-bmp", "x0", 128);

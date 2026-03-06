@@ -1,6 +1,7 @@
 {
   "1": {
     "type": "base",
+    "texture": "ufoRed",
     "health": 1,
     "movementSpeed": 0.2,
     "movementAmplitude": 0,
@@ -11,6 +12,7 @@
   },
   "2": {
     "type": "spread",
+    "texture": "ufoRedSpread",
     "health": 2,
     "movementSpeed": 0.1,
     "movementAmplitude": 80,

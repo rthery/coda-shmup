@@ -45,7 +45,7 @@ export default class Enemy extends Entity {
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
         this.randomEnemyType();
-
+        this.setTexture('sprites', this._enemyData.texture)
         this.addComponent(new Health(this._enemyData.health, this));
         this.addComponent(new Movement(this._enemyData.movementSpeed));
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
@@ -65,9 +65,20 @@ export default class Enemy extends Entity {
             this.scene.anims.create({
                 key: 'ufoShoot',
                 frames: [
-                    {key: 'sprites', frame: 'ufoRed.png'},
-                    {key: 'sprites', frame: 'ufoRed-shoot0.png'},
-                    {key: 'sprites', frame: 'ufoRed-shoot1.png'}
+                    {key: 'sprites', frame: 'ufoRed'},
+                    {key: 'sprites', frame: 'ufoRed-shoot0'},
+                    {key: 'sprites', frame: 'ufoRed-shoot1'}
+                ],
+                frameRate: 4,
+            });
+        }
+        if (!this.scene.anims.exists('ufoSpreadShoot')) {
+            this.scene.anims.create({
+                key: 'ufoSpreadShoot',
+                frames: [
+                    {key: 'sprites', frame: 'ufoRedSpread'},
+                    {key: 'sprites', frame: 'ufoRedSpread-shoot0'},
+                    {key: 'sprites', frame: 'ufoRedSpread-shoot1'}
                 ],
                 frameRate: 4,
             });
@@ -113,20 +124,24 @@ export default class Enemy extends Entity {
     }
 
     private shoot() {
-        this.play('ufoShoot');
-        this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-            this.setTexture('sprites', 'ufoRed.png');
-
-            switch (this._enemyData.type) {
-                case "base":
-                    this.getComponent(Weapon)?.shoot(this);                    
-                    break;
-                case "spread":
+        switch (this._enemyData.type) {
+            case "base":
+                this.play('ufoShoot');
+                this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+                    this.setTexture('sprites', 'ufoRed');
+                    this.getComponent(Weapon)?.shoot(this);
+                    this.scene.sound.play('sfx_laser2');
+                })          
+                break;
+            case "spread":
+                this.play('ufoSpreadShoot');
+                this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+                    this.setTexture('sprites', 'ufoRedSpread');
                     this.getComponent(Weapon)?.spreadShoot(this, this._enemyData.shotRate, this._enemyData.shotAngleZone);
-                    break;
-            }
-            this.scene.sound.play('sfx_laser2');
-        });
+                    this.scene.sound.play('sfx_laser2');
+                })
+                break;
+        }
     }
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {

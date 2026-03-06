@@ -59,7 +59,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this._enemies = this.scene!.physics.add.group({
             classType: Enemy,
             defaultKey: 'sprites',
-            defaultFrame: 'ufoRed.png',
+            defaultFrame: 'ufoRed',
             createCallback: (enemy) => {
                 (enemy as Enemy).init(this._enemyBullets);
             }
