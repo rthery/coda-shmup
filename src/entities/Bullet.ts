@@ -4,11 +4,11 @@ import {BulletData} from "../gameData/BulletData.ts";
 export default class Bullet extends Physics.Arcade.Sprite {
     private _arcadeBody: Phaser.Physics.Arcade.Body;
 
-    private _damage: number = 0;
+    private _data : BulletData;
     private _tween: Tweens.Tween;
 
-    public get damage(): number {
-        return this._damage;
+    public get bulletData(): BulletData {
+        return this._data;
     }
 
     public init() {
@@ -39,7 +39,7 @@ export default class Bullet extends Physics.Arcade.Sprite {
 
         this._arcadeBody.setVelocity(velocityX, velocityY);
         this._arcadeBody.setCircle(data.body.radius, data.body.offsetX, data.body.offsetY);
-        this._damage = data.damage;
+        this._data = data;
 
         // Rotate the bullet to face the direction it's moving
         this.setRotation(this._arcadeBody.velocity.angle());

@@ -7,4 +7,11 @@ export type BulletData = {
     speed: number;
     damage: number;
     body: CircleBodyData;
+    fx: BulletFxData;
+}
+
+export type BulletFxData = {
+    flashTint: number;
+    sparkTints: number[];
+    glowTints: number[];
 }

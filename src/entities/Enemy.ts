@@ -15,6 +15,11 @@ export default class Enemy extends Entity {
             radius: 5,
             offsetX: 32,
             offsetY: -5
+        },
+        fx: {
+            flashTint: 0xffffff,
+            sparkTints: [0xffffff, 0xff4400, 0xff9955],
+            glowTints: [0xff2200, 0xffffff],
         }
     };
     private _shootTimerConfig: Phaser.Types.Time.TimerEventConfig;
