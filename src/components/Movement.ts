@@ -1,14 +1,20 @@
 import Entity from "../entities/Entity.ts";
-import Enemy from "../entities/Enemy.ts";
 import IComponent from "./IComponent.ts";
 
 export default class Movement implements IComponent {
     public enabled: boolean = true;
 
     private _speed: number = 0;
+    private _elapsedTime: number = 0;
+    private _startX: number | null = null;
 
     public get speed(): number {
         return this._speed;
+    }
+
+    public reset(entity: Entity) {
+        this._elapsedTime = 0;
+        this._startX = entity.x;
     }
 
     public constructor(speed?: number) {
@@ -35,18 +41,17 @@ export default class Movement implements IComponent {
         entity.y += this._speed * deltaTime;
     }
 
-    public moveSinusoidally(enemy: Enemy, deltaTime: number, amplitude: number, frequency: number) {
+    public moveSinusoidally(entity: Entity, deltaTime: number, amplitude: number, frequency: number) {
         if(!this.enabled)
             return;
-        let internTimer: number = enemy.getInterTimer();
-        let startX: number = enemy.getStartX();
+        if(this._startX === null) {
+            this._startX = entity.x;
+        }
 
-        internTimer += deltaTime;
-        enemy.y += this._speed * deltaTime;
+        this._elapsedTime += deltaTime;
+        entity.y += this._speed * deltaTime;
         
-        enemy.x = startX + amplitude * Math.sin(internTimer * frequency);
+        entity.x = this._startX + amplitude * Math.sin(this._elapsedTime * frequency);
 
-        enemy.setInternTimer(internTimer);
-        enemy.setStartX(startX);
     }
 }

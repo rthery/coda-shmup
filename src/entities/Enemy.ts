@@ -16,24 +16,6 @@ export default class Enemy extends Entity {
     private _enemyData: EnemyData;
     private _shootTimerConfig: Phaser.Types.Time.TimerEventConfig;
     private _shootTimer: Phaser.Time.TimerEvent;
-    private _internTimer: number;
-    private _startX: number;
-
-    public getInterTimer() {
-        return this._internTimer;
-    }
-
-    public getStartX() {
-        return this._startX;
-    }
-
-    public setInternTimer(internTimer: number) {
-        this._internTimer = internTimer
-    }
-
-    public setStartX(startX: number) {
-        this._startX = startX;
-    }
 
     public randomEnemyType() {
         const enemiesData = this.scene.cache.json.get('enemies') as EnemiesData;
@@ -90,8 +72,6 @@ export default class Enemy extends Entity {
     public enable(x: number, y: number) {
         this.enableBody(true, x, y - this.displayHeight, true, true);
         this._shootTimer.reset(this._shootTimerConfig);
-        this._startX = this.x;
-        this._internTimer = 0;
         const health = this.getComponent(Health);
         health?.on(Health.CHANGE_EVENT, () => {
             this.setTintFill(0xffffff);
@@ -113,6 +93,8 @@ export default class Enemy extends Entity {
 
         // Restore health, in case the enemy is reused from the pool, without emitting events
         health?.heal(health!.max, false);
+        // Reset movement, in case the enemy is reused from the pool, without emitting events
+        this.getComponent(Movement)?.reset(this);
     }
 
     public disable() {
