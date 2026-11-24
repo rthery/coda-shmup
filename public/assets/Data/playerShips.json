@@ -1,6 +1,9 @@
 {
   "1": {
     "movementSpeed": 0.6,
+    "acceleration": 0.004,
+    "deceleration": 0.004,
+    "turnSpeed": 0.005,
     "texture": "playerShip1_blue",
     "body": {
       "radius": 42,
@@ -10,6 +13,9 @@
   },
   "2": {
     "movementSpeed": 0.9,
+    "acceleration": 0.006,
+    "deceleration": 0.006,
+    "turnSpeed": 0.005,
     "texture": "playerShip2_blue",
     "body": {
       "radius": 42,
@@ -19,6 +25,9 @@
   },
   "3": {
     "movementSpeed": 1.2,
+    "acceleration": 0.008,
+    "deceleration": 0.008,
+    "turnSpeed": 0.005,
     "texture": "playerShip3_blue",
     "body": {
       "radius": 42,

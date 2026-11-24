@@ -6,6 +6,9 @@ export type PlayerShipsData = {
 
 export type PlayerShipData = {
     movementSpeed: number;
+    acceleration: number;
+    deceleration: number;
+    turnSpeed: number;
     texture: string;
     body: CircleBodyData;
 }

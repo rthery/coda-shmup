@@ -78,6 +78,7 @@ export default class Player extends Entity {
         this.arcadeBody.setCircle(bodyData.radius, bodyData.offsetX, bodyData.offsetY);
 
         this.getComponent(Movement)?.setSpeed(this._playerShipData.movementSpeed);
+        this.getComponent(Movement)?.setAcceleration(this._playerShipData.acceleration, this._playerShipData.deceleration);
     }
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
@@ -86,17 +87,26 @@ export default class Player extends Entity {
         // Arrow keys, touch or gamepad
         this._moveDirection.copy(this.scene.gameInputManager.moveDirection);
 
-        if (this._moveDirection.lengthSq() > 0) {
-            this._moveDirection.normalize();
-            this.getComponent(Movement)?.move(this, this._moveDirection, deltaTime);
+        this._moveDirection.normalize();
+        const movement = this.getComponent(Movement);
+        movement?.accelerateInDirection(this, this._moveDirection, deltaTime);
 
-            // Face the move direction
-            this.rotation = this._moveDirection.angle();
+        // Turn progressively toward the move direction
+        if (this._moveDirection.lengthSq() > 0) {
+            // angle() is in [0, 2PI] but rotation is in [-PI, PI]: wrap it, or RotateTo snaps across the gap
+            this.rotation = Phaser.Math.Angle.RotateTo(this.rotation, Phaser.Math.Angle.Wrap(this._moveDirection.angle()),
+                this._playerShipData.turnSpeed * deltaTime);
         }
 
-        // Stop player from leaving the arena
-        this.x = Phaser.Math.Clamp(this.x, this.displayWidth / 2, GameConstants.ARENA_WIDTH - this.displayWidth / 2);
-        this.y = Phaser.Math.Clamp(this.y, this.displayHeight / 2, GameConstants.ARENA_HEIGHT - this.displayHeight / 2);
+        // Stop player from leaving the arena, and kill the velocity pushing into the wall
+        const clampedX = Phaser.Math.Clamp(this.x, this.displayWidth / 2, GameConstants.ARENA_WIDTH - this.displayWidth / 2);
+        const clampedY = Phaser.Math.Clamp(this.y, this.displayHeight / 2, GameConstants.ARENA_HEIGHT - this.displayHeight / 2);
+        if (movement && clampedX != this.x)
+            movement.velocity.x = 0;
+        if (movement && clampedY != this.y)
+            movement.velocity.y = 0;
+        this.x = clampedX;
+        this.y = clampedY;
 
         // Shoot automatically at the nearest enemy
         if (timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000) {

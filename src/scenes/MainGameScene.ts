@@ -5,10 +5,14 @@ import SaveManager from "../managers/SaveManager.ts";
 import SaveConstants from "../SaveConstants.ts";
 import EntityManager from "../managers/EntityManager.ts";
 import GameConstants from "../GameConstants.ts";
+import Movement from "../components/Movement.ts";
+import Player from "../entities/Player.ts";
 
 export default class MainGameScene extends Scene {
     private saveManager: SaveManager;
     private entityManager: EntityManager;
+    private player: Player;
+    private readonly cameraLookAhead: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
     constructor() {
         super(GameConstants.SceneKeys.MAIN_GAME);
@@ -35,8 +39,9 @@ export default class MainGameScene extends Scene {
         // Keep the camera still during the player intro, then follow the player
         this.cameras.main.centerOn(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2);
         const player = this.entityManager.initAndSpawnPlayer(() => {
-            this.cameras.main.startFollow(player, true, 0.1, 0.1);
+            this.cameras.main.startFollow(player, true, 0.15, 0.15);
         });
+        this.player = player;
         player.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
             // Hide the player and let its explosion play before showing the game over screen
             player.disableBody(true, true);
@@ -59,9 +64,19 @@ export default class MainGameScene extends Scene {
         this.scene.start(GameConstants.SceneKeys.GAME_OVER);
     }
 
-    update() {
+    update(_timeSinceLaunch: number, deltaTime: number) {
         if (this.gameInputManager.restartJustPressed()) {
             this.scene.restart();
+        }
+
+        // Look ahead in the move direction: the follow offset is subtracted from the target position
+        const velocity = this.player.getComponent(Movement)?.velocity;
+        if (velocity) {
+            const lookAheadTime = 250;
+            const smoothing = 1 - Math.exp(-deltaTime / 200);
+            this.cameraLookAhead.x += (-velocity.x * lookAheadTime - this.cameraLookAhead.x) * smoothing;
+            this.cameraLookAhead.y += (-velocity.y * lookAheadTime - this.cameraLookAhead.y) * smoothing;
+            this.cameras.main.setFollowOffset(this.cameraLookAhead.x, this.cameraLookAhead.y);
         }
     }
 }
