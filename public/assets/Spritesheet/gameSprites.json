@@ -218,6 +218,48 @@
 						"w": 24,
 						"h": 24
 					}
+				},
+				{
+					"filename": "laserBlue01",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 54,
+						"h": 9
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 54,
+						"h": 9
+					},
+					"frame": {
+						"x": 81,
+						"y": 306,
+						"w": 54,
+						"h": 9
+					}
+				},
+				{
+					"filename": "laserRed03",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 37,
+						"h": 9
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 37,
+						"h": 9
+					},
+					"frame": {
+						"x": 109,
+						"y": 278,
+						"w": 37,
+						"h": 9
+					}
 				}
 			]
 		}

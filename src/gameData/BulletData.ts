@@ -1,7 +1,10 @@
+import {CircleBodyData} from "./CircleBodyData.ts";
+
 export type BulletData = {
-    width: number;
-    height: number;
-    color: number;
+    scale: number;
+    texture: string;
+    blink: boolean;
     speed: number;
     damage: number;
+    body: CircleBodyData;
 }
