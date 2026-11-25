@@ -7,6 +7,7 @@ import Movement from "../components/Movement.ts";
 import Weapon from "../components/Weapon.ts";
 import GameConstants from "../GameConstants.ts";
 import Invulnerability from "../components/Invulnerability.ts";
+import Experience from "../components/Experience.ts";
 
 export default class Player extends Entity {
     private readonly _bulletData: BulletData = {
@@ -34,6 +35,11 @@ export default class Player extends Entity {
     private readonly _moveDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _shootDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private _targets: Phaser.Physics.Arcade.Group;
+    private _magnetRadius: number = 250;
+
+    public get magnetRadius(): number {
+        return this._magnetRadius;
+    }
 
     constructor(scene: Scene, x: number, y: number) {
         super(scene, x, y, 'sprites');
@@ -50,6 +56,7 @@ export default class Player extends Entity {
         this.addComponent(new Invulnerability(250, this));
         this.addComponent(new Movement());
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
+        this.addComponent(new Experience());
 
         this.angle = -90;
 

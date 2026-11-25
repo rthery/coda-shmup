@@ -3,6 +3,8 @@ import Health from "../components/Health.ts";
 import Bullet from "../entities/Bullet.ts";
 import Enemy from "../entities/Enemy.ts";
 import Player from "../entities/Player.ts";
+import XpGem from "../entities/XpGem.ts";
+import Experience from "../components/Experience.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
@@ -17,6 +19,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
         PLAYER: 100,
         PLAYER_BULLETS: 90,
         ENEMIES: 80,
+        XP_GEMS: 75,
         ENEMY_BULLETS: 70,
         EFFECTS: 60
     }
@@ -35,6 +38,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private _playerBullets: Physics.Arcade.Group;
     private _enemies: Physics.Arcade.Group;
     private _enemyBullets: Physics.Arcade.Group;
+    private _xpGems: Physics.Arcade.Group;
+    private _xpTrailFX: GameObjects.Particles.ParticleEmitter;
     private readonly _spawnOffset: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private _explosionFireFX: GameObjects.Particles.ParticleEmitter;
     private _explosionSmokeFX: GameObjects.Particles.ParticleEmitter;
@@ -78,6 +83,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
         });
 
         // Create the enemy pools now, not at the end of the intro, to avoid a freeze
+        this.initXpGems();
         this.initEnemies();
         this.initGroupCollisions();
         this.initParticleEmitters();
@@ -124,6 +130,36 @@ export default class EntityManager extends Plugins.ScenePlugin {
         return this._enemies;
     }
 
+    public initXpGems(): Physics.Arcade.Group {
+        // Shared by all gems, created before them
+        this._xpTrailFX = this.scene!.add.particles(0, 0, 'shapes', {
+            maxParticles: 1000,
+            frame: 'circle_05',
+            speed: 0,
+            scale: { start: 0.35, end: 0 },
+            alpha: { start: 0.8, end: 0 },
+            tint: 0xffcc00,
+            blendMode: 'ADD',
+            lifespan: 200,
+            emitting: false
+        }).setDepth(EntityManager.ENTITIES_DEPTHS.XP_GEMS - 1);
+
+        this._xpGems = this.scene!.physics.add.group({
+            classType: XpGem,
+            maxSize: 256,
+            runChildUpdate: true,
+            createCallback: (gem) => {
+                (gem as XpGem).init(this._player, this._xpTrailFX);
+            }
+        });
+        this._xpGems.setDepth(EntityManager.ENTITIES_DEPTHS.XP_GEMS);
+        GroupUtils.populate(64, this._xpGems);
+
+        console.log("[EntityManager] XP gems initialized");
+
+        return this._xpGems;
+    }
+
     public initGroupCollisions() {
         // Push enemies apart so they don't stack into a single blob
         this.scene!.physics.add.collider(this._enemies, this._enemies);
@@ -158,6 +194,11 @@ export default class EntityManager extends Plugins.ScenePlugin {
             playerHealth?.damage(1);
 
             this.scene?.cameras.main.shake(100, 0.03);
+        });
+
+        this.scene!.physics.add.overlap(this._player, this._xpGems, (player, gem) => {
+            (gem as XpGem).disable();
+            (player as Player).getComponent(Experience)?.add((gem as XpGem).value);
         });
 
         console.log("[EntityManager] Group collisions initialized");
@@ -282,6 +323,11 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this._explosionSmokeFX.explode(12, x, y);
     }
 
+    public spawnXpGem(x: number, y: number) {
+        // No drop when the pool is full
+        (this._xpGems.get() as XpGem | null)?.enable(x, y);
+    }
+
     private spawnEnemy() {
         if (this._enemies.countActive(true) >= 50) {
             return;
@@ -303,6 +349,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
         enemy.getComponent(Health)?.once(Health.DEATH_START_EVENT, () => {
             this.spawnExplosion(enemy.x, enemy.y);
+            this.spawnXpGem(enemy.x, enemy.y);
         });
 
         console.log("[EntityManager] Enemy spawned");

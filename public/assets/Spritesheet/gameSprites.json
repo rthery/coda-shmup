@@ -260,6 +260,27 @@
 						"w": 37,
 						"h": 9
 					}
+				},
+				{
+					"filename": "star_gold",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 31,
+						"h": 30
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 31,
+						"h": 30
+					},
+					"frame": {
+						"x": 118,
+						"y": 192,
+						"w": 31,
+						"h": 30
+					}
 				}
 			]
 		}
