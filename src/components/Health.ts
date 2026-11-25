@@ -1,7 +1,8 @@
+import {Events} from "phaser";
 import IComponent from "./IComponent.ts";
 import Entity from "../entities/Entity.ts";
 
-export default class Health extends Phaser.Events.EventEmitter implements IComponent {
+export default class Health extends Events.EventEmitter implements IComponent {
     public enabled: boolean = true;
 
     public static readonly CHANGE_EVENT: string = 'change';
