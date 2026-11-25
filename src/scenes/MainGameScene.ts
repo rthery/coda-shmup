@@ -5,6 +5,7 @@ import SaveManager from "../managers/SaveManager.ts";
 import SaveConstants from "../SaveConstants.ts";
 import EntityManager from "../managers/EntityManager.ts";
 import GameConstants from "../GameConstants.ts";
+import Experience from "../components/Experience.ts";
 import Movement from "../components/Movement.ts";
 import Player from "../entities/Player.ts";
 
@@ -46,6 +47,12 @@ export default class MainGameScene extends Scene {
             // Hide the player and let its explosion play before showing the game over screen
             player.disableBody(true, true);
             this.time.delayedCall(1000, this.endGame, [], this);
+        }, this);
+
+        // Freeze the game while the player picks an upgrade
+        player.getComponent(Experience)?.on(Experience.LEVEL_UP_EVENT, () => {
+            this.scene.pause();
+            this.scene.launch(GameConstants.SceneKeys.LEVEL_UP, {player});
         }, this);
 
         this.registry.set(RegistryConstants.Keys.PLAYER_SCORE, 0);

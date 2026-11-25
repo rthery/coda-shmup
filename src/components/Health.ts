@@ -10,7 +10,7 @@ export default class Health extends Events.EventEmitter implements IComponent {
     public static readonly DEATH_EVENT: string = 'death';
 
     private _current: number;
-    private readonly _max: number;
+    private _max: number;
     private readonly _entity: Entity;
 
     public get current(): number {
@@ -48,6 +48,18 @@ export default class Health extends Events.EventEmitter implements IComponent {
         this.adjust(amount, emitEvents);
     }
 
+    public increaseMax(amount: number, emitEvents: boolean = true): void {
+        if (amount <= 0) return;
+
+        // Full repair, even while invulnerable
+        const prev: number = this._current;
+        this._max += amount;
+        this._current = this._max;
+
+        if (emitEvents)
+            this.emit(Health.CHANGE_EVENT, this._current, prev);
+    }
+
     private adjust(delta: number, emitEvents: boolean = true): void {
         if (!this.enabled)
             return;
@@ -56,7 +68,7 @@ export default class Health extends Events.EventEmitter implements IComponent {
         this._current = Phaser.Math.Clamp(this._current + delta, 0, this._max);
 
         if (emitEvents && this._current !== prev) {
-            this.emit(Health.CHANGE_EVENT, this._current);
+            this.emit(Health.CHANGE_EVENT, this._current, prev);
 
             if (this._current <= 0 && prev > 0) {
                 this.emit(Health.DEATH_EVENT);

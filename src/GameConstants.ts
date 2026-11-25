@@ -9,6 +9,7 @@ export default class GameConstants {
         MAIN_GAME: "MainGameScene",
         MAIN_UI: "MainUIScene",
         GAME_OVER: "GameOverScene",
+        LEVEL_UP: "LevelUpScene",
     } as const);
 
     public static readonly START_DELAY: number = 500; // ms

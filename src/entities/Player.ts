@@ -8,6 +8,7 @@ import Weapon from "../components/Weapon.ts";
 import GameConstants from "../GameConstants.ts";
 import Invulnerability from "../components/Invulnerability.ts";
 import Experience from "../components/Experience.ts";
+import type {UpgradeData} from "../gameData/UpgradesData.ts";
 
 export default class Player extends Entity {
     private readonly _bulletData: BulletData = {
@@ -36,6 +37,7 @@ export default class Player extends Entity {
     private readonly _shootDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private _targets: Phaser.Physics.Arcade.Group;
     private _magnetRadius: number = 250;
+    private _moveSpeedMultiplier: number = 1;
 
     public get magnetRadius(): number {
         return this._magnetRadius;
@@ -65,7 +67,10 @@ export default class Player extends Entity {
         this._rateOfFire = 0.5;
         this._lastShotTime = 0;
 
-        this.getComponent(Health)?.on(Health.CHANGE_EVENT, () => {
+        this.getComponent(Health)?.on(Health.CHANGE_EVENT, (current: number, previous: number) => {
+            if (current > previous)
+                return;
+
             this.arcadeBody.setEnable(false);
 
             this.scene.time.delayedCall(50, () => {
@@ -84,8 +89,34 @@ export default class Player extends Entity {
         const bodyData = this._playerShipData.body;
         this.arcadeBody.setCircle(bodyData.radius, bodyData.offsetX, bodyData.offsetY);
 
-        this.getComponent(Movement)?.setSpeed(this._playerShipData.movementSpeed);
+        this.getComponent(Movement)?.setSpeed(this._playerShipData.movementSpeed * this._moveSpeedMultiplier);
         this.getComponent(Movement)?.setAcceleration(this._playerShipData.acceleration, this._playerShipData.deceleration);
+    }
+
+    public applyUpgrade(upgrade: UpgradeData) {
+        switch (upgrade.id) {
+            case 'fireRate':
+                this._rateOfFire *= upgrade.value;
+                break;
+            case 'range':
+                this._bulletData.range += upgrade.value;
+                break;
+            case 'bulletSpeed':
+                this._bulletData.speed *= upgrade.value;
+                break;
+            case 'moveSpeed':
+                this._moveSpeedMultiplier *= upgrade.value;
+                this.getComponent(Movement)?.setSpeed(this._playerShipData.movementSpeed * this._moveSpeedMultiplier);
+                break;
+            case 'maxHealth':
+                this.getComponent(Health)?.increaseMax(upgrade.value);
+                break;
+            case 'magnet':
+                this._magnetRadius += upgrade.value;
+                break;
+        }
+
+        console.log("[Player] Upgrade applied: " + upgrade.id);
     }
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
