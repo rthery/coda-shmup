@@ -68,8 +68,10 @@ export default class HomeScene extends Phaser.Scene {
             ease: 'Quad.easeInOut'
         });
 
-        this.add.text(this.scale.width / 2, 512, 'CODA SHMUP',
+        this.add.text(this.scale.width / 2, 512, 'CODA ARENA',
             {fontSize: '72px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
+        this.add.text(this.scale.width / 2, 600, 'SURVIVAL',
+            {fontSize: '48px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
 
         this._startPrompt = this.add.text(
             this.scale.width / 2,
