@@ -32,16 +32,16 @@ export default class MainGameScene extends Scene {
             console.error('EntityManager plugin not found');
         }
 
-        const player = this.entityManager.initAndSpawnPlayer();
+        // Keep the camera still during the player intro, then follow the player
+        this.cameras.main.centerOn(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2);
+        const player = this.entityManager.initAndSpawnPlayer(() => {
+            this.cameras.main.startFollow(player, true, 0.1, 0.1);
+        });
         player.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
             // Hide the player and let its explosion play before showing the game over screen
             player.disableBody(true, true);
             this.time.delayedCall(1000, this.endGame, [], this);
         }, this);
-        this.cameras.main.startFollow(player, true, 0.1, 0.1);
-
-        this.entityManager.initEnemies();
-        this.entityManager.initGroupCollisions();
 
         if (this.input.keyboard) {
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R).on('down', () => this.scene.restart());

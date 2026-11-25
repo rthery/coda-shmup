@@ -48,14 +48,30 @@ export default class EntityManager extends Plugins.ScenePlugin {
         console.log("[EntityManager] Destroyed");
     }
 
-    public initAndSpawnPlayer(): Player {
+    public initAndSpawnPlayer(onIntroComplete: () => void): Player {
         this._playerBullets = this.scene!.physics.add.group(this.bulletGroupConfig);
         this._playerBullets.setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER_BULLETS);
         GroupUtils.populate(64, this._playerBullets);
 
-        this._player = new Player(this.scene!, GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2);
+        this._player = new Player(this.scene!, 0, 0);
         this._player.setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER);
         this._player.init(this._playerBullets);
+        // Fly in from below the screen to the arena center
+        const playerStartX: number = GameConstants.ARENA_WIDTH / 2;
+        const playerEndY: number = GameConstants.ARENA_HEIGHT / 2;
+        this._player.setPosition(playerStartX, playerEndY + this.scene!.cameras.main.height / 2 + this._player.height);
+        this._player.setAngle(-90);
+        this.scene!.tweens.add({
+            targets: this._player,
+            y: playerEndY,
+            duration: 500,
+            ease: Phaser.Math.Easing.Quadratic.Out,
+            onComplete: () => {
+                this.initEnemies();
+                this.initGroupCollisions();
+                onIntroComplete();
+            }
+        });
 
         console.log("[EntityManager] Player spawned");
 

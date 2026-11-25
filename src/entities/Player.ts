@@ -119,6 +119,10 @@ export default class Player extends Entity {
     }
 
     private findNearestTarget(): Entity | null {
+        // No targets yet during the intro
+        if (!this._targets)
+            return null;
+
         return this.scene.physics.closest(this, this._targets.getMatching('active', true)) as Entity | null;
     }
 }

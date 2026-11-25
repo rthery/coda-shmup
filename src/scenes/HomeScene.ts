@@ -2,6 +2,10 @@ import {Loader} from "phaser";
 import GameConstants from "../GameConstants.ts";
 
 export default class HomeScene extends Phaser.Scene {
+    private _bg: Phaser.GameObjects.TileSprite;
+    private _playerShip: Phaser.GameObjects.Image;
+    private _isStarting: boolean = false;
+
     constructor() {
         super(GameConstants.SceneKeys.HOME);
     }
@@ -42,20 +46,54 @@ export default class HomeScene extends Phaser.Scene {
     }
 
     create() {
-        this.add.text(this.scale.width / 2, this.scale.width / 2, 'CODA SHMUP',
+        this._isStarting = false;
+        this._bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg')
+            .setOrigin(0).setTileScale(2);
+
+        const playerShipOffsetX: number = 96;
+        this._playerShip = this.add.image(this.scale.width / 2 - playerShipOffsetX, this.scale.height / 2, 'sprites',
+            'playerShip1_blue').setAngle(-90);
+
+        this.tweens.add({
+            targets: this._playerShip,
+            x: this.cameras.main.centerX + playerShipOffsetX,
+            duration: 700,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Quad.easeInOut'
+        });
+
+        this.add.text(this.scale.width / 2, 512, 'CODA SHMUP',
             {fontSize: '72px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
-        this.add.text(this.scale.width / 2, this.scale.width / 2 + 72, 'Press SPACE to start',
+        this.add.text(this.scale.width / 2, this.scale.height - 256, 'Press SPACE to start',
             {fontSize: '32px', color: '#fff'}).setOrigin(0.5);
 
         // Ignore the OS key repeat: SPACE may still be held from the previous game
         this.input.keyboard?.on('keydown-SPACE', (event: KeyboardEvent) => {
-            if (event.repeat)
+            if (event.repeat || this._isStarting)
                 return;
 
-            this.scene.launch(GameConstants.SceneKeys.MAIN_UI);
-            this.scene.start(GameConstants.SceneKeys.MAIN_GAME);
+            this._isStarting = true;
+            this.tweens.killTweensOf(this._playerShip);
+            this.tweens.add({
+                targets: this._playerShip,
+                x: this.cameras.main.centerX,
+                y: -this._playerShip.height,
+                duration: 600,
+                ease: 'Quad.easeIn',
+                onComplete: () => {
+                    this.scene.launch(GameConstants.SceneKeys.MAIN_UI);
+                    this.scene.start(GameConstants.SceneKeys.MAIN_GAME);
+                }
+            })
         });
 
         console.log("HomeScene created");
+    }
+
+    update(timeSinceLaunch: number, deltaTime: number) {
+        super.update(timeSinceLaunch, deltaTime);
+
+        this._bg.tilePositionY -= 0.1 * deltaTime;
     }
 }
