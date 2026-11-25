@@ -15,7 +15,7 @@
         }
     },
     "miniboss": {
-        "health": 100,
+        "health": 10,
         "speed": 0.05,
         "movement_pattern": "sine_wave",
         "wave_amplitude": 100,
