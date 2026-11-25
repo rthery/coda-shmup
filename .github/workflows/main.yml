@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+      - arena-dev
   workflow_dispatch:
     inputs:
       use_pngquant:
@@ -12,13 +13,22 @@ on:
         type: boolean
         default: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && 'main' || 'pages' }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: ${{ fromJSON(github.ref == 'refs/heads/main' && '["main"]' || '["dev", "arena-dev"]') }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
+        with:
+          ref: ${{ matrix.branch }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4.2.0
@@ -60,7 +70,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.1
         with:
-          name: game-build
+          name: game-build-${{ matrix.branch }}
           path: dist/
 
   deploy_itch:
@@ -75,7 +85,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4.1.9
         with:
-          name: game-build
+          name: game-build-main
           path: dist/
 
       - name: Upload to itch.io
@@ -94,18 +104,24 @@ jobs:
       id-token: write
 
     needs: build
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/arena-dev'
 
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Download build artifact
+      - name: Download shmup build
         uses: actions/download-artifact@v4.1.9
         with:
-          name: game-build
+          name: game-build-dev
           path: dist/
+
+      - name: Download arena build
+        uses: actions/download-artifact@v4.1.9
+        with:
+          name: game-build-arena-dev
+          path: dist/arena/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
