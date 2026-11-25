@@ -33,20 +33,8 @@ export default class Enemy extends Entity {
 
         // Listen once per enemy, not on every enable(): pooled enemies are reused many times
         const health = this.getComponent(Health);
-        health?.on(Health.CHANGE_EVENT, (currentHealth: number) => {
-            this.setTintFill(0xffffff);
-
-            if (currentHealth == 0) {
-                this.disableBody();
-            }
-
-            this.scene.time.delayedCall(50, () => {
-                this.clearTint();
-
-                if (currentHealth == 0) {
-                    this.disable();
-                }
-            });
+        health?.on(Health.DEATH_EVENT, () => {
+            this.disable();
         });
 
         // Only enemies with an enabled weapon shoot
