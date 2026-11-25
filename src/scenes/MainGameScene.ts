@@ -26,7 +26,7 @@ export default class MainGameScene extends Scene {
 
         this.add.tileSprite(0, 0, GameConstants.ARENA_WIDTH, GameConstants.ARENA_HEIGHT, 'bg')
             .setOrigin(0).setTileScale(2);
-        this.add.image(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2, 'planet').setScale(1.5);
+        this.add.image(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2, 'planet').setScale(7.5);
 
         if (!this.entityManager) {
             console.error('EntityManager plugin not found');
