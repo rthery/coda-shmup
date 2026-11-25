@@ -19,6 +19,11 @@ export default class Player extends Entity {
             radius: 5,
             offsetX: 49,
             offsetY: -0.5
+        },
+        fx: {
+            flashTint: 0xffffff,
+            sparkTints: [0xffffff, 0x00eeff, 0xaaddff],
+            glowTints: [0x00ccff, 0xffffff],
         }
     };
 
