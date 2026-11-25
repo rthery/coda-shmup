@@ -18,6 +18,7 @@ export default class Player extends Entity {
         speed: 1024,
         range: 800,
         damage: 1,
+        pierce: 0,
         body: {
             radius: 5,
             offsetX: 49,
@@ -110,6 +111,9 @@ export default class Player extends Entity {
                 break;
             case 'maxHealth':
                 this.getComponent(Health)?.increaseMax(upgrade.value);
+                break;
+            case 'pierce':
+                this._bulletData.pierce += upgrade.value;
                 break;
             case 'magnet':
                 this._magnetRadius += upgrade.value;

@@ -1,4 +1,4 @@
-import {Physics, Tweens} from "phaser";
+import {GameObjects, Physics, Tweens} from "phaser";
 import {BulletData} from "../gameData/BulletData.ts";
 import GameConstants from "../GameConstants.ts";
 
@@ -8,6 +8,8 @@ export default class Bullet extends Physics.Arcade.Sprite {
     private _data : BulletData;
     private _tween: Tweens.Tween;
     private readonly _start: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private readonly _hitTargets: Set<GameObjects.GameObject> = new Set();
+    private _pierceLeft: number = 0;
 
     public get bulletData(): BulletData {
         return this._data;
@@ -43,6 +45,8 @@ export default class Bullet extends Physics.Arcade.Sprite {
         this._arcadeBody.setVelocity(velocityX, velocityY);
         this._arcadeBody.setCircle(data.body.radius, data.body.offsetX, data.body.offsetY);
         this._data = data;
+        this._pierceLeft = data.pierce;
+        this._hitTargets.clear();
 
         // Rotate the bullet to face the direction it's moving
         this.setRotation(this._arcadeBody.velocity.angle());
@@ -53,6 +57,24 @@ export default class Bullet extends Physics.Arcade.Sprite {
         if (data.blink) {
             this._tween.restart();
         }
+    }
+
+    // False when the bullet already went through this target
+    public registerHit(target: GameObjects.GameObject): boolean {
+        if (this._hitTargets.has(target))
+            return false;
+
+        this._hitTargets.add(target);
+        return true;
+    }
+
+    // Spends one pierce, false when none is left
+    public pierce(): boolean {
+        if (this._pierceLeft <= 0)
+            return false;
+
+        this._pierceLeft--;
+        return true;
     }
 
     public disable() {

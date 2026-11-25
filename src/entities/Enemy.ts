@@ -12,6 +12,7 @@ export default class Enemy extends Entity {
         speed: 512,
         range: 1200,
         damage: 1,
+        pierce: 0,
         body: {
             radius: 5,
             offsetX: 32,

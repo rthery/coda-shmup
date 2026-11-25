@@ -1,4 +1,4 @@
-export type UpgradeId = 'fireRate' | 'range' | 'bulletSpeed' | 'moveSpeed' | 'maxHealth' | 'magnet';
+export type UpgradeId = 'fireRate' | 'range' | 'bulletSpeed' | 'moveSpeed' | 'maxHealth' | 'magnet' | 'pierce';
 
 export type UpgradeData = {
     id: UpgradeId;

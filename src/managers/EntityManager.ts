@@ -165,11 +165,15 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this.scene!.physics.add.collider(this._enemies, this._enemies);
 
         this.scene!.physics.add.overlap(this._playerBullets, this._enemies, (bullet, enemy) => {
+            if (!(bullet as Bullet).registerHit(enemy as Enemy))
+                return;
+
             this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
 
             this.spawnLaserImpact((bullet as Bullet).x, (bullet as Bullet).y, (bullet as Bullet).bulletData.fx);
 
-            (bullet as Bullet).disable();
+            if (!(bullet as Bullet).pierce())
+                (bullet as Bullet).disable();
             (enemy as Enemy).getComponent(Health)?.damage((bullet as Bullet).bulletData.damage);
         });
 

@@ -7,6 +7,8 @@ export type BulletData = {
     speed: number;
     range: number;
     damage: number;
+    // Enemies a bullet goes through before disappearing
+    pierce: number;
     body: CircleBodyData;
     fx: BulletFxData;
 }

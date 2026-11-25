@@ -34,5 +34,11 @@
     "title": "MAGNET",
     "description": "Collect XP from further away",
     "value": 100
+  },
+  {
+    "id": "pierce",
+    "title": "PIERCING",
+    "description": "Lasers go through +1 enemy",
+    "value": 1
   }
 ]
