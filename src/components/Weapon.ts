@@ -43,4 +43,29 @@ export default class Weapon implements IComponent {
             //     bulletVelocityX, bulletVelocityY, this._bulletData);
         }
     }
+
+    //spreadhost logic here
+    public shootSpread(source: Entity, spreadAngle: number, numBullets: number) {
+        if (!this.enabled)
+            return;
+        
+        if (!this._bullets)
+            return;
+
+        const angleStep = spreadAngle / (numBullets - 1);
+        const startAngle = source.rotation - spreadAngle / 2;
+
+        for (let i = 0; i < numBullets; i++) {
+            const bullet: Bullet = this._bullets.get() as Bullet;
+            if (bullet) {
+                const bulletAngle = startAngle + i * angleStep;
+                const bulletVelocityX = Math.cos(bulletAngle) * this._bulletData.speed;
+                const bulletVelocityY = Math.sin(bulletAngle) * this._bulletData.speed;
+
+                bullet.enable(source.x + Math.cos(bulletAngle) * source.arcadeBody.radius,
+                    source.y + Math.sin(bulletAngle) * source.arcadeBody.radius,
+                    bulletVelocityX, bulletVelocityY, this._bulletData);
+            }
+        }
+    }
 }

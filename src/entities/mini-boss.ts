@@ -33,7 +33,6 @@ export default class MiniBoss extends Entity {
 
         const health = this.getComponent(Health);
         health?.on(Health.CHANGE_EVENT, () => {
-            console.debug(`[MiniBoss] Health changed: ${health.current}/${health.max}`);
             this.setTintFill(0xffffff);
 
             if (health.current === 0) {
@@ -44,7 +43,7 @@ export default class MiniBoss extends Entity {
                 this.clearTint();
 
                 if (health.current === 0) {
-                    this.disable('health depleted');
+                    this.disable();
                 }
             });
         });
@@ -81,7 +80,6 @@ export default class MiniBoss extends Entity {
         this._movement.reset(this);
         const health = this.getComponent(Health);
         health?.heal(health.max, false);
-        console.debug(`[MiniBoss] Enabled at (${this.x.toFixed(1)}, ${this.y.toFixed(1)}), HP ${health?.current}/${health?.max}`);
         this._shootTimer.reset({
             delay: Phaser.Math.Between(2000, 3000),
             callback: this.shoot,
@@ -92,20 +90,14 @@ export default class MiniBoss extends Entity {
 
     public takeBulletDamage(incomingDamage: number) {
         const health = this.getComponent(Health);
-        if (!health) {
-            console.error('[MiniBoss] Cannot apply bullet damage: Health component is missing');
+        if (!health)
             return;
-        }
 
         const appliedDamage = Math.min(incomingDamage, 1);
-        console.debug(`[MiniBoss] Bullet hit: incoming=${incomingDamage}, applied=${appliedDamage}, HP before=${health.current}/${health.max}`);
         health.damage(appliedDamage);
-        console.debug(`[MiniBoss] HP after hit=${health.current}/${health.max}`);
     }
 
-    public disable(reason: string = 'unspecified') {
-        console.warn(`[MiniBoss] Disabled: reason=${reason}, HP=${this.getComponent(Health)?.current}, y=${this.y.toFixed(1)}`);
-        console.trace('[MiniBoss] Disable call stack');
+    public disable() {
         this.stop();
         this.removeAllListeners(Phaser.Animations.Events.ANIMATION_COMPLETE);
 
@@ -117,16 +109,15 @@ export default class MiniBoss extends Entity {
         this.play('ufoShoot');
         this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
             this.setTexture('sprites', 'ufoRed');
-            this.getComponent(Weapon)?.shoot(this);
+            this.getComponent(Weapon)?.shootSpread(this, Phaser.Math.DegToRad(45), 11);
             this.scene.sound.play('sfx_laser2');
         });
     }
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
         super.preUpdate(timeSinceLaunch, deltaTime);
-
         if (this.y > this.scene.cameras.main.height + this.displayHeight) {
-            this.disable('left screen');
+            this.disable();
             return;
         }
 
