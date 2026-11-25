@@ -117,7 +117,7 @@ export default class MiniBoss extends Entity {
         this.play('ufoShoot');
         this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
             this.setTexture('sprites', 'ufoRed');
-            this.getComponent(Weapon)?.shoot(this);
+            this.getComponent(Weapon)?.shootSpread(this, Phaser.Math.DegToRad(45), 3);
             this.scene.sound.play('sfx_laser2');
         });
     }
