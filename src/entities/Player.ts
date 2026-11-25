@@ -9,9 +9,12 @@ import GameConstants from "../GameConstants.ts";
 import Invulnerability from "../components/Invulnerability.ts";
 import Experience from "../components/Experience.ts";
 import Thrusters from "../components/Thrusters.ts";
+import WingTrails from "../components/WingTrails.ts";
 import type {UpgradeData} from "../gameData/UpgradesData.ts";
 
 export default class Player extends Entity {
+    private static readonly WING_TRAILS_SPEED_RATIO: number = 0.5;
+
     private readonly _bulletData: BulletData = {
         scale: 1.8,
         texture: "laserBlue01",
@@ -62,7 +65,11 @@ export default class Player extends Entity {
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
         this.addComponent(new Experience());
         this.addComponent(new Thrusters(this));
-        this.getComponent(Health)?.once(Health.DEATH_EVENT, () => this.getComponent(Thrusters)?.hide());
+        this.addComponent(new WingTrails(this));
+        this.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
+            this.getComponent(Thrusters)?.hide();
+            this.getComponent(WingTrails)?.hide();
+        });
 
         this.angle = -90;
 
@@ -96,6 +103,7 @@ export default class Player extends Entity {
         this.getComponent(Movement)?.setSpeed(this._playerShipData.movementSpeed * this._moveSpeedMultiplier);
         this.getComponent(Movement)?.setAcceleration(this._playerShipData.acceleration, this._playerShipData.deceleration);
         this.getComponent(Thrusters)?.setThrusters(this._playerShipData.thrusters);
+        this.getComponent(WingTrails)?.setWingTips(this._playerShipData.wingTips);
     }
 
     public applyUpgrade(upgrade: UpgradeData) {
@@ -157,6 +165,7 @@ export default class Player extends Entity {
 
         const speedRatio: number = movement && movement.speed > 0 ? movement.velocity.length() / movement.speed : 0;
         this.getComponent(Thrusters)?.update(this._moveDirection.lengthSq() > 0, speedRatio, deltaTime);
+        this.getComponent(WingTrails)?.update(speedRatio > Player.WING_TRAILS_SPEED_RATIO);
 
         // Shoot automatically at the nearest enemy
         if (timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000) {

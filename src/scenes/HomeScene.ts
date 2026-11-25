@@ -1,13 +1,18 @@
 import {Loader} from "phaser";
 import GameConstants from "../GameConstants.ts";
 import Thrusters from "../components/Thrusters.ts";
+import WingTrails from "../components/WingTrails.ts";
 import type {PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 
 export default class HomeScene extends Phaser.Scene {
+    private static readonly BG_TILE_SCALE: number = 2;
+    private static readonly BG_SCROLL_SPEED: number = 0.1; // texture px/ms
+
     private _bg: Phaser.GameObjects.TileSprite;
     private _playerShip: Phaser.GameObjects.Image;
     private _thrusters: Thrusters;
+    private _wingTrails: WingTrails;
     private _startPrompt: Phaser.GameObjects.Text;
     private _started: boolean = false;
 
@@ -55,14 +60,19 @@ export default class HomeScene extends Phaser.Scene {
         this._started = false;
 
         this._bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg')
-            .setOrigin(0).setTileScale(2);
+            .setOrigin(0).setTileScale(HomeScene.BG_TILE_SCALE);
 
         const playerShipOffsetX: number = 96;
         this._playerShip = this.add.image(this.scale.width / 2 - playerShipOffsetX, this.scale.height / 2, 'sprites',
             'playerShip1_blue').setAngle(-90).setDepth(10);
 
+        const playerShipData = (this.cache.json.get('playerShips') as PlayerShipsData)[1];
         this._thrusters = new Thrusters(this._playerShip);
-        this._thrusters.setThrusters((this.cache.json.get('playerShips') as PlayerShipsData)[1].thrusters);
+        this._thrusters.setThrusters(playerShipData.thrusters);
+        // The streaks drift down with the background, in px/s
+        const bgScreenSpeed: number = HomeScene.BG_SCROLL_SPEED * HomeScene.BG_TILE_SCALE * 1000;
+        this._wingTrails = new WingTrails(this._playerShip, bgScreenSpeed);
+        this._wingTrails.setWingTips(playerShipData.wingTips);
 
         this.tweens.add({
             targets: this._playerShip,
@@ -127,9 +137,10 @@ export default class HomeScene extends Phaser.Scene {
 
     update(timeSinceLaunch: number, deltaTime: number) {
         super.update(timeSinceLaunch, deltaTime);
-        this._bg.tilePositionY -= 0.1 * deltaTime;
+        this._bg.tilePositionY -= HomeScene.BG_SCROLL_SPEED * deltaTime;
         // Cruising forward, as the background scrolls
         this._thrusters.update(true, 1, deltaTime);
+        this._wingTrails.update(true);
 
         if (!this._started && this.gameInputManager.confirmJustPressed()) {
             this._startGame();
