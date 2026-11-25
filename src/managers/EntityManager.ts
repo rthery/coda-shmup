@@ -7,7 +7,6 @@ import XpGem from "../entities/XpGem.ts";
 import Experience from "../components/Experience.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
-import RegistryConstants from "../RegistryConstants.ts";
 import {BulletFxData} from "../gameData/BulletData.ts";
 
 export default class EntityManager extends Plugins.ScenePlugin {
@@ -168,8 +167,6 @@ export default class EntityManager extends Plugins.ScenePlugin {
             if (!(bullet as Bullet).registerHit(enemy as Enemy))
                 return;
 
-            this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
-
             this.spawnLaserImpact((bullet as Bullet).x, (bullet as Bullet).y, (bullet as Bullet).bulletData.fx);
 
             if (!(bullet as Bullet).pierce())
@@ -187,8 +184,6 @@ export default class EntityManager extends Plugins.ScenePlugin {
         });
 
         this.scene!.physics.add.overlap(this._player, this._enemies, (player, enemy) => {
-            this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
-
             this.spawnCollisionImpact((enemy as Enemy).x, (enemy as Enemy).y);
 
             const enemyHealth = (enemy as Enemy).getComponent(Health);
@@ -354,6 +349,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
         enemy.getComponent(Health)?.once(Health.DEATH_START_EVENT, () => {
             this.spawnExplosion(enemy.x, enemy.y);
             this.spawnXpGem(enemy.x, enemy.y);
+            this.game!.events.emit(GameConstants.Events.ENEMY_KILLED_EVENT, enemy);
         });
 
         console.log("[EntityManager] Enemy spawned");

@@ -8,6 +8,7 @@ import RegistryConstants from "../RegistryConstants.ts";
 export default class MainUIScene extends Scene {
     private _playerHealthText: GameObjects.BitmapText;
     private _scoreText: GameObjects.BitmapText;
+    private _comboText: GameObjects.Text;
     private _xpBarFill: GameObjects.Rectangle;
     private _levelText: GameObjects.Text;
 
@@ -19,10 +20,12 @@ export default class MainUIScene extends Scene {
     init() {
         this.game.events.on(GameConstants.Events.PLAYER_SPAWNED_EVENT, this.onPlayerSpawned, this);
         this.registry.events.on(RegistryConstants.Events.PLAYER_SCORE_CHANGE, this.onPlayerScoreChanged, this);
+        this.registry.events.on(RegistryConstants.Events.PLAYER_COMBO_CHANGE, this.onPlayerComboChanged, this);
 
         this.events.once(Scenes.Events.SHUTDOWN, () => {
             this.game.events.off(GameConstants.Events.PLAYER_SPAWNED_EVENT, this.onPlayerSpawned, this);
             this.registry.events.off(RegistryConstants.Events.PLAYER_SCORE_CHANGE, this.onPlayerScoreChanged, this);
+            this.registry.events.off(RegistryConstants.Events.PLAYER_COMBO_CHANGE, this.onPlayerComboChanged, this);
         }, this);
     }
 
@@ -50,6 +53,9 @@ export default class MainUIScene extends Scene {
         this._levelText = this.add.text(64, xpBarY + 40, "LV 1",
             {fontSize: '40px', color: '#fff', fontFamily: 'future'});
 
+        this._comboText = this.add.text(this.scale.width - 64, xpBarY + 40, "",
+            {fontSize: '40px', color: '#ffcc00', fontFamily: 'future'}).setOrigin(1, 0);
+
         this.scene.bringToTop();
 
         console.log("MainUIScene created");
@@ -58,6 +64,18 @@ export default class MainUIScene extends Scene {
     private onPlayerScoreChanged(_: any, value: number) {
         const scoreStr: string = value.toString().padStart(GameConstants.MAX_SCORE_DIGITS, "0");
         this._scoreText.setText(scoreStr);
+    }
+
+    private onPlayerComboChanged(_: any, combo: number, previousCombo: number) {
+        if (combo === previousCombo)
+            return;
+
+        // Only worth showing once it multiplies something
+        this._comboText.setText(combo > 1 ? "COMBO x" + combo : "");
+
+        if (combo > previousCombo) {
+            this.tweens.add({targets: this._comboText, scale: {from: 1.4, to: 1}, duration: 200, ease: 'Back.easeOut'});
+        }
     }
 
     private onPlayerSpawned(player: Player) {

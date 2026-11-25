@@ -10,8 +10,13 @@ import Movement from "../components/Movement.ts";
 import Player from "../entities/Player.ts";
 
 export default class MainGameScene extends Scene {
+    private static readonly KILL_SCORE: number = 10;
+    private static readonly KILLS_PER_COMBO_STEP: number = 10;
+    private static readonly MAX_COMBO: number = 5;
+
     private saveManager: SaveManager;
     private entityManager: EntityManager;
+    private _killStreak: number = 0;
     private player: Player;
     private readonly cameraLookAhead: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
@@ -55,9 +60,34 @@ export default class MainGameScene extends Scene {
             this.scene.launch(GameConstants.SceneKeys.LEVEL_UP, {player});
         }, this);
 
+        // A hit breaks the combo
+        player.getComponent(Health)?.on(Health.CHANGE_EVENT, (current: number, previous: number) => {
+            if (current < previous)
+                this.setKillStreak(0);
+        }, this);
+
+        this.game.events.on(GameConstants.Events.ENEMY_KILLED_EVENT, this.onEnemyKilled, this);
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.game.events.off(GameConstants.Events.ENEMY_KILLED_EVENT, this.onEnemyKilled, this);
+        }, this);
+
         this.registry.set(RegistryConstants.Keys.PLAYER_SCORE, 0);
+        this.setKillStreak(0);
 
         console.log("MainGameScene created");
+    }
+
+    private onEnemyKilled() {
+        this.registry.inc(RegistryConstants.Keys.PLAYER_SCORE,
+            MainGameScene.KILL_SCORE * this.registry.get(RegistryConstants.Keys.PLAYER_COMBO));
+        this.setKillStreak(this._killStreak + 1);
+    }
+
+    private setKillStreak(killStreak: number) {
+        this._killStreak = killStreak;
+
+        const combo: number = Math.min(1 + Math.floor(killStreak / MainGameScene.KILLS_PER_COMBO_STEP), MainGameScene.MAX_COMBO);
+        this.registry.set(RegistryConstants.Keys.PLAYER_COMBO, combo);
     }
 
     private endGame() {
