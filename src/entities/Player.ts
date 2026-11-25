@@ -8,6 +8,7 @@ import Weapon from "../components/Weapon.ts";
 import GameConstants from "../GameConstants.ts";
 import Invulnerability from "../components/Invulnerability.ts";
 import Experience from "../components/Experience.ts";
+import Thrusters from "../components/Thrusters.ts";
 import type {UpgradeData} from "../gameData/UpgradesData.ts";
 
 export default class Player extends Entity {
@@ -60,6 +61,8 @@ export default class Player extends Entity {
         this.addComponent(new Movement());
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
         this.addComponent(new Experience());
+        this.addComponent(new Thrusters(this));
+        this.getComponent(Health)?.once(Health.DEATH_EVENT, () => this.getComponent(Thrusters)?.hide());
 
         this.angle = -90;
 
@@ -92,6 +95,7 @@ export default class Player extends Entity {
 
         this.getComponent(Movement)?.setSpeed(this._playerShipData.movementSpeed * this._moveSpeedMultiplier);
         this.getComponent(Movement)?.setAcceleration(this._playerShipData.acceleration, this._playerShipData.deceleration);
+        this.getComponent(Thrusters)?.setThrusters(this._playerShipData.thrusters);
     }
 
     public applyUpgrade(upgrade: UpgradeData) {
@@ -107,6 +111,7 @@ export default class Player extends Entity {
                 break;
             case 'moveSpeed':
                 this._moveSpeedMultiplier *= upgrade.value;
+                this.getComponent(Thrusters)?.upgrade();
                 this.getComponent(Movement)?.setSpeed(this._playerShipData.movementSpeed * this._moveSpeedMultiplier);
                 break;
             case 'maxHealth':
@@ -149,6 +154,9 @@ export default class Player extends Entity {
             movement.velocity.y = 0;
         this.x = clampedX;
         this.y = clampedY;
+
+        const speedRatio: number = movement && movement.speed > 0 ? movement.velocity.length() / movement.speed : 0;
+        this.getComponent(Thrusters)?.update(this._moveDirection.lengthSq() > 0, speedRatio, deltaTime);
 
         // Shoot automatically at the nearest enemy
         if (timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000) {

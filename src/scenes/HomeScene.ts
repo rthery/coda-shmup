@@ -1,10 +1,13 @@
 import {Loader} from "phaser";
 import GameConstants from "../GameConstants.ts";
+import Thrusters from "../components/Thrusters.ts";
+import type {PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 
 export default class HomeScene extends Phaser.Scene {
     private _bg: Phaser.GameObjects.TileSprite;
     private _playerShip: Phaser.GameObjects.Image;
+    private _thrusters: Thrusters;
     private _startPrompt: Phaser.GameObjects.Text;
     private _started: boolean = false;
 
@@ -56,7 +59,10 @@ export default class HomeScene extends Phaser.Scene {
 
         const playerShipOffsetX: number = 96;
         this._playerShip = this.add.image(this.scale.width / 2 - playerShipOffsetX, this.scale.height / 2, 'sprites',
-            'playerShip1_blue').setAngle(-90);
+            'playerShip1_blue').setAngle(-90).setDepth(10);
+
+        this._thrusters = new Thrusters(this._playerShip);
+        this._thrusters.setThrusters((this.cache.json.get('playerShips') as PlayerShipsData)[1].thrusters);
 
         this.tweens.add({
             targets: this._playerShip,
@@ -105,6 +111,7 @@ export default class HomeScene extends Phaser.Scene {
         this._started = true;
 
         this.tweens.killTweensOf(this._playerShip);
+        this._thrusters.setBoost(true);
         this.tweens.add({
             targets: this._playerShip,
             x: this.cameras.main.centerX,
@@ -121,6 +128,8 @@ export default class HomeScene extends Phaser.Scene {
     update(timeSinceLaunch: number, deltaTime: number) {
         super.update(timeSinceLaunch, deltaTime);
         this._bg.tilePositionY -= 0.1 * deltaTime;
+        // Cruising forward, as the background scrolls
+        this._thrusters.update(true, 1, deltaTime);
 
         if (!this._started && this.gameInputManager.confirmJustPressed()) {
             this._startGame();

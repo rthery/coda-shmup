@@ -10,6 +10,10 @@ export default class Movement implements IComponent {
     private readonly _velocity: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _velocityChange: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
+    public get speed(): number {
+        return this._speed;
+    }
+
     public get velocity(): Phaser.Math.Vector2 {
         return this._velocity;
     }

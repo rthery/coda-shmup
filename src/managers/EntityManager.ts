@@ -5,6 +5,7 @@ import Enemy from "../entities/Enemy.ts";
 import Player from "../entities/Player.ts";
 import XpGem from "../entities/XpGem.ts";
 import Experience from "../components/Experience.ts";
+import Thrusters from "../components/Thrusters.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
 import {BulletFxData} from "../gameData/BulletData.ts";
@@ -73,12 +74,16 @@ export default class EntityManager extends Plugins.ScenePlugin {
         const playerEndY: number = GameConstants.ARENA_HEIGHT / 2;
         this._player.setPosition(playerStartX, playerEndY + this.scene!.cameras.main.height / 2 + this._player.height);
         this._player.setAngle(-90);
+        this._player.getComponent(Thrusters)?.setBoost(true);
         this.scene!.tweens.add({
             targets: this._player,
             y: playerEndY,
             duration: GameConstants.START_DELAY,
             ease: Phaser.Math.Easing.Quadratic.Out,
-            onComplete: onIntroComplete
+            onComplete: () => {
+                this._player.getComponent(Thrusters)?.setBoost(false);
+                onIntroComplete();
+            }
         });
 
         // Create the enemy pools now, not at the end of the intro, to avoid a freeze

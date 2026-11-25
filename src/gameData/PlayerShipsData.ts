@@ -1,4 +1,5 @@
 import {CircleBodyData} from "./CircleBodyData.ts";
+import {ThrusterData} from "./ThrusterData.ts";
 
 export type PlayerShipsData = {
     [key: string]: PlayerShipData
@@ -11,4 +12,5 @@ export type PlayerShipData = {
     turnSpeed: number;
     texture: string;
     body: CircleBodyData;
+    thrusters: ThrusterData[];
 }
