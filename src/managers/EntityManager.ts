@@ -6,7 +6,7 @@ import Player from "../entities/Player.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
-import MiniBoss from "../entities/mini-boss.ts";
+import MiniBoss, {type MiniBossSheet} from "../entities/mini-boss.ts";
 
 export default class EntityManager extends Plugins.ScenePlugin {
     public static readonly PLUGIN_KEY: string = 'EntityManager';
@@ -68,7 +68,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
         });
 
         this._miniBoss = new MiniBoss(this.scene!, this.scene!.cameras.main.centerX, -48);
-        this._miniBoss.init(this._enemyBullets);
+        const miniBossSettings = this.scene!.cache.json.get('miniBossSheet') as MiniBossSheet;
+        this._miniBoss.init(this._enemyBullets, miniBossSettings);
 
         this.scene!.time.addEvent({
             delay: 10000,
@@ -161,4 +162,5 @@ export default class EntityManager extends Plugins.ScenePlugin {
             -this._miniBoss.displayHeight
         );
     }
+
 }

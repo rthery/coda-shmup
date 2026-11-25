@@ -5,31 +5,49 @@ import Weapon from "../components/Weapon.ts";
 import type {BulletData} from "../gameData/BulletData.ts";
 import SinusoidalMovement from "../components/SinusiodalMovement.ts";
 
-export default class MiniBoss extends Entity {
-    private static readonly HEALTH = 10;
-    private static readonly DESCENT_SPEED = 0.05;
+export type MiniBossSheet = {
+    spreadshot: {
+        spread: number;
+        angle: number;
+        num_bullets: number;
+        fire_delay_min: number;
+        fire_delay_max: number;
+        animation_frame_rate: number;
+        projectile: BulletData;
+    };
+    miniboss: {
+        health: number;
+        speed: number;
+        movement_pattern: 'sine_wave';
+        wave_amplitude: number;
+        wave_frequency: number;
+        scale: number;
+        orientation_degrees: number;
+        max_damage_per_hit: number;
+        tinted_speed_multiplier: number;
+    };
+};
 
-    private readonly _bulletData: BulletData = {
-            width: 12,
-            height: 12,
-            color: 0xf25f5c,
-            speed: 512,
-            damage: 1,
-    }; //change bullet data to match the spread shot later
-    
+export default class MiniBoss extends Entity {
     private _shootTimer: Phaser.Time.TimerEvent;
     private _movement: SinusoidalMovement;
+    private _settings: MiniBossSheet;
 
     public constructor(scene: Scene, x: number, y: number) {
         super(scene, x, y, 'sprites', 'ufoRed');
-        this.setScale(2);
     }
 
-    public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
-        this.addComponent(new Health(MiniBoss.HEALTH, this));
-        this._movement = new SinusoidalMovement(MiniBoss.DESCENT_SPEED);
+    public init(bulletsGroup: Phaser.Physics.Arcade.Group, settings: MiniBossSheet) {
+        this._settings = settings;
+        this.setScale(settings.miniboss.scale);
+        this.addComponent(new Health(settings.miniboss.health, this));
+        this._movement = new SinusoidalMovement(
+            settings.miniboss.speed,
+            settings.miniboss.wave_amplitude,
+            settings.miniboss.wave_frequency
+        );
         this.addComponent(this._movement);
-        this.addComponent(new Weapon(bulletsGroup, this._bulletData));
+        this.addComponent(new Weapon(bulletsGroup, settings.spreadshot.projectile));
 
         const health = this.getComponent(Health);
         health?.on(Health.CHANGE_EVENT, () => {
@@ -48,7 +66,7 @@ export default class MiniBoss extends Entity {
             });
         });
 
-        this.angle = 90;
+        this.angle = settings.miniboss.orientation_degrees;
         this.arcadeBody.setCircle(this.displayWidth / 2);
 
         if (!this.scene.anims.exists('ufoShoot')) {
@@ -59,12 +77,12 @@ export default class MiniBoss extends Entity {
                     {key: 'sprites', frame: 'ufoRed-shoot0'},
                     {key: 'sprites', frame: 'ufoRed-shoot1'}
                 ],
-                frameRate: 4,
+                frameRate: settings.spreadshot.animation_frame_rate,
             });
         }
 
         this._shootTimer = this.scene.time.addEvent({
-            delay: Phaser.Math.Between(2000, 3000),
+            delay: this.getShootDelay(),
             callback: this.shoot,
             callbackScope: this,
             loop: true,
@@ -76,12 +94,12 @@ export default class MiniBoss extends Entity {
 
     public enable(x: number, y: number) {
         this.enableBody(true, x, y, true, true);
-        this._movement.setSpeed(MiniBoss.DESCENT_SPEED);
+        this._movement.setSpeed(this._settings.miniboss.speed);
         this._movement.reset(this);
         const health = this.getComponent(Health);
         health?.heal(health.max, false);
         this._shootTimer.reset({
-            delay: Phaser.Math.Between(2000, 3000),
+            delay: this.getShootDelay(),
             callback: this.shoot,
             callbackScope: this,
             loop: true
@@ -93,7 +111,7 @@ export default class MiniBoss extends Entity {
         if (!health)
             return;
 
-        const appliedDamage = Math.min(incomingDamage, 1);
+        const appliedDamage = Math.min(incomingDamage, this._settings.miniboss.max_damage_per_hit);
         health.damage(appliedDamage);
     }
 
@@ -109,9 +127,21 @@ export default class MiniBoss extends Entity {
         this.play('ufoShoot');
         this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
             this.setTexture('sprites', 'ufoRed');
-            this.getComponent(Weapon)?.shootSpread(this, Phaser.Math.DegToRad(45), 11);
+            this.getComponent(Weapon)?.shootSpread(
+                this,
+                this._settings.spreadshot.spread,
+                this._settings.spreadshot.num_bullets,
+                this._settings.spreadshot.angle
+            );
             this.scene.sound.play('sfx_laser2');
         });
+    }
+
+    private getShootDelay(): number {
+        return Phaser.Math.Between(
+            this._settings.spreadshot.fire_delay_min,
+            this._settings.spreadshot.fire_delay_max
+        );
     }
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
@@ -121,7 +151,11 @@ export default class MiniBoss extends Entity {
             return;
         }
 
-        const movementDelta = this.isTinted ? deltaTime * 0.5 : deltaTime;
-        this._movement.moveSinusoidally(this, movementDelta);
+        const movementDelta = this.isTinted
+            ? deltaTime * this._settings.miniboss.tinted_speed_multiplier
+            : deltaTime;
+        if (this._settings.miniboss.movement_pattern === 'sine_wave') {
+            this._movement.moveSinusoidally(this, movementDelta);
+        }
     }
 }
