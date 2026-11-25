@@ -39,6 +39,10 @@ export default class Enemy extends Entity {
 
         // Listen once per enemy, not on every enable(): pooled enemies are reused many times
         const health = this.getComponent(Health);
+        // Stop overlapping during the hit flash, or the same hit counts on every frame
+        health?.on(Health.DEATH_START_EVENT, () => {
+            this.arcadeBody.setEnable(false);
+        });
         health?.on(Health.DEATH_EVENT, () => {
             this.disable();
         });
