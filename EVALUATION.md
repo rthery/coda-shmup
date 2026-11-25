@@ -14,11 +14,19 @@ Créez une branche depuis la `main` après les cours (il faut que votre branche 
 cette évaluation), nommez la `eval`, travaillez et faites vos commits puis soumettez-la via une PR.   
 Vous pouvez la merge, mais n'effacez pas votre branche `eval`!
 
+Joignez votre tech plan à la PR, en fichier `.md`.
+
+Rappel pour le TD : si vous voulez ensuite ajouter d'autres ennemis/monstres, faites d'abord cette évaluation (règle aussi rappelée dans [COURS.md](COURS.md)).
+
 ## Critères de notation
 
 La note sur 20 se fera sur ces critères
 
 ### Fonctionnalité 7
+L'ennemi spawn, se déplace en sinusoïde, tire en spread shot ; les 3 sont pilotés par le JSON (on peut changer les valeurs sans toucher au code)
 ### Architecture 7
+Pattern Entity/Composants respecté, pooling avec reset d'état correct, config JSON + type TS, pas de dépendance logique → UI, constantes nommées
 ### Qualité du code 5
+Lisibilité, pas de code mort ni de `console.log` de debug, `npm run build-nolog` passe, playtest manuel décrit
 ### Git 1
+Branche `eval` propre (uniquement les ajouts de l'éval), commits atomiques, PR ouverte

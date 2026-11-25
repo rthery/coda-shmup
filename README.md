@@ -2,10 +2,12 @@
 This is the base project used as teaching material for the gamedev module at Coda
 
 ## Suivre le cours commit par commit
-Forkez ce repo, clonez votre fork, puis lancez une seule fois, à la racine du clone :
+Il faut Node.js 22.18 ou plus récent (la version LTS actuelle convient) : vérifiez avec `node -v`.
+
+Forkez ce repo, clonez votre fork, puis lancez une seule fois, à la racine du clone (macOS, Linux, ou Windows dans PowerShell ou Git Bash, pas dans cmd) :
 
 ```bash
-git config alias.go '!f() { h=$(git rev-list --reverse main | sed -n "$((10#$1))p"); git clean -fdq && git switch -q -fC cours "$h" && git log -1 --oneline; }; f'
+git config alias.go '!f() { export GIT_ASK_YESNO=false; h=$(git rev-list --reverse main | sed -n $(expr $1 + 0)p); git clean -fdq; git switch -q -fC cours $h && git log -1 --oneline; }; f'
 ```
 
 Ensuite, pour aller au commit numéro 09 du cours (le numéro affiché sur les slides) :
@@ -14,7 +16,9 @@ Ensuite, pour aller au commit numéro 09 du cours (le numéro affiché sur les s
 git go 09
 ```
 
-`git go` efface vos changements locaux et place la branche `cours` sur ce commit. Si le jeu ne démarre plus après un changement de commit, lancez `npm install`.
+`git go` efface vos changements locaux et place la branche `cours` sur ce commit.
+
+Le serveur de dev (`npm run dev-nolog`) peut rester lancé pendant `git go` : il recharge le jeu tout seul. Si un commit change `package.json`, arrêtez-le, lancez `npm install`, puis relancez-le.
 
 ## Matériel pédagogique
 - [COURS.md](COURS.md) — support de cours : concepts Phaser, patterns, processus dev, idées de features

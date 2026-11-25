@@ -23,6 +23,8 @@ Ouvrir le projet dans votre IDE
 
 Vous devriez pouvoir voir la page du "jeu" dans votre browser pour valider que tout fonctionne
 
+> Note : les commandes `npm run dev` / `npm run build` du template Phaser exécutent `log.js`, qui envoie un ping **anonyme** (nom du template, dev/prod, version de Phaser) vers `gryzor.co`. Aucune donnée personnelle n'est envoyée (voir `README_PHASER.md`, section « About log.js »). Pour désactiver cet envoi : `npm run dev-nolog` / `npm run build-nolog`.
+
 ## Concepts de base des moteurs de jeu
 ### Game Loop
 
@@ -55,6 +57,11 @@ Plus de détail sur leur ordre ici : <https://docs.phaser.io/phaser/concepts/sce
 
 Vous pouvez avoir plusieurs scènes actives à la fois (on a souvent une scène de jeu et une pour l'UI qui vient 
 par-dessus par exemple).
+
+Dans le code : les scènes sont `src/scenes/HomeScene.ts`, `MainGameScene.ts`, `MainUIScene.ts`, `GameOverScene.ts`,
+enregistrées dans `src/main.ts:36-41`. Plusieurs scènes actives en même temps : `HomeScene` lance la scène UI et
+démarre la partie avec `scene.launch` + `scene.start` (`src/scenes/HomeScene.ts:49-52`) ; `MainUIScene` se place
+au-dessus avec `scene.bringToTop()` (`src/scenes/MainUIScene.ts:40`).
 
 ### Game Objects
 
@@ -101,7 +108,8 @@ Notre personnage sera un vaisseau spatial avec des vies et différentes armes/po
 
 ## Gestion des ressources du jeu
 
-Utilisation de resources gratuites et libres provenant de <https://kenney.nl/>
+Utilisation de resources gratuites et libres provenant de <https://kenney.nl/> (licence **CC0**, domaine public :
+utilisation libre, y compris commerciale — <https://kenney.nl/support>)
 - <https://kenney.nl/assets/space-shooter-redux>
 - <https://kenney.nl/assets/space-shooter-extension>
 - <https://kenney.nl/assets/ui-pack-sci-fi>
@@ -121,16 +129,30 @@ Optimiser vos performances en assemblant vos images dans des atlas/spritesheets
 Utilisation de fichiers JSON pour stocker les données de configuration du jeu, comme les niveaux, les ennemis, les power-ups, etc.
 Cela permet de facilement les lires et éditer, et de les charger dynamiquement dans le jeu.
 
+Exemple dans le code : `public/assets/Data/playerShips.json` est chargé dans `HomeScene.preload` (`src/scenes/HomeScene.ts:38`)
+avec `this.load.json`, puis lu via `this.scene.cache.json.get('playerShips')` (`src/entities/Player.ts:57`) et typé dans
+`src/gameData/PlayerShipsData.ts`. C'est ce pattern qu'il faut généraliser pour rendre un ennemi configurable via JSON
+(cf. évaluation).
+
 ### Outils
 - Editer des images: <https://www.photopea.com/>
 - Créer des atlas/spritesheets: <https://free-tex-packer.com/app/>
 
 ## Game Logic et Design Patterns
 
+L'historique git de ce repo montre la progression prototype → architecture (pooling, Entity+Components, managers,
+scènes, sauvegarde) : `git log --oneline` puis `git show <commit>` (ex. `656f1ec` pooling, `37fe043` Entity,
+`b037885` composants, `26935b2` EntityManager, `af68a37` registry, `e5118de` SaveManager, `ae68120` scène UI).
+
 ### Pooling
 Le pooling est une technique de gestion des ressources qui consiste à réutiliser des objets au lieu de les 
 créer/détruire.
 Attention ! Cela vous oblige à gérer correctement l'état de ces objets et de le réinitialiser correctement avant de les réutiliser.
+
+Exemple dans le code : `GroupUtils.populate` pré-remplit et désactive les objets (`src/utils/GroupUtils.ts:5-18`),
+les groupes de balles/ennemis sont configurés dans `src/managers/EntityManager.ts:15-22,42-43,56-57`, et chaque objet
+pooled a un `enable`/`disable` qui remet l'état à zéro (`src/entities/Bullet.ts:20-49`, `src/entities/Enemy.ts:49-83`
+— bien remettre la vie à fond sans émettre d'événement : `heal(max, false)`, `Enemy.ts:73`).
 
 ### Entity/Component
 Utilisez une classe, Entity, pour définir les entités de votre jeu, ne pas hésiter à hériter d'une classe du moteur, tel que Sprite
@@ -138,6 +160,10 @@ Puis ajoutez des composants pour customiser le comportement et les fonctionnalit
 Par exemple en ajoutant un component pour le mouvement, le tir ou la vie
 
 Utilisez des events pour laisser les components communiquer avec le reste de la logique
+
+Exemple dans le code : `Entity.addComponent` / `getComponent<T>` (`src/entities/Entity.ts:25-45`), les entités
+`src/entities/Player.ts`, `Enemy.ts`, et les composants `src/components/` (`Health` avec ses événements
+`CHANGE_EVENT`/`DEATH_EVENT`, `Movement`, `Weapon` — le tir est dans `Weapon.shoot`, `src/components/Weapon.ts:22-46`).
 
 ### Game State
 
@@ -149,11 +175,21 @@ le niveau actuel.
 Le Game State sert aussi de base pour les systèmes de sauvegarde et de chargement : en enregistrant son contenu, 
 vous pouvez retrouver la partie plus tard exactement là où elle s’était arrêtée.
 
+Dans le code : le score vit dans le **registry** Phaser (`src/RegistryConstants.ts`, `this.registry.set(...)` dans
+`src/scenes/MainGameScene.ts:46`, `registry.inc(...)` dans `src/managers/EntityManager.ts:83,97`) et ses changements
+sont notifiés via `registry.events` (écouté dans `src/scenes/MainUIScene.ts:18`). La **persistance** (localStorage)
+est gérée par le `SaveManager` (`src/managers/SaveManager.ts`, clé `phaserSaveData`, best score sauvegardé à la mort
+du joueur dans `src/scenes/MainGameScene.ts:51-61`).
+
 ### Managers/Services
 Centralisez la gestion de certaines fonctionnalités dans des classes dédiées, comme un EntityManager pour gérer les entités.
 Ils doivent être facilement accessibles pour le reste de la logique. Le système de plugins de Phaser permet de le faire de
 manière idiomatique à cette librairie, en les ayant soit au niveau global du jeu ou au niveau des scènes.
 Par contre évitez d'en faire des singletons, cela rend le code plus difficile à tester et à maintenir.
+
+Exemple dans le code : les plugins sont enregistrés dans `src/main.ts:27-34` — `SaveManager` en plugin **global**
+(accès via `this.saveManager`) et `EntityManager` en plugin de **scène** (accès via `this.entityManager`,
+`src/managers/EntityManager.ts`).
 
 ### Références
 - <https://gameprogrammingpatterns.com/>
@@ -165,6 +201,10 @@ pas le core gameplay)
 
 On essaye généralement que la couche logique n'ait aucune dépendance à celle de l'UI (votre jeu doit pouvoir 
 tourner sans l'UI), pour qu'il soit plus maintenable et moins sujet aux bugs.
+
+Exemple dans le code : `src/scenes/MainUIScene.ts` ne fait qu'écouter — le score via les événements du registry
+(`MainUIScene.ts:18`) et la vie du joueur via `game.events` + l'événement du composant `Health` (`MainUIScene.ts:17,50-57`,
+avec nettoyage des listeners au `SHUTDOWN`, lignes 20-24) — pendant que la logique tourne dans `MainGameScene`.
 
 ### Références
 - <https://snowb.org/>
@@ -183,6 +223,11 @@ mais qu'ils ressentent quand elles manquent.
 - Effets de particules
 - Musique et effets sonores
 
+Exemples dans le code : shake de caméra (`src/managers/EntityManager.ts:93,105`), flash blanc quand un ennemi est
+touché (`src/entities/Enemy.ts:55`), explosion en tween à la mort (`src/components/Health.ts:52-71`), sons laser
+(`src/entities/Player.ts:91`, `src/entities/Enemy.ts:90`), touche R pour redémarrer la scène
+(`src/scenes/MainGameScene.ts:41`), barre de chargement au preload (`src/scenes/HomeScene.ts:13-28`).
+
 ### Références
 - <https://www.youtube.com/watch?v=Fy0aCDmgnxg>
 - <https://www.youtube.com/watch?v=AJdEqssNZ-U>
@@ -192,7 +237,9 @@ mais qu'ils ressentent quand elles manquent.
 ## Publication du jeu
 
 Utilisation de la plateforme [itch.io](https://itch.io/) pour publier le jeu via Github Actions.
-Une clé API doit être générée pour permettre l'upload du jeu depuis Github, attention a bien la saisir via les secrets du repository.
+Un jeton butler doit être généré pour permettre l'upload du jeu depuis Github, attention a bien le saisir via les secrets du repository
+(secret `BUTLER_CREDENTIALS`, voir `.github/workflows/main.yml`). Si vous forkez ce repo, pensez aussi à personnaliser
+`ITCH_USER` / `ITCH_GAME` dans le workflow (valeur en dur : `surmoi`).
 
 ## Features additionnelles
 
@@ -206,6 +253,7 @@ Une clé API doit être générée pour permettre l'upload du jeu depuis Github,
 ### Idées de features additionnelles
 - Spawn enemies in waves/pattern
 - Si vous voulez ajouter des boss/enemies, faites d'abord votre évaluation !
+  - Astuce pour un ennemi « visuellement différent » sans modifier l'atlas : `setTint()` (cf. flash blanc quand un ennemi est touché, `src/entities/Enemy.ts:26`)
 - Ajouter des power-ups
 - Mettre à jour les data pour supporter l'ajout de components et configuration des bullets directement via JSON
 - Ajouter un leaderboard local (tips, utiliser 'prompt' en JS pour la saisie texte)
@@ -228,6 +276,7 @@ assurez-vous d'avoir les droits d'utilisation et
 garder une certaine coherence visuelle)
 - Ajouter un tutoriel (expliquer les contrôles, tuto diégétique)
 - Ajouter mouvement vertical pour le joueur
+- Migrer le jeu vers Phaser 4 (sorti en avril 2026)
 
 Vous vous aussi proposer des features additionnelles, n'hésitez pas à en discuter en amont d'abord
 
