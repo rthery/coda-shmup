@@ -55,7 +55,8 @@ export default class MainGameScene extends Scene {
         }, this);
 
         // Freeze the game while the player picks an upgrade
-        player.getComponent(Experience)?.on(Experience.LEVEL_UP_EVENT, () => {
+        player.getComponent(Experience)?.on(Experience.LEVEL_UP_EVENT, (level: number) => {
+            this.registry.set(RegistryConstants.Keys.PLAYER_LEVEL, level);
             this.scene.pause();
             this.scene.launch(GameConstants.SceneKeys.LEVEL_UP, {player});
         }, this);
@@ -72,6 +73,7 @@ export default class MainGameScene extends Scene {
         }, this);
 
         this.registry.set(RegistryConstants.Keys.PLAYER_SCORE, 0);
+        this.registry.set(RegistryConstants.Keys.PLAYER_LEVEL, 1);
         this.setKillStreak(0);
 
         console.log("MainGameScene created");
@@ -93,7 +95,9 @@ export default class MainGameScene extends Scene {
     private endGame() {
         const bestScore: number = Number(this.saveManager.getData(SaveConstants.Keys.PLAYER_BEST_SCORE) ?? 0);
         const currentScore: number = Number(this.registry.get(RegistryConstants.Keys.PLAYER_SCORE) ?? 0);
-        if (currentScore > bestScore) {
+        const isNewBestScore: boolean = currentScore > bestScore;
+        this.registry.set(RegistryConstants.Keys.IS_NEW_BEST_SCORE, isNewBestScore);
+        if (isNewBestScore) {
             this.saveManager.setData(SaveConstants.Keys.PLAYER_BEST_SCORE, currentScore);
             console.log("New Best Score: " + currentScore);
         }

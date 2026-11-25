@@ -3,7 +3,9 @@ import {Data} from 'phaser';
 export default class RegistryConstants {
     public static readonly Keys = Object.freeze({
         PLAYER_SCORE: 'playerScore',
-        PLAYER_COMBO: 'playerCombo'
+        PLAYER_COMBO: 'playerCombo',
+        PLAYER_LEVEL: 'playerLevel',
+        IS_NEW_BEST_SCORE: 'isNewBestScore'
     } as const);
 
     public static readonly Events = Object.freeze({

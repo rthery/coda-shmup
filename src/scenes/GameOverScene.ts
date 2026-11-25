@@ -1,10 +1,13 @@
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
+import SaveConstants from "../SaveConstants.ts";
+import type SaveManager from "../managers/SaveManager.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 
 export default class GameOverScene extends Phaser.Scene {
     private _promptText: Phaser.GameObjects.Text;
     private _started: boolean = false;
+    private saveManager: SaveManager;
 
     constructor() {
         super(GameConstants.SceneKeys.GAME_OVER);
@@ -23,6 +26,18 @@ export default class GameOverScene extends Phaser.Scene {
             {fontSize: '48px', align: 'center'}).setOrigin(0.5);
 
         this.add.text(screenCenterX, titleY + 220, this.registry.get(RegistryConstants.Keys.PLAYER_SCORE).toString(),
+            {fontSize: '32px', color: '#fff', align: 'center'}).setOrigin(0.5);
+
+        const bestScore: number = Number(this.saveManager.getData(SaveConstants.Keys.PLAYER_BEST_SCORE) ?? 0);
+        const isNewBestScore: boolean = this.registry.get(RegistryConstants.Keys.IS_NEW_BEST_SCORE) ?? false;
+        this.add.text(screenCenterX, titleY + 320, isNewBestScore ? "NEW BEST!" : "BEST",
+            {fontSize: '48px', color: isNewBestScore ? '#ffcc00' : '#fff', align: 'center'}).setOrigin(0.5);
+        this.add.text(screenCenterX, titleY + 380, bestScore.toString(),
+            {fontSize: '32px', color: '#fff', align: 'center'}).setOrigin(0.5);
+
+        this.add.text(screenCenterX, titleY + 480, "LEVEL",
+            {fontSize: '48px', align: 'center'}).setOrigin(0.5);
+        this.add.text(screenCenterX, titleY + 540, (this.registry.get(RegistryConstants.Keys.PLAYER_LEVEL) ?? 1).toString(),
             {fontSize: '32px', color: '#fff', align: 'center'}).setOrigin(0.5);
 
         this._promptText = this.add.text(
