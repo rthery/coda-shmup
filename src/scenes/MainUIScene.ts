@@ -1,5 +1,6 @@
 import {GameObjects, Scenes, Scene} from "phaser";
 import Health from "../components/Health.ts";
+import Experience from "../components/Experience.ts";
 import Player from "../entities/Player.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
@@ -7,6 +8,8 @@ import RegistryConstants from "../RegistryConstants.ts";
 export default class MainUIScene extends Scene {
     private _playerHealthText: GameObjects.BitmapText;
     private _scoreText: GameObjects.BitmapText;
+    private _xpBarFill: GameObjects.Rectangle;
+    private _levelText: GameObjects.Text;
 
     constructor() {
         super(GameConstants.SceneKeys.MAIN_UI);
@@ -37,6 +40,16 @@ export default class MainUIScene extends Scene {
         this._scoreText = this.add.bitmapText(this.scale.width - 64, 64, "future-bmp", scoreStr, 128)
             .setOrigin(1, 0);
 
+        const xpBarY: number = 216;
+        const xpBarWidth: number = this.scale.width - 128;
+        this.add.rectangle(64, xpBarY, xpBarWidth, 24, 0x000000, 0.5)
+            .setOrigin(0, 0).setStrokeStyle(4, 0xffffff, 0.8);
+        // Gold, like the XP stars
+        this._xpBarFill = this.add.rectangle(64, xpBarY, xpBarWidth, 24, 0xffcc00)
+            .setOrigin(0, 0).setScale(0, 1);
+        this._levelText = this.add.text(64, xpBarY + 40, "LV 1",
+            {fontSize: '40px', color: '#fff', fontFamily: 'future'});
+
         this.scene.bringToTop();
 
         console.log("MainUIScene created");
@@ -53,5 +66,17 @@ export default class MainUIScene extends Scene {
         player.getComponent(Health)?.on(Health.CHANGE_EVENT, (current: number) => {
             this._playerHealthText.setText("x" + current);
         }, this);
+
+        const experience = player.getComponent(Experience);
+        if (experience) {
+            // This scene outlives a game restart: reset the bar from the new player
+            this.onPlayerXpChanged(experience.xp, experience.xpToNextLevel, experience.level);
+            experience.on(Experience.CHANGE_EVENT, this.onPlayerXpChanged, this);
+        }
+    }
+
+    private onPlayerXpChanged(xp: number, xpToNextLevel: number, level: number) {
+        this._xpBarFill.setScale(xp / xpToNextLevel, 1);
+        this._levelText.setText("LV " + level);
     }
 }
