@@ -14,6 +14,7 @@ export default class Player extends Entity {
         texture: "laserBlue01",
         blink: true,
         speed: 1024,
+        range: 800,
         damage: 1,
         body: {
             radius: 5,
@@ -119,6 +120,11 @@ export default class Player extends Entity {
         if (!this._targets)
             return null;
 
-        return this.scene.physics.closest(this, this._targets.getMatching('active', true)) as Entity | null;
+        const nearestTarget = this.scene.physics.closest(this, this._targets.getMatching('active', true)) as Entity | null;
+        const range: number = this.getComponent(Weapon)?.range ?? 0;
+        if (!nearestTarget || Phaser.Math.Distance.Between(this.x, this.y, nearestTarget.x, nearestTarget.y) > range)
+            return null;
+
+        return nearestTarget;
     }
 }

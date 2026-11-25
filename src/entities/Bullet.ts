@@ -7,6 +7,7 @@ export default class Bullet extends Physics.Arcade.Sprite {
 
     private _data : BulletData;
     private _tween: Tweens.Tween;
+    private readonly _start: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
     public get bulletData(): BulletData {
         return this._data;
@@ -33,6 +34,7 @@ export default class Bullet extends Physics.Arcade.Sprite {
 
     public enable(x: number, y: number, velocityX: number, velocityY: number, data: BulletData) {
         this.enableBody(true, x, y, true, true);
+        this._start.set(x, y);
 
         this.setOrigin(1, 0.5);
         this.setTexture('sprites', data.texture);
@@ -61,8 +63,9 @@ export default class Bullet extends Physics.Arcade.Sprite {
     update(timeSinceLaunch: number, deltaTime: number) {
         super.update(timeSinceLaunch, deltaTime);
 
-        // Recycle bullets when they leave the arena on any side
-        if (this.x < -this.displayWidth || this.x > GameConstants.ARENA_WIDTH + this.displayWidth
+        // Recycle bullets past their range or when they leave the arena on any side
+        if (Phaser.Math.Distance.Between(this._start.x, this._start.y, this.x, this.y) > this._data.range
+            || this.x < -this.displayWidth || this.x > GameConstants.ARENA_WIDTH + this.displayWidth
             || this.y < -this.displayHeight || this.y > GameConstants.ARENA_HEIGHT + this.displayHeight) {
             this.disable();
         }

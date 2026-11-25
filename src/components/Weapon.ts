@@ -10,6 +10,10 @@ export default class Weapon implements IComponent {
     private readonly _bullets: Physics.Arcade.Group;
     private readonly _bulletData: BulletData;
 
+    public get range(): number {
+        return this._bulletData.range;
+    }
+
     constructor(bullets: Physics.Arcade.Group, bulletData: BulletData) {
         if (!bullets) {
             console.error("Weapon 'bullets' group cannot be null or undefined");

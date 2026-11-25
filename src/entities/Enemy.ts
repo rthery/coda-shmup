@@ -10,6 +10,7 @@ export default class Enemy extends Entity {
         texture: "laserRed03",
         blink: false,
         speed: 512,
+        range: 1200,
         damage: 1,
         body: {
             radius: 5,

@@ -5,6 +5,7 @@ export type BulletData = {
     texture: string;
     blink: boolean;
     speed: number;
+    range: number;
     damage: number;
     body: CircleBodyData;
     fx: BulletFxData;
