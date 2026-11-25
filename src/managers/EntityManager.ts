@@ -67,6 +67,16 @@ export default class EntityManager extends Plugins.ScenePlugin {
             }
         });
 
+        this._miniBoss = new MiniBoss(this.scene!, this.scene!.cameras.main.centerX, -48);
+        this._miniBoss.init(this._enemyBullets);
+
+        this.scene!.time.addEvent({
+            delay: 10000,
+            callback: this.spawnMiniBoss,
+            callbackScope: this,
+            loop: true
+        });
+
         // Spawn enemies indefinitely
         this.scene!.time.addEvent({
             delay: 1500,
@@ -86,6 +96,11 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
             (bullet as Bullet).disable();
             (enemy as Enemy).getComponent(Health)?.damage((bullet as Bullet).damage);
+        });
+
+        this.scene!.physics.add.overlap(this._playerBullets, this._miniBoss, (bullet) => {
+            (bullet as Bullet).disable();
+            this._miniBoss.getComponent(Health)?.damage((bullet as Bullet).damage);
         });
 
         this.scene!.physics.add.overlap(this._player, this._enemyBullets, (player, bullet) => {
@@ -125,5 +140,16 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this.game!.events.emit(GameConstants.Events.ENEMY_SPAWNED_EVENT, enemy);
 
         console.log("[EntityManager] Enemy spawned");
+    }
+
+    private spawnMiniBoss() {
+        if (this._miniBoss.active) {
+            return;
+        }
+
+        this._miniBoss.enable(
+            this.scene!.cameras.main.centerX,
+            -this._miniBoss.displayHeight
+        );
     }
 }
