@@ -4,6 +4,7 @@ import HomeScene from "./scenes/HomeScene.ts";
 import MainGameScene from './scenes/MainGameScene.ts';
 import MainUIScene from "./scenes/MainUIScene.ts";
 import EntityManager from "./managers/EntityManager.ts";
+import GameInputManager from "./managers/GameInputManager.ts";
 import SaveManager from "./managers/SaveManager.ts";
 
 // Find out more information about the Game Config at:
@@ -21,7 +22,8 @@ const config: Types.Core.GameConfig = {
                 Input.Keyboard.KeyCodes.LEFT, Input.Keyboard.KeyCodes.RIGHT,
                 Input.Keyboard.KeyCodes.SPACE
             ]
-        }
+        },
+        gamepad: true
     },
     scale: {
         mode: Scale.FIT,
@@ -35,6 +37,7 @@ const config: Types.Core.GameConfig = {
     },
     plugins: {
         global: [
+            {key: GameInputManager.PLUGIN_KEY, plugin: GameInputManager, mapping: GameInputManager.MAPPING_NAME},
             {key: SaveManager.PLUGIN_KEY, plugin: SaveManager, mapping: SaveManager.MAPPING_NAME}
         ],
         scene: [

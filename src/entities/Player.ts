@@ -27,7 +27,6 @@ export default class Player extends Entity {
         }
     };
 
-    private readonly _cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
     private _playerShipData: PlayerShipData;
     private _rateOfFire: number;
     private _lastShotTime: number;
@@ -35,54 +34,14 @@ export default class Player extends Entity {
     private readonly _shootDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private _targets: Phaser.Physics.Arcade.Group;
 
-    // Touch: a floating joystick, the first touch sets its center
-    private static readonly TOUCH_DEADZONE: number = 24;
-    private _touchPointerId: number = -1;
-    private readonly _touchOrigin: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
-    private readonly _touchDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
-
     constructor(scene: Scene, x: number, y: number) {
         super(scene, x, y, 'sprites');
 
         if (this.scene.input.keyboard) {
-            this._cursorKeys = this.scene.input.keyboard.createCursorKeys();
-
             this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.ONE).on('down', () => this.selectPlayerShip(1));
             this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.TWO).on('down', () => this.selectPlayerShip(2));
             this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.THREE).on('down', () => this.selectPlayerShip(3));
         }
-
-        this._setupTouchInput();
-    }
-
-    private _setupTouchInput() {
-        this.scene.input.on(Input.Events.POINTER_DOWN, (pointer: Phaser.Input.Pointer) => {
-            if (!pointer.wasTouch || this._touchPointerId !== -1)
-                return;
-
-            this._touchPointerId = pointer.id;
-            this._touchOrigin.set(pointer.x, pointer.y);
-            this._touchDirection.set(0, 0);
-        });
-
-        this.scene.input.on(Input.Events.POINTER_MOVE, (pointer: Phaser.Input.Pointer) => {
-            if (pointer.id !== this._touchPointerId)
-                return;
-
-            this._touchDirection.set(pointer.x - this._touchOrigin.x, pointer.y - this._touchOrigin.y);
-            if (this._touchDirection.length() < Player.TOUCH_DEADZONE)
-                this._touchDirection.set(0, 0);
-        });
-
-        const onTouchEnd = (pointer: Phaser.Input.Pointer) => {
-            if (pointer.id !== this._touchPointerId)
-                return;
-
-            this._touchPointerId = -1;
-            this._touchDirection.set(0, 0);
-        };
-        this.scene.input.on(Input.Events.POINTER_UP, onTouchEnd);
-        this.scene.input.on(Input.Events.POINTER_UP_OUTSIDE, onTouchEnd);
     }
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
@@ -123,20 +82,8 @@ export default class Player extends Entity {
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
         super.preUpdate(timeSinceLaunch, deltaTime);
 
-        // Build the move direction from the arrow keys
-        this._moveDirection.set(0, 0);
-        if (this._cursorKeys.left.isDown)
-            this._moveDirection.x -= 1;
-        if (this._cursorKeys.right.isDown)
-            this._moveDirection.x += 1;
-        if (this._cursorKeys.up.isDown)
-            this._moveDirection.y -= 1;
-        if (this._cursorKeys.down.isDown)
-            this._moveDirection.y += 1;
-
-        // Touch: drag from where the finger went down
-        if (this._moveDirection.lengthSq() === 0)
-            this._moveDirection.copy(this._touchDirection);
+        // Arrow keys, touch or gamepad
+        this._moveDirection.copy(this.scene.gameInputManager.moveDirection);
 
         if (this._moveDirection.lengthSq() > 0) {
             this._moveDirection.normalize();

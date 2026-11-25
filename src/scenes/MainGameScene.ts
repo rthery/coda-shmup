@@ -43,12 +43,6 @@ export default class MainGameScene extends Scene {
             this.time.delayedCall(1000, this.endGame, [], this);
         }, this);
 
-        if (this.input.keyboard) {
-            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R).on('down', () => this.scene.restart());
-        } else {
-            console.error('No keyboard input');
-        }
-
         this.registry.set(RegistryConstants.Keys.PLAYER_SCORE, 0);
 
         console.log("MainGameScene created");
@@ -63,5 +57,11 @@ export default class MainGameScene extends Scene {
         }
 
         this.scene.start(GameConstants.SceneKeys.GAME_OVER);
+    }
+
+    update() {
+        if (this.gameInputManager.restartJustPressed()) {
+            this.scene.restart();
+        }
     }
 }
