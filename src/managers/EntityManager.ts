@@ -64,14 +64,14 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this.scene!.tweens.add({
             targets: this._player,
             y: playerEndY,
-            duration: 500,
+            duration: GameConstants.START_DELAY,
             ease: Phaser.Math.Easing.Quadratic.Out,
-            onComplete: () => {
-                this.initEnemies();
-                this.initGroupCollisions();
-                onIntroComplete();
-            }
+            onComplete: onIntroComplete
         });
+
+        // Create the enemy pools now, not at the end of the intro, to avoid a freeze
+        this.initEnemies();
+        this.initGroupCollisions();
 
         console.log("[EntityManager] Player spawned");
 
@@ -97,9 +97,9 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
         this._player.setTargets(this._enemies);
 
-        // Spawn enemies indefinitely
+        // Spawn enemies indefinitely, the first one when the player intro is over
         this.scene!.time.addEvent({
-            delay: 500,
+            delay: GameConstants.START_DELAY,
             callback: this.spawnEnemy,
             callbackScope: this,
             loop: true
