@@ -98,9 +98,20 @@ export default class EntityManager extends Plugins.ScenePlugin {
             (enemy as Enemy).getComponent(Health)?.damage((bullet as Bullet).damage);
         });
 
-        this.scene!.physics.add.overlap(this._playerBullets, this._miniBoss, (bullet) => {
-            (bullet as Bullet).disable();
-            this._miniBoss.getComponent(Health)?.damage((bullet as Bullet).damage);
+        this.scene!.physics.add.overlap(this._playerBullets, this._miniBoss, (first, second) => {
+            const bullet = first instanceof Bullet
+                ? first
+                : second instanceof Bullet
+                    ? second
+                    : undefined;
+
+            if (!bullet) {
+                console.warn('[EntityManager] Mini-boss overlap did not include a Bullet', first, second);
+                return;
+            }
+
+            bullet.disable();
+            this._miniBoss.takeBulletDamage(bullet.damage);
         });
 
         this.scene!.physics.add.overlap(this._player, this._enemyBullets, (player, bullet) => {
