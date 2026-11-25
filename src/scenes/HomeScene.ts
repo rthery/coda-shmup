@@ -4,6 +4,7 @@ import Thrusters from "../components/Thrusters.ts";
 import WingTrails from "../components/WingTrails.ts";
 import type {PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
+import UiUtils from "../utils/UiUtils.ts";
 
 export default class HomeScene extends Phaser.Scene {
     private static readonly BG_TILE_SCALE: number = 2;
@@ -13,6 +14,7 @@ export default class HomeScene extends Phaser.Scene {
     private _playerShip: Phaser.GameObjects.Image;
     private _thrusters: Thrusters;
     private _wingTrails: WingTrails;
+    private _title: Phaser.GameObjects.Container;
     private _startPrompt: Phaser.GameObjects.Text;
     private _started: boolean = false;
 
@@ -83,17 +85,18 @@ export default class HomeScene extends Phaser.Scene {
             ease: 'Quad.easeInOut'
         });
 
-        this.add.text(this.scale.width / 2, 512, 'CODA ARENA',
-            {fontSize: '72px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
-        this.add.text(this.scale.width / 2, 600, 'SURVIVAL',
-            {fontSize: '48px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
+        const centerX: number = this.scale.width / 2;
+        const titleY: number = 560;
+        this._title = this.add.container(0, 0, [
+            this.add.text(centerX, titleY - 96, 'SURVIVAL',
+                {fontSize: '36px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future', letterSpacing: 12})
+                .setOrigin(0.5),
+            this.add.text(centerX, titleY, 'CODA ARENA', {fontSize: '120px', color: '#fff', fontFamily: 'future'})
+                .setOrigin(0.5).setShadow(0, 8, '#000', 0, false, true),
+        ]);
 
-        this._startPrompt = this.add.text(
-            this.scale.width / 2,
-            this.scale.height - 256,
-            this._getPromptText(this.gameInputManager.activeInputType),
-            {fontSize: '32px', color: '#fff'}
-        ).setOrigin(0.5);
+        this._startPrompt = UiUtils.addHint(this, centerX, this.scale.height - 220,
+            this._getPromptText(this.gameInputManager.activeInputType));
 
         this.game.events.on('input-type-changed', this._onInputTypeChanged, this);
         this.events.once('shutdown', () => {
@@ -111,17 +114,20 @@ export default class HomeScene extends Phaser.Scene {
 
     private _getPromptText(type: InputType): string {
         switch (type) {
-            case 'touch': return 'Tap to start';
-            case 'gamepad': return 'Press A or START';
-            default: return 'Press SPACE to start';
+            case 'touch': return 'TAP TO START';
+            case 'gamepad': return 'PRESS A OR START';
+            default: return 'PRESS SPACE TO START';
         }
     }
 
     private _startGame(): void {
         this._started = true;
 
-        this.tweens.killTweensOf(this._playerShip);
+        this.tweens.killTweensOf([this._playerShip, this._startPrompt]);
         this._thrusters.setBoost(true);
+        // The title clears the ship's way out
+        this.tweens.add({targets: this._title, y: -200, alpha: 0, duration: 400, ease: 'Quad.easeIn'});
+        this.tweens.add({targets: this._startPrompt, alpha: 0, duration: 200});
         this.tweens.add({
             targets: this._playerShip,
             x: this.cameras.main.centerX,

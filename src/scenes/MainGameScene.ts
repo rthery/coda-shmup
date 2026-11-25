@@ -102,7 +102,9 @@ export default class MainGameScene extends Scene {
             console.log("New Best Score: " + currentScore);
         }
 
-        this.scene.start(GameConstants.SceneKeys.GAME_OVER);
+        // The arena stays on screen, frozen, behind the game over screen
+        this.scene.pause();
+        this.scene.launch(GameConstants.SceneKeys.GAME_OVER);
     }
 
     update(_timeSinceLaunch: number, deltaTime: number) {

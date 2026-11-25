@@ -4,16 +4,23 @@ import Experience from "../components/Experience.ts";
 import Player from "../entities/Player.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
+import UiUtils from "../utils/UiUtils.ts";
 
 export default class MainUIScene extends Scene {
+    private static readonly MARGIN: number = 64;
     private static readonly LIFE_ICON_SCALE: number = 2;
     private static readonly LIFE_ICON_SPACING: number = 12;
     private static readonly LOST_LIFE_ALPHA: number = 0.25;
+    private static readonly XP_BAR_Y: number = 216;
+    private static readonly XP_BAR_X: number = 200;
+    private static readonly BRACKET_INSET: number = 28;
+    private static readonly BRACKET_LENGTH: number = 56;
 
     private _lifeIcons: GameObjects.Image[];
     private _scoreText: GameObjects.BitmapText;
     private _comboText: GameObjects.Text;
-    private _xpBarFill: GameObjects.Rectangle;
+    private _xpBarFill: GameObjects.NineSlice;
+    private _xpBarWidth: number;
     private _levelText: GameObjects.Text;
 
     constructor() {
@@ -41,21 +48,24 @@ export default class MainUIScene extends Scene {
         if (this.registry.has(RegistryConstants.Keys.PLAYER_SCORE))
             scoreStr = this.registry.get(RegistryConstants.Keys.PLAYER_SCORE).toString()
                 .padStart(GameConstants.MAX_SCORE_DIGITS, "0");
-        this._scoreText = this.add.bitmapText(this.scale.width - 64, 64, "future-bmp", scoreStr, 128)
-            .setOrigin(1, 0);
+        this._scoreText = this.add.bitmapText(this.scale.width - MainUIScene.MARGIN, MainUIScene.MARGIN,
+            "future-bmp", scoreStr, 128).setOrigin(1, 0);
 
-        const xpBarY: number = 216;
-        const xpBarWidth: number = this.scale.width - 128;
-        this.add.rectangle(64, xpBarY, xpBarWidth, 24, 0x000000, 0.5)
-            .setOrigin(0, 0).setStrokeStyle(4, 0xffffff, 0.8);
+        this.addCornerBrackets();
+
+        const xpBarY: number = MainUIScene.XP_BAR_Y;
+        this._xpBarWidth = this.scale.width - MainUIScene.MARGIN - MainUIScene.XP_BAR_X;
+        const xpBarTrack = UiUtils.addBar(this, MainUIScene.XP_BAR_X, xpBarY, this._xpBarWidth, "ui_bar_track")
+            .setOrigin(0, 0);
         // Gold, like the XP stars
-        this._xpBarFill = this.add.rectangle(64, xpBarY, xpBarWidth, 24, 0xffcc00)
-            .setOrigin(0, 0).setScale(0, 1);
-        this._levelText = this.add.text(64, xpBarY + 40, "LV 1",
-            {fontSize: '40px', color: '#fff', fontFamily: 'future'});
+        this._xpBarFill = UiUtils.addBar(this, MainUIScene.XP_BAR_X, xpBarY, this._xpBarWidth, "ui_bar_fill_yellow")
+            .setOrigin(0, 0);
+        UiUtils.setBarFill(this._xpBarFill, this._xpBarWidth, 0);
+        this._levelText = this.add.text(MainUIScene.MARGIN, xpBarY + xpBarTrack.height / 2, "LV 1",
+            {fontSize: '40px', color: '#fff', fontFamily: 'future'}).setOrigin(0, 0.5);
 
-        this._comboText = this.add.text(this.scale.width - 64, xpBarY + 40, "",
-            {fontSize: '40px', color: '#ffcc00', fontFamily: 'future'}).setOrigin(1, 0);
+        this._comboText = this.add.text(this.scale.width - MainUIScene.MARGIN, xpBarY + 72, "",
+            {fontSize: '40px', color: '#ffcc00', fontStyle: 'bold'}).setOrigin(1, 0);
 
         this.scene.bringToTop();
 
@@ -72,7 +82,7 @@ export default class MainUIScene extends Scene {
             return;
 
         // Only worth showing once it multiplies something
-        this._comboText.setText(combo > 1 ? "COMBO x" + combo : "");
+        this._comboText.setText(combo > 1 ? "COMBO X" + combo : "");
 
         if (combo > previousCombo) {
             this.tweens.add({targets: this._comboText, scale: {from: 1.4, to: 1}, duration: 200, ease: 'Back.easeOut'});
@@ -96,12 +106,23 @@ export default class MainUIScene extends Scene {
         }
     }
 
+    // Bare HUD: corner brackets frame the play area instead of panels
+    private addCornerBrackets() {
+        const inset: number = MainUIScene.BRACKET_INSET;
+        const length: number = MainUIScene.BRACKET_LENGTH;
+        const right: number = this.scale.width - inset;
+        this.add.graphics()
+            .lineStyle(6, 0xffffff, 0.4)
+            .strokePoints([{x: inset, y: inset + length}, {x: inset, y: inset}, {x: inset + length, y: inset}])
+            .strokePoints([{x: right - length, y: inset}, {x: right, y: inset}, {x: right, y: inset + length}]);
+    }
+
     // One icon per max life, lost lives dimmed
     private updateLifeIcons(current: number, max: number) {
         while (this._lifeIcons.length < max) {
-            const icon = this.add.image(0, 64, "sprites", "playerLife1_blue")
+            const icon = this.add.image(0, MainUIScene.MARGIN, "sprites", "playerLife1_blue")
                 .setOrigin(0, 0).setScale(MainUIScene.LIFE_ICON_SCALE);
-            icon.x = 64 + this._lifeIcons.length * (icon.displayWidth + MainUIScene.LIFE_ICON_SPACING);
+            icon.x = MainUIScene.MARGIN + this._lifeIcons.length * (icon.displayWidth + MainUIScene.LIFE_ICON_SPACING);
             this._lifeIcons.push(icon);
         }
 
@@ -111,7 +132,7 @@ export default class MainUIScene extends Scene {
     }
 
     private onPlayerXpChanged(xp: number, xpToNextLevel: number, level: number) {
-        this._xpBarFill.setScale(xp / xpToNextLevel, 1);
+        UiUtils.setBarFill(this._xpBarFill, this._xpBarWidth, xp / xpToNextLevel);
         this._levelText.setText("LV " + level);
     }
 }

@@ -1,42 +1,49 @@
 [
   {
     "id": "fireRate",
+    "category": "weapon",
     "title": "RAPID FIRE",
     "description": "Shoot 15% faster",
     "value": 0.85
   },
   {
     "id": "range",
+    "category": "weapon",
     "title": "LONG RANGE",
     "description": "+150 laser range",
     "value": 150
   },
   {
     "id": "bulletSpeed",
+    "category": "weapon",
     "title": "FAST LASERS",
     "description": "Lasers fly 20% faster",
     "value": 1.2
   },
   {
     "id": "moveSpeed",
+    "category": "ship",
     "title": "THRUSTERS",
     "description": "Move 10% faster",
     "value": 1.1
   },
   {
     "id": "maxHealth",
+    "category": "ship",
     "title": "HULL PLATING",
     "description": "+1 max life, full repair",
     "value": 1
   },
   {
     "id": "magnet",
+    "category": "ship",
     "title": "MAGNET",
     "description": "Collect XP from further away",
     "value": 100
   },
   {
     "id": "pierce",
+    "category": "weapon",
     "title": "PIERCING",
     "description": "Lasers go through +1 enemy",
     "value": 1

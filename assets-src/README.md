@@ -22,6 +22,9 @@ nommée comme le fichier sans son extension : `ufoRed.png` devient la frame `'uf
 Les sprites viennent du pack Kenney « Space Shooter Redux », licence CC0 (domaine public) : https://kenney.nl/assets/space-shooter-redux
 `ufoRed-shoot0` et `ufoRed-shoot1` n'en font pas partie : ce sont des variantes de `ufoRed` pour l'animation de tir.
 
+Les sprites `ui_*` viennent du pack Kenney « UI Pack - Sci-Fi », licence CC0 : https://kenney.nl/assets/ui-pack-sci-fi
+Ce sont les versions `Double` du pack, renommées. Les panneaux sont découpés en 9 (`nineslice`) par `src/utils/UiUtils.ts`.
+
 ## Ce qui reste hors de l'atlas
 
 Les images répétées, comme le fond `darkPurple`, restent des images à part (`public/assets/Backgrounds/`).
