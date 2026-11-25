@@ -6,7 +6,11 @@ import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
 
 export default class MainUIScene extends Scene {
-    private _playerHealthText: GameObjects.BitmapText;
+    private static readonly LIFE_ICON_SCALE: number = 2;
+    private static readonly LIFE_ICON_SPACING: number = 12;
+    private static readonly LOST_LIFE_ALPHA: number = 0.25;
+
+    private _lifeIcons: GameObjects.Image[];
     private _scoreText: GameObjects.BitmapText;
     private _comboText: GameObjects.Text;
     private _xpBarFill: GameObjects.Rectangle;
@@ -31,10 +35,7 @@ export default class MainUIScene extends Scene {
 
     // noinspection JSUnusedGlobalSymbols
     create() {
-        const playerHealthIcon = this.add.image(64, 64, "sprites", "playerLife1_blue")
-            .setOrigin(0, 0).setScale(1.5);
-        const playerHealthTextX = playerHealthIcon.x + playerHealthIcon.displayWidth + 16;
-        this._playerHealthText = this.add.bitmapText(playerHealthTextX, 64, "future-bmp", "x0", 128);
+        this._lifeIcons = [];
 
         let scoreStr: string = "".padStart(GameConstants.MAX_SCORE_DIGITS, "0");
         if (this.registry.has(RegistryConstants.Keys.PLAYER_SCORE))
@@ -79,11 +80,13 @@ export default class MainUIScene extends Scene {
     }
 
     private onPlayerSpawned(player: Player) {
-        this._playerHealthText.setText("x" + player.getComponent(Health)?.current);
-
-        player.getComponent(Health)?.on(Health.CHANGE_EVENT, (current: number) => {
-            this._playerHealthText.setText("x" + current);
-        }, this);
+        const health = player.getComponent(Health);
+        if (health) {
+            this.updateLifeIcons(health.current, health.max);
+            health.on(Health.CHANGE_EVENT, (current: number) => {
+                this.updateLifeIcons(current, health.max);
+            }, this);
+        }
 
         const experience = player.getComponent(Experience);
         if (experience) {
@@ -91,6 +94,20 @@ export default class MainUIScene extends Scene {
             this.onPlayerXpChanged(experience.xp, experience.xpToNextLevel, experience.level);
             experience.on(Experience.CHANGE_EVENT, this.onPlayerXpChanged, this);
         }
+    }
+
+    // One icon per max life, lost lives dimmed
+    private updateLifeIcons(current: number, max: number) {
+        while (this._lifeIcons.length < max) {
+            const icon = this.add.image(0, 64, "sprites", "playerLife1_blue")
+                .setOrigin(0, 0).setScale(MainUIScene.LIFE_ICON_SCALE);
+            icon.x = 64 + this._lifeIcons.length * (icon.displayWidth + MainUIScene.LIFE_ICON_SPACING);
+            this._lifeIcons.push(icon);
+        }
+
+        this._lifeIcons.forEach((icon, index) => {
+            icon.setAlpha(index < current ? 1 : MainUIScene.LOST_LIFE_ALPHA);
+        });
     }
 
     private onPlayerXpChanged(xp: number, xpToNextLevel: number, level: number) {
