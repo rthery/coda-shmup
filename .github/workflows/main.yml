@@ -6,6 +6,11 @@ on:
       - main
       - dev
   workflow_dispatch:
+    inputs:
+      use_pngquant:
+        description: 'Lossy PNG compression with pngquant (before lossless optipng pass)'
+        type: boolean
+        default: true
 
 jobs:
   build:
@@ -23,9 +28,22 @@ jobs:
       - name: Install image optimization tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y optipng
+          sudo apt-get install -y optipng pngquant
 
-      - name: Optimize PNGs in public/assets (lossless)
+      - name: Optimize PNGs in public/assets (lossy with pngquant)
+        if: github.event_name != 'workflow_dispatch' || inputs.use_pngquant
+        run: |
+          echo "Optimizing PNGs in public/assets (lossy with pngquant)"
+          find public/assets -type f -iname '*.png' -print0 | xargs -0 -n1 -P4 \
+            pngquant \
+              --quality=75-100 \
+              --speed 1 \
+              --skip-if-larger \
+              --ext .png \
+              --force \
+              || true
+
+      - name: Optimize PNGs in public/assets (lossless with optipng)
         run: |
           echo "Optimizing PNGs in public/assets (lossless with optipng)"
           find public/assets -type f -iname '*.png' -print0 | xargs -0 -n1 -P4 optipng -o7 -strip all || true
