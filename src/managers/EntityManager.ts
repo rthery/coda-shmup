@@ -6,9 +6,7 @@ import Player from "../entities/Player.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
-import MiniBoss from "../entities/mini-boss.ts";
-import SpreadShotBuff from "../components/Buff.ts";
-import SpreadShotPickup from "../entities/SpreadShotPickup.ts";
+import MiniBoss, {type MiniBossSheet} from "../entities/mini-boss.ts";
 
 export default class EntityManager extends Plugins.ScenePlugin {
     public static readonly PLUGIN_KEY: string = 'EntityManager';
@@ -29,7 +27,6 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private _enemies: Physics.Arcade.Group;
     private _enemyBullets: Physics.Arcade.Group;
     private _miniBoss: MiniBoss;
-    private _spreadShotPickup: SpreadShotPickup;
 
     constructor(scene: Scene, pluginManager: Plugins.PluginManager) {
         super(scene, pluginManager, EntityManager.PLUGIN_KEY);
@@ -71,17 +68,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
         });
 
         this._miniBoss = new MiniBoss(this.scene!, this.scene!.cameras.main.centerX, -48);
-        this._miniBoss.init(this._enemyBullets);
-
-        this._spreadShotPickup = new SpreadShotPickup(this.scene!, 0, 0);
-        this._spreadShotPickup.disable();
-
-        this.scene!.time.addEvent({
-            delay: 10000,
-            callback: this.spawnSpreadShotPickup,
-            callbackScope: this,
-            loop: true
-        });
+        const miniBossSettings = this.scene!.cache.json.get('miniBossSheet') as MiniBossSheet;
+        this._miniBoss.init(this._enemyBullets, miniBossSettings);
 
         this.scene!.time.addEvent({
             delay: 10000,
@@ -123,11 +111,6 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
             bullet.disable();
             this._miniBoss.takeBulletDamage(bullet.damage);
-        });
-
-        this.scene!.physics.add.overlap(this._player, this._spreadShotPickup, () => {
-            this._spreadShotPickup.disable();
-            new SpreadShotBuff(this._player).apply();
         });
 
         this.scene!.physics.add.overlap(this._player, this._enemyBullets, (player, bullet) => {
@@ -180,13 +163,4 @@ export default class EntityManager extends Plugins.ScenePlugin {
         );
     }
 
-    private spawnSpreadShotPickup() {
-        if (this._spreadShotPickup.active) {
-            return;
-        }
-
-        const margin = this._spreadShotPickup.displayWidth / 2;
-        const x = Phaser.Math.Between(margin, this.scene!.cameras.main.width - margin);
-        this._spreadShotPickup.enable(x, -this._spreadShotPickup.displayHeight);
-    }
 }

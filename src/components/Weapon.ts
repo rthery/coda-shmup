@@ -45,15 +45,15 @@ export default class Weapon implements IComponent {
     }
 
     //spreadhost logic here
-    public shootSpread(source: Entity, spreadAngle: number, numBullets: number) {
+    public shootSpread(source: Entity, spreadAngle: number, numBullets: number, angleOffset: number = 0) {
         if (!this.enabled)
             return;
         
-        if (!this._bullets)
+        if (!this._bullets || numBullets < 1)
             return;
 
-        const angleStep = spreadAngle / (numBullets - 1);
-        const startAngle = source.rotation - spreadAngle / 2;
+        const angleStep = numBullets > 1 ? spreadAngle / (numBullets - 1) : 0;
+        const startAngle = source.rotation + angleOffset - spreadAngle / 2;
 
         for (let i = 0; i < numBullets; i++) {
             const bullet: Bullet = this._bullets.get() as Bullet;
