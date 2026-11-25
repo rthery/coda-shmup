@@ -105,10 +105,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
                     ? second
                     : undefined;
 
-            if (!bullet) {
-                console.warn('[EntityManager] Mini-boss overlap did not include a Bullet', first, second);
+            if (!bullet)
                 return;
-            }
 
             bullet.disable();
             this._miniBoss.takeBulletDamage(bullet.damage);
