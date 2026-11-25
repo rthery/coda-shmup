@@ -19,6 +19,7 @@ export default class Player extends Entity {
     private _playerShipData: PlayerShipData;
     private _rateOfFire: number;
     private _lastShotTime: number;
+    public weapon: Weapon;
 
     constructor(scene: Scene, x: number, y: number) {
         super(scene, x, y, 'sprites');
@@ -35,7 +36,8 @@ export default class Player extends Entity {
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
         this.addComponent(new Health(3, this));
         this.addComponent(new Movement());
-        this.addComponent(new Weapon(bulletsGroup, this._bulletData));
+        this.weapon = new Weapon(bulletsGroup, this._bulletData);
+        this.addComponent(this.weapon);
 
         this.angle = -90;
 
