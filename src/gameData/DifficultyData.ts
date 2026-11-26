@@ -14,7 +14,16 @@ export type DifficultyKeyframeData = {
     enemySpeed: number; // px/ms
 }
 
+// Applied for each player beyond the first
+export type CoopScalingData = {
+    maxEnemiesPerPlayer: number; // +ratio of max enemies
+    spawnIntervalPerPlayer: number; // spawn interval multiplier
+    enemyHealthPerPlayer: number; // +ratio of enemy health
+    xpPerPlayer: number; // +ratio of XP to reach each level: every player picks an upgrade
+}
+
 export type DifficultyData = {
     xp: XpCurveData;
+    coop: CoopScalingData;
     keyframes: DifficultyKeyframeData[];
 }

@@ -4,6 +4,12 @@
     "perLevel": 10,
     "perLevelSquared": 1
   },
+  "coop": {
+    "maxEnemiesPerPlayer": 0.6,
+    "spawnIntervalPerPlayer": 0.75,
+    "enemyHealthPerPlayer": 0,
+    "xpPerPlayer": 0.5
+  },
   "keyframes": [
     {
       "time": 0,

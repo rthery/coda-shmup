@@ -189,7 +189,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this._players.forEach(player => player.setTargets(this._enemies));
 
         // Spawn enemies indefinitely, faster over time, the first one when the player intro is over
-        this._difficulty = new DifficultyCurve(this.scene!.cache.json.get('difficulty') as DifficultyData);
+        this._difficulty = new DifficultyCurve(this.scene!.cache.json.get('difficulty') as DifficultyData,
+            this._team.players.length);
         this.scene!.time.delayedCall(GameConstants.START_DELAY, this.spawnEnemy, [], this);
 
         console.log("[EntityManager] Enemies initialized");

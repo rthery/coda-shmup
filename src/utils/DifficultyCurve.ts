@@ -1,13 +1,26 @@
-import type {DifficultyData, DifficultyKeyframeData} from "../gameData/DifficultyData.ts";
+import type {CoopScalingData, DifficultyData, DifficultyKeyframeData, XpCurveData} from "../gameData/DifficultyData.ts";
 
 export default class DifficultyCurve {
     private readonly _keyframes: DifficultyKeyframeData[];
+    private readonly _xp: XpCurveData;
+    private readonly _coop: CoopScalingData;
+    private readonly _extraPlayers: number;
     private readonly _current: DifficultyKeyframeData = {
         time: 0, spawnInterval: 0, maxEnemies: 0, enemyHealth: 0, enemySpeed: 0
     };
 
-    public constructor(data: DifficultyData) {
+    public constructor(data: DifficultyData, playerCount: number = 1) {
         this._keyframes = data.keyframes;
+        this._xp = data.xp;
+        this._coop = data.coop;
+        this._extraPlayers = playerCount - 1;
+    }
+
+    // XP to reach each level, more with each player
+    public get xpCurve(): XpCurveData {
+        const scale: number = 1 + this._coop.xpPerPlayer * this._extraPlayers;
+        return {base: this._xp.base * scale, perLevel: this._xp.perLevel * scale,
+            perLevelSquared: this._xp.perLevelSquared * scale};
     }
 
     // 0 at the start, +1 at each keyframe reached after the first
@@ -47,10 +60,15 @@ export default class DifficultyCurve {
         const t: number = span > 0 ? Phaser.Math.Clamp((time - previous.time) / span, 0, 1) : 1;
 
         this._current.time = time;
-        this._current.spawnInterval = Phaser.Math.Linear(previous.spawnInterval, next.spawnInterval, t);
-        this._current.maxEnemies = Math.round(Phaser.Math.Linear(previous.maxEnemies, next.maxEnemies, t));
+        const coop: CoopScalingData = this._coop;
+        const extraPlayers: number = this._extraPlayers;
+        this._current.spawnInterval = Phaser.Math.Linear(previous.spawnInterval, next.spawnInterval, t)
+            * Math.pow(coop.spawnIntervalPerPlayer, extraPlayers);
+        this._current.maxEnemies = Math.round(Phaser.Math.Linear(previous.maxEnemies, next.maxEnemies, t)
+            * (1 + coop.maxEnemiesPerPlayer * extraPlayers));
         // Rounded down: enemies only reach a keyframe's health at its time
-        this._current.enemyHealth = Math.floor(Phaser.Math.Linear(previous.enemyHealth, next.enemyHealth, t));
+        this._current.enemyHealth = Math.floor(Phaser.Math.Linear(previous.enemyHealth, next.enemyHealth, t)
+            * (1 + coop.enemyHealthPerPlayer * extraPlayers));
         this._current.enemySpeed = Phaser.Math.Linear(previous.enemySpeed, next.enemySpeed, t);
         return this._current;
     }

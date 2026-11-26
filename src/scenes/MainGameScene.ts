@@ -77,8 +77,7 @@ export default class MainGameScene extends Scene {
         this._background = this.add.tileSprite(0, 0, GameConstants.ARENA_WIDTH, GameConstants.ARENA_HEIGHT, 'bg')
             .setOrigin(0).setTileScale(2);
         this._planet = this.add.image(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2, 'planet').setScale(2.5);
-        const difficultyData = this.cache.json.get('difficulty') as DifficultyData;
-        this._difficulty = new DifficultyCurve(difficultyData);
+        this._difficulty = new DifficultyCurve(this.cache.json.get('difficulty') as DifficultyData, this._devices.length);
 
         if (!this.entityManager) {
             console.error('EntityManager plugin not found');
@@ -87,7 +86,7 @@ export default class MainGameScene extends Scene {
         // Keep the camera still during the player intro, then follow the player
         this.cameras.main.centerOn(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2);
         this._cameraTarget.set(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2);
-        const team = new Team(difficultyData.xp);
+        const team = new Team(this._difficulty.xpCurve);
         this._team = team;
         this.game.events.emit(GameConstants.Events.TEAM_CREATED_EVENT, team);
         const inputs = this._devices.map(device => this.gameInputManager.getInput(device));
