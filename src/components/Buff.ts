@@ -8,7 +8,7 @@ interface IBuff {
 
 export default class SpreadShotBuff implements IBuff {
     public static readonly BUFF_KEY: string = 'SpreadShotBuff';
-    public static readonly BUFF_DURATION: number = 5000;
+    public static readonly BUFF_DURATION: number = 3000;
 
     private _player: Player;
     private _originalShootMethod: (source: Entity) => void;
@@ -20,8 +20,8 @@ export default class SpreadShotBuff implements IBuff {
 
     public apply(): void {
         this._player.weapon.shoot = (source: Entity) => {
-            const spreadAngle = Phaser.Math.DegToRad(30);
-            const numBullets = 5;
+            const spreadAngle = Phaser.Math.DegToRad(18);
+            const numBullets = 3;
             this._player.weapon.shootSpread(source, spreadAngle, numBullets);
         };
 

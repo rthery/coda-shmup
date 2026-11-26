@@ -68,4 +68,105 @@ export default class Weapon implements IComponent {
             }
         }
     }
+
+    public shootRadial(source: Entity, numBullets: number, rotation: number = 0) {
+        if (!this.enabled || !this._bullets || numBullets < 1)
+            return;
+
+        const angleStep = Math.PI * 2 / numBullets;
+        for (let i = 0; i < numBullets; i++) {
+            const bullet = this._bullets.get() as Bullet;
+            if (!bullet)
+                continue;
+
+            this.fireAtAngle(source, bullet, i * angleStep + rotation);
+        }
+    }
+
+    private fireAtAngle(source: Entity, bullet: Bullet, angle: number) {
+        const velocityX = Math.cos(angle) * this._bulletData.speed;
+        const velocityY = Math.sin(angle) * this._bulletData.speed;
+
+        bullet.enable(
+            source.x + Math.cos(angle) * source.arcadeBody.radius,
+            source.y + Math.sin(angle) * source.arcadeBody.radius,
+            velocityX,
+            velocityY,
+            this._bulletData
+        );
+    }
+
+    public shootBeam(source: Entity, beamData?: BulletData, angle: number = source.rotation) {
+        if (!this.enabled || !this._bullets)
+            return;
+
+        const bullet = this._bullets.get() as Bullet;
+        if (!bullet)
+            return;
+
+        const data: BulletData = beamData ?? {
+            width: 8,
+            height: 220,
+            color: 0x66ffff,
+            speed: 1280,
+            damage: 2
+        };
+        const sourceForward = new Phaser.Math.Vector2(1, 0).rotate(angle);
+        const velocity = sourceForward.clone().scale(data.speed);
+
+        bullet.enable(
+            source.x + sourceForward.x * source.arcadeBody.radius,
+            source.y + sourceForward.y * source.arcadeBody.radius,
+            velocity.x,
+            velocity.y,
+            data
+        );
+    }
+
+    public shootWithData(source: Entity, data: BulletData, angle: number = source.rotation) {
+        if (!this.enabled || !this._bullets)
+            return;
+
+        const bullet = this._bullets.get() as Bullet;
+        if (!bullet)
+            return;
+
+        const direction = new Phaser.Math.Vector2(1, 0).rotate(angle);
+        const velocity = direction.clone().scale(data.speed);
+
+        bullet.enable(
+            source.x + direction.x * source.arcadeBody.radius,
+            source.y + direction.y * source.arcadeBody.radius,
+            velocity.x,
+            velocity.y,
+            data
+        );
+    }
+
+    public shootRadialWithData(source: Entity, numBullets: number, data: BulletData, rotation: number = 0) {
+        if (!this.enabled || !this._bullets || numBullets < 1)
+            return;
+
+        const angleStep = Math.PI * 2 / numBullets;
+        for (let i = 0; i < numBullets; i++) {
+            const bullet = this._bullets.get() as Bullet;
+            if (!bullet)
+                continue;
+
+            this.fireAtAngleWithData(source, bullet, i * angleStep + rotation, data);
+        }
+    }
+
+    private fireAtAngleWithData(source: Entity, bullet: Bullet, angle: number, data: BulletData) {
+        const velocityX = Math.cos(angle) * data.speed;
+        const velocityY = Math.sin(angle) * data.speed;
+
+        bullet.enable(
+            source.x + Math.cos(angle) * source.arcadeBody.radius,
+            source.y + Math.sin(angle) * source.arcadeBody.radius,
+            velocityX,
+            velocityY,
+            data
+        );
+    }
 }

@@ -1,10 +1,10 @@
 {
     "spreadshot": {
-        "spread": 0.75,
+        "spread": 1.25,
         "angle": 0,
-        "num_bullets": 11,
-        "fire_delay_min": 2000,
-        "fire_delay_max": 3000,
+        "num_bullets": 13,
+        "fire_delay_min": 700,
+        "fire_delay_max": 1000,
         "animation_frame_rate": 4,
         "projectile": {
             "width": 12,
@@ -15,7 +15,7 @@
         }
     },
     "miniboss": {
-        "health": 10,
+        "health": 50,
         "speed": 0.05,
         "movement_pattern": "sine_wave",
         "wave_amplitude": 100,
@@ -23,7 +23,11 @@
         "scale": 2,
         "orientation_degrees": 90,
         "max_damage_per_hit": 1,
-        "tinted_speed_multiplier": 0.5
+        "tinted_speed_multiplier": 0.5,
+        "projectile": {
+            "width": 24,
+            "height": 24
+        }
     }
 
 }

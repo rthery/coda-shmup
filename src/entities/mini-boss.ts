@@ -33,6 +33,9 @@ export default class MiniBoss extends Entity {
     private _movement: SinusoidalMovement;
     private _settings: MiniBossSheet;
 
+    private _patternIndex: number = 0;
+    private _ringRotation: number = 0;
+
     public constructor(scene: Scene, x: number, y: number) {
         super(scene, x, y, 'sprites', 'ufoRed');
     }
@@ -96,6 +99,8 @@ export default class MiniBoss extends Entity {
         this.enableBody(true, x, y, true, true);
         this._movement.setSpeed(this._settings.miniboss.speed);
         this._movement.reset(this);
+        this._patternIndex = 0;
+        this._ringRotation = 0;
         const health = this.getComponent(Health);
         health?.heal(health.max, false);
         this._shootTimer.reset({
@@ -127,12 +132,26 @@ export default class MiniBoss extends Entity {
         this.play('ufoShoot');
         this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
             this.setTexture('sprites', 'ufoRed');
-            this.getComponent(Weapon)?.shootSpread(
-                this,
-                this._settings.spreadshot.spread,
-                this._settings.spreadshot.num_bullets,
-                this._settings.spreadshot.angle
-            );
+            const weapon = this.getComponent(Weapon);
+
+            if (this._patternIndex % 2 === 0) {
+                const ringData = {...this._settings.spreadshot.projectile, color: 0x66ccff};
+                weapon?.shootRadialWithData(this, 24, ringData, this._ringRotation);
+                this._ringRotation += Math.PI / 24;
+            } else {
+                const spreadData = {...this._settings.spreadshot.projectile, color: 0xff9933};
+                const spreadWeapon = weapon;
+
+                for (let i = 0; i < this._settings.spreadshot.num_bullets; i++) {
+                    const angleStep = this._settings.spreadshot.spread /
+                        Math.max(1, this._settings.spreadshot.num_bullets - 1);
+                    const angle = this.rotation + this._settings.spreadshot.angle
+                        - this._settings.spreadshot.spread / 2 + i * angleStep;
+                    spreadWeapon?.shootWithData(this, spreadData, angle);
+                }
+            }
+
+            this._patternIndex++;
             this.scene.sound.play('sfx_laser2');
         });
     }
