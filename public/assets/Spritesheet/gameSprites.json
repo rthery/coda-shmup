@@ -5,7 +5,7 @@
 			"format": "RGBA8888",
 			"size": {
 				"w": 1013,
-				"h": 369
+				"h": 340
 			},
 			"scale": 1,
 			"frames": [
@@ -472,27 +472,6 @@
 					}
 				},
 				{
-					"filename": "ui_crosshair",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 60,
-						"h": 60
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 60,
-						"h": 60
-					},
-					"frame": {
-						"x": 704,
-						"y": 237,
-						"w": 60,
-						"h": 60
-					}
-				},
-				{
 					"filename": "playerTurretTwin",
 					"rotated": false,
 					"trimmed": false,
@@ -508,7 +487,7 @@
 					},
 					"frame": {
 						"x": 704,
-						"y": 301,
+						"y": 237,
 						"w": 60,
 						"h": 36
 					}
@@ -529,7 +508,7 @@
 					},
 					"frame": {
 						"x": 704,
-						"y": 341,
+						"y": 277,
 						"w": 60,
 						"h": 26
 					}
@@ -759,8 +738,8 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 820,
-						"y": 282,
+						"x": 704,
+						"y": 307,
 						"w": 14,
 						"h": 31
 					}

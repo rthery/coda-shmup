@@ -19,10 +19,12 @@ export default class LevelUpScene extends Scene {
     private static readonly CARD_PADDING: number = 40;
     private static readonly ICON_SCALE: number = 3;
     private static readonly ICON_TEXT_GAP: number = 32;
-    private static readonly SELECTED_CARD_SCALE: number = 1.04;
-    private static readonly CARD_SCALE: number = 0.96;
+    // The selected card rises over its shadow, the others stay down and dimmer, like the pause buttons
+    private static readonly CARD_LIFT: number = 14;
+    private static readonly CARD_SHADOW_ALPHA: number = 0.45;
+    private static readonly CARD_SHADOW_RADIUS: number = 18;
     private static readonly CARD_ALPHA: number = 0.8;
-    // Rank pips in the header, left of the crosshair: slanted like the combo pips
+    // Rank pips on the right of the header: slanted like the combo pips
     private static readonly PIP_WIDTH: number = 26;
     private static readonly PIP_HEIGHT: number = 20;
     private static readonly PIP_SKEW: number = 7;
@@ -49,7 +51,6 @@ export default class LevelUpScene extends Scene {
     private _player: Player;
     private _upgrades: UpgradeData[];
     private _cards: GameObjects.Container[];
-    private _crosshair: GameObjects.Image;
     private _hintText: GameObjects.Text;
     private _selectedIndex: number;
     // null until the first update, so a direction held when the screen opens doesn't move the selection
@@ -113,8 +114,6 @@ export default class LevelUpScene extends Scene {
             this._cards.push(this.createCard(upgrade, index, centerX, cardY));
         });
 
-        this._crosshair = this.add.image(0, 0, "sprites", "ui_crosshair").setVisible(false);
-
         this._hintText = this.add.text(centerX, UiLayout.HEIGHT - 200,
             this.getHintText(this.gameInputManager.activeInputType),
             {fontSize: '32px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5).setAlpha(0);
@@ -165,7 +164,13 @@ export default class LevelUpScene extends Scene {
             {fontSize: '36px', color: LevelUpScene.NEXT_VALUE_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
 
         const pips = this.createRankPips(upgrade, halfWidth - LevelUpScene.PIPS_RIGHT_MARGIN, top + UiUtils.HEADER_HEIGHT / 2);
-        return this.add.container(x, y, [panel, categoryText, icon, titleText, currentText, nextText, ...pips]);
+        // Where the card rests: it shows below the card once lifted
+        const shadow = this.add.graphics().setVisible(false)
+            .fillStyle(0x000000, LevelUpScene.CARD_SHADOW_ALPHA)
+            .fillRoundedRect(-halfWidth, top + LevelUpScene.CARD_LIFT, LevelUpScene.CARD_WIDTH, LevelUpScene.CARD_HEIGHT,
+                LevelUpScene.CARD_SHADOW_RADIUS);
+        return this.add.container(x, y, [shadow, panel, categoryText, icon, titleText, currentText, nextText, ...pips])
+            .setData('restY', y).setData('shadow', shadow);
     }
 
     // One pip per rank: gold when owned, the one this pick adds blinks
@@ -202,9 +207,6 @@ export default class LevelUpScene extends Scene {
         this._isReady = true;
         // Placed again now the cards have landed
         this.select(this._selectedIndex);
-        this._crosshair.setVisible(true);
-        this.tweens.add({targets: this._crosshair, scale: {from: 2, to: 1}, angle: {from: -90, to: 0}, duration: 250,
-            ease: 'Back.easeOut'});
         this.tweens.add({targets: this._hintText, alpha: 1, duration: 250});
     }
 
@@ -245,13 +247,10 @@ export default class LevelUpScene extends Scene {
 
         this._cards.forEach((card, cardIndex) => {
             const isSelected: boolean = cardIndex === index;
-            card.setScale(isSelected ? LevelUpScene.SELECTED_CARD_SCALE : LevelUpScene.CARD_SCALE)
+            card.setY(card.getData('restY') - (isSelected ? LevelUpScene.CARD_LIFT : 0))
                 .setAlpha(isSelected ? 1 : LevelUpScene.CARD_ALPHA);
+            (card.getData('shadow') as GameObjects.Graphics).setVisible(isSelected);
         });
-
-        const selectedCard = this._cards[index];
-        const crosshairOffset: number = LevelUpScene.CARD_WIDTH / 2 * LevelUpScene.SELECTED_CARD_SCALE - 70;
-        this._crosshair.setPosition(selectedCard.x + crosshairOffset, selectedCard.y + UiUtils.HEADER_HEIGHT / 2);
     }
 
     private choose(index: number) {
