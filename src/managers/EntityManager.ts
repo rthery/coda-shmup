@@ -19,6 +19,8 @@ import Sfx from "../audio/Sfx.ts";
 export default class EntityManager extends Plugins.ScenePlugin {
     public static readonly PLUGIN_KEY: string = 'EntityManager';
     public static readonly MAPPING_NAME: string = 'entityManager';
+    // Dev cheat, kept across restarts: N stops new enemies from spawning
+    private static _isSpawningDisabled: boolean = false;
 
     private static readonly XP_GEM_SCATTER_MIN_RADIUS: number = 24;
     private static readonly XP_GEM_SCATTER_MAX_RADIUS: number = 56;
@@ -482,6 +484,11 @@ export default class EntityManager extends Plugins.ScenePlugin {
         }
     }
 
+    public static toggleSpawning() {
+        EntityManager._isSpawningDisabled = !EntityManager._isSpawningDisabled;
+        console.log("[Cheat] Enemy spawning " + (EntityManager._isSpawningDisabled ? "off" : "on"));
+    }
+
     // At most one pickup per kill, each one rare and spaced out by its cooldown
     private rollPickupDrop(x: number, y: number) {
         const runTime: number = this.scene!.registry.get(RegistryConstants.Keys.RUN_TIME) ?? 0;
@@ -581,7 +588,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
         const difficulty = this._difficulty.at(this.scene!.registry.get(RegistryConstants.Keys.RUN_TIME) ?? 0);
         this.scene!.time.delayedCall(difficulty.spawnInterval, this.spawnEnemy, [], this);
 
-        if (this._enemies.countActive(true) >= difficulty.maxEnemies) {
+        if (EntityManager._isSpawningDisabled || this._enemies.countActive(true) >= difficulty.maxEnemies) {
             return;
         }
 

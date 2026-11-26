@@ -69,6 +69,8 @@ export default class MainGameScene extends Scene {
                     this.jumpThreatLevel(1);
                 else if (event.key === '-')
                     this.jumpThreatLevel(-1);
+                else if (event.key.toLowerCase() === 'n')
+                    EntityManager.toggleSpawning();
             });
         }
 

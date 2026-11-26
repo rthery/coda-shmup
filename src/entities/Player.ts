@@ -40,6 +40,8 @@ export default class Player extends Entity {
     private static readonly LASER_DETUNE: number = 150;
     // Dev cheat, kept across restarts: F toggles the player's firing
     private static _isFiringDisabled: boolean = false;
+    // Dev cheat, kept across restarts: I makes the ship take no damage
+    private static _isInvulnerable: boolean = false;
     // Safety net for M, in case an upgrade never stops being available
     private static readonly CHEAT_MAX_PICKS: number = 20;
 
@@ -86,6 +88,13 @@ export default class Player extends Entity {
             this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.F).on('down', () => {
                 Player._isFiringDisabled = !Player._isFiringDisabled;
                 console.log("[Cheat] Player firing " + (Player._isFiringDisabled ? "off" : "on"));
+            });
+            this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.I).on('down', () => {
+                Player._isInvulnerable = !Player._isInvulnerable;
+                const health = this.getComponent(Health);
+                if (health)
+                    health.enabled = !Player._isInvulnerable;
+                console.log("[Cheat] Player invulnerable " + (Player._isInvulnerable ? "on" : "off"));
             });
             // L grants the XP missing to reach the next level
             this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.L).on('down', () => {
@@ -326,6 +335,10 @@ export default class Player extends Entity {
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
         super.preUpdate(timeSinceLaunch, deltaTime);
+        // The end of a hit's blink turns health back on: the cheat keeps it off
+        const health = this.getComponent(Health);
+        if (Player._isInvulnerable && health)
+            health.enabled = false;
 
         // Arrow keys, touch or gamepad
         this._moveDirection.copy(this.scene.gameInputManager.moveDirection);
