@@ -12,6 +12,9 @@ export default class MainUIScene extends Scene {
     private static readonly MARGIN: number = 64;
     private static readonly LIFE_ICON_SCALE: number = 2;
     private static readonly LIFE_ICON_SPACING: number = 12;
+    // Smaller and tighter than the hull icons, so 3 hull points and 3 shield cells stay clear of the run clock
+    private static readonly SHIELD_ICON_SCALE: number = 1.3;
+    private static readonly SHIELD_ICON_SPACING: number = 6;
     private static readonly LOST_LIFE_ALPHA: number = 0.25;
     private static readonly XP_BAR_Y: number = 216;
     private static readonly XP_BAR_X: number = 200;
@@ -368,15 +371,21 @@ export default class MainUIScene extends Scene {
             .strokePoints([{x: right - length, y: inset}, {x: right, y: inset}, {x: right, y: inset + length}]);
     }
 
-    // One icon per max life, lost lives dimmed
+    // One ship icon per hull point, then one shield badge per shield cell, lost ones dimmed
     private updateLifeIcons(current: number, max: number, previous: number) {
         const isFirstBuild: boolean = this._lifeIcons.length === 0;
         while (this._lifeIcons.length < max) {
-            const icon = this.add.image(0, 0, "sprites", "playerLife3_blue").setScale(MainUIScene.LIFE_ICON_SCALE);
-            icon.setPosition(
-                MainUIScene.MARGIN + icon.displayWidth / 2 +
-                this._lifeIcons.length * (icon.displayWidth + MainUIScene.LIFE_ICON_SPACING),
-                MainUIScene.MARGIN + icon.displayHeight / 2);
+            const isHull: boolean = this._lifeIcons.length < Player.HULL_POINTS;
+            const scale: number = isHull ? MainUIScene.LIFE_ICON_SCALE : MainUIScene.SHIELD_ICON_SCALE;
+            const icon = this.add.image(0, 0, "sprites", isHull ? "playerLife3_blue" : "ui_shield_cell")
+                .setScale(scale).setData('baseScale', scale);
+            const previousIcon: GameObjects.Image | undefined = this._lifeIcons[this._lifeIcons.length - 1];
+            const spacing: number = isHull || this._lifeIcons.length === Player.HULL_POINTS
+                ? MainUIScene.LIFE_ICON_SPACING : MainUIScene.SHIELD_ICON_SPACING;
+            const left: number = previousIcon
+                ? previousIcon.x + previousIcon.displayWidth / 2 + spacing : MainUIScene.MARGIN;
+            // Centered on the hull icons' row
+            icon.setPosition(left + icon.displayWidth / 2, MainUIScene.MARGIN + 25 * MainUIScene.LIFE_ICON_SCALE / 2);
             this._lifeRow.add(icon);
             this._lifeIcons.push(icon);
         }
@@ -396,15 +405,16 @@ export default class MainUIScene extends Scene {
 
     private playLifeLost(icon: GameObjects.Image) {
         // A white copy breaks off and falls away
-        const shard = this.add.image(icon.x, icon.y, "sprites", "playerLife3_blue")
-            .setScale(MainUIScene.LIFE_ICON_SCALE).setTintFill(0xffffff);
+        const baseScale: number = icon.getData('baseScale');
+        const shard = this.add.image(icon.x, icon.y, "sprites", icon.frame.name)
+            .setScale(baseScale).setTintFill(0xffffff);
         this._lifeRow.add(shard);
         this.tweens.add({
             targets: shard,
             y: shard.y + 80,
             angle: 35,
             alpha: 0,
-            scale: MainUIScene.LIFE_ICON_SCALE * 1.4,
+            scale: baseScale * 1.4,
             duration: 500,
             ease: 'Quad.easeIn',
             onComplete: () => shard.destroy()
@@ -431,7 +441,7 @@ export default class MainUIScene extends Scene {
     private popIcon(icon: GameObjects.Image) {
         this.tweens.add({
             targets: icon,
-            scale: {from: MainUIScene.LIFE_ICON_SCALE * 1.4, to: MainUIScene.LIFE_ICON_SCALE},
+            scale: {from: icon.getData('baseScale') * 1.4, to: icon.getData('baseScale')},
             duration: 300,
             ease: 'Back.easeOut'
         });

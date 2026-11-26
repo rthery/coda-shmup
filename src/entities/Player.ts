@@ -11,10 +11,13 @@ import Experience from "../components/Experience.ts";
 import Thrusters from "../components/Thrusters.ts";
 import WingTrails from "../components/WingTrails.ts";
 import Turret from "../components/Turret.ts";
+import ShieldBubble from "../components/ShieldBubble.ts";
 import type {UpgradeData, UpgradeId, UpgradePreview} from "../gameData/UpgradesData.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 
 export default class Player extends Entity {
+    // Lives the ship starts with: shield cells come on top and are lost first
+    public static readonly HULL_POINTS: number = 3;
     private static readonly WING_TRAILS_SPEED_RATIO: number = 0.5;
     // The turret fires once it points this close to its target
     private static readonly TURRET_AIM_TOLERANCE: number = Phaser.Math.DegToRad(15);
@@ -79,7 +82,7 @@ export default class Player extends Entity {
     }
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
-        this.addComponent(new Health(3, this));
+        this.addComponent(new Health(Player.HULL_POINTS, this));
         this.addComponent(new Invulnerability(Player.INVULNERABILITY_DURATION, this));
         this.addComponent(new Movement());
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
@@ -87,10 +90,13 @@ export default class Player extends Entity {
         this.addComponent(new Thrusters(this));
         this.addComponent(new WingTrails(this));
         this.addComponent(new Turret(this));
+        this.addComponent(new ShieldBubble(this));
+        this.getComponent(Health)?.on(Health.CHANGE_EVENT, () => this.updateShieldBubble());
         this.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
             this.getComponent(Thrusters)?.hide();
             this.getComponent(WingTrails)?.hide();
             this.getComponent(Turret)?.hide();
+            this.getComponent(ShieldBubble)?.hide();
         });
 
         this.angle = -90;
@@ -149,15 +155,21 @@ export default class Player extends Entity {
                 const speed: number = this._playerShipData.movementSpeed * this._moveSpeedMultiplier * 1000;
                 return Player.preview("SPEED", speed, speed * value);
             }
-            case 'maxHealth': {
-                const lives: number = this.getComponent(Health)?.max ?? 0;
-                return Player.preview("LIVES", lives, lives + value);
+            case 'shieldCell': {
+                const cells: number = (this.getComponent(Health)?.max ?? 0) - Player.HULL_POINTS;
+                return Player.preview("SHIELD CELLS", cells, cells + value);
             }
             case 'pierce':
                 return Player.preview("PIERCE", this._bulletData.pierce, this._bulletData.pierce + value);
             case 'magnet':
                 return Player.preview("MAGNET", this._magnetRadius, this._magnetRadius + value);
         }
+    }
+
+    // Health above the hull is shield: hits take it first
+    private updateShieldBubble() {
+        const current: number = this.getComponent(Health)?.current ?? 0;
+        this.getComponent(ShieldBubble)?.setCells(Math.max(0, current - Player.HULL_POINTS));
     }
 
     private static preview(stat: string, current: number, next: number, decimals: number = 0,
@@ -185,7 +197,7 @@ export default class Player extends Entity {
                 this.getComponent(Thrusters)?.upgrade();
                 this.getComponent(Movement)?.setSpeed(this._playerShipData.movementSpeed * this._moveSpeedMultiplier);
                 break;
-            case 'maxHealth':
+            case 'shieldCell':
                 this.getComponent(Health)?.increaseMax(upgrade.value);
                 break;
             case 'pierce':
@@ -238,6 +250,7 @@ export default class Player extends Entity {
             ? Phaser.Math.Angle.Between(this.x, this.y, nearestTarget.x, nearestTarget.y) : null;
         turret?.aim(targetRotation);
         turret?.update(deltaTime);
+        this.getComponent(ShieldBubble)?.update();
 
         const isInRange: boolean = nearestTarget !== null && Phaser.Math.Distance.Between(this.x, this.y,
             nearestTarget.x, nearestTarget.y) <= (this.getComponent(Weapon)?.range ?? 0);

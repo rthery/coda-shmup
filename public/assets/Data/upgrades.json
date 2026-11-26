@@ -40,12 +40,12 @@
     "maxRank": 5
   },
   {
-    "id": "maxHealth",
+    "id": "shieldCell",
     "category": "ship",
-    "title": "HULL PLATING",
-    "description": "+1 max life, full repair",
+    "title": "SHIELD CELL",
+    "description": "+1 shield, full recharge",
     "value": 1,
-    "maxRank": 5
+    "maxRank": 3
   },
   {
     "id": "magnet",
