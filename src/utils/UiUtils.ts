@@ -56,28 +56,6 @@ export default class UiUtils {
         return minutes.toString().padStart(2, "0") + ":" + (seconds % 60).toString().padStart(2, "0");
     }
 
-    // Dim pulsing line, for input hints that shouldn't draw the eye
-    public static addHint(scene: Scene, x: number, y: number, text: string): GameObjects.Text {
-        const hint: GameObjects.Text = scene.add.text(x, y, text, {fontSize: '36px', color: '#fff', fontFamily: 'future'})
-            .setOrigin(0.5).setAlpha(UiUtils.HINT_ALPHA);
-        scene.tweens.add({
-            targets: hint,
-            alpha: UiUtils.HINT_ALPHA / 3,
-            duration: 900,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-        return hint;
-    }
-
-    // How a second player joins: the gamepad's confirm icon shows only once a gamepad is detected
-    public static joinHintParts(gamepadConfirmIcon: string | null): HintPart[] {
-        if (!gamepadConfirmIcon)
-            return ['P2: PRESS ENTER TO JOIN, B FOR A BOT'];
-        return ['P2: PRESS ENTER OR', {icon: gamepadConfirmIcon}, 'TO JOIN, B FOR A BOT'];
-    }
-
     // A hint line mixing text and button icons, centered on x. setButtonHint changes its parts
     public static addButtonHint(scene: Scene, x: number, y: number, parts: HintPart[],
                                 fontSize: number = 36): GameObjects.Container {
@@ -86,7 +64,7 @@ export default class UiUtils {
         return hint;
     }
 
-    // Like addHint, with button icons
+    // Dim pulsing hint, for prompts that shouldn't draw the eye
     public static addPulsingButtonHint(scene: Scene, x: number, y: number, parts: HintPart[]): GameObjects.Container {
         const hint: GameObjects.Container = UiUtils.addButtonHint(scene, x, y, parts).setAlpha(UiUtils.HINT_ALPHA);
         scene.tweens.add({

@@ -188,7 +188,7 @@ export default class GameOverScene extends Phaser.Scene {
             case 'touch': return ['TAP TO PLAY AGAIN'];
             case 'gamepad': return [inputManager.gamepadHintPart('confirm'), 'OR', inputManager.gamepadHintPart('start'),
                 'TO PLAY AGAIN'];
-            default: return ['SPACE TO PLAY AGAIN'];
+            default: return [inputManager.keyHintPart('Space'), 'TO PLAY AGAIN'];
         }
     }
 

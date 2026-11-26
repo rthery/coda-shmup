@@ -152,7 +152,8 @@ export default class PauseScene extends Scene {
             case 'touch': return ['TAP AN OPTION'];
             case 'gamepad': return [inputManager.gamepadHintPart('confirm'), 'TO SELECT,',
                 inputManager.gamepadHintPart('start'), 'TO RESUME'];
-            default: return ['SPACE TO SELECT, ESC TO RESUME'];
+            default: return [inputManager.keyHintPart('Space'), 'TO SELECT,', inputManager.keyHintPart('Escape'),
+                'TO RESUME'];
         }
     }
 

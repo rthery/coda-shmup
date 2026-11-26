@@ -284,9 +284,15 @@ export default class LevelUpScene extends Scene {
                     inputManager.gamepadHintPart('confirm', padIndex), 'TO PICK'];
             }
         }
-        if (device.type === 'keyboard')
-            return [device.keys === 'wasd' ? 'W / S TO CHOOSE, SPACE TO PICK' : 'UP / DOWN TO CHOOSE, ENTER TO PICK'];
-        return ['UP / DOWN TO CHOOSE, SPACE TO PICK'];
+        const inputManager = this.gameInputManager;
+        const key = (code: string): HintPart => inputManager.keyHintPart(code);
+        if (device.type === 'keyboard' && device.keys === 'arrows')
+            return [key('ArrowUp'), key('ArrowDown'), 'TO CHOOSE,', key('Enter'), 'TO PICK'];
+        // Player 1 reads WASD and the arrows: the arrows are the hint, unless player 2 took them
+        const areArrowsTaken: boolean = device.type === 'keyboard'
+            || (device.type === 'any' && !!device.excluded?.some(owned => owned.type === 'keyboard' && owned.keys === 'arrows'));
+        return areArrowsTaken ? [key('KeyW'), key('KeyS'), 'TO CHOOSE,', key('Space'), 'TO PICK']
+            : [key('ArrowUp'), key('ArrowDown'), 'TO CHOOSE,', key('Space'), 'TO PICK'];
     }
 
     update() {

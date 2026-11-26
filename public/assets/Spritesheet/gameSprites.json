@@ -4,8 +4,8 @@
 			"image": "gameSprites.png",
 			"format": "RGBA8888",
 			"size": {
-				"w": 1024,
-				"h": 513
+				"w": 1013,
+				"h": 547
 			},
 			"scale": 1,
 			"frames": [
@@ -472,7 +472,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_playstation_cross",
+					"filename": "ui_key_arrow_down",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -493,7 +493,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_playstation_dpad_vertical",
+					"filename": "ui_key_arrow_up",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -514,7 +514,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_playstation_options",
+					"filename": "ui_key_b",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -619,7 +619,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_b",
+					"filename": "ui_key_enter",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -661,7 +661,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_dpad_vertical",
+					"filename": "ui_key_escape",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -682,7 +682,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_plus",
+					"filename": "ui_key_s",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -703,7 +703,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_xbox_a",
+					"filename": "ui_key_space",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -787,7 +787,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_xbox_dpad_vertical",
+					"filename": "ui_key_w",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -808,7 +808,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_xbox_menu",
+					"filename": "ui_key_z",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -829,24 +829,24 @@
 					}
 				},
 				{
-					"filename": "ui_crosshair",
+					"filename": "ui_pad_playstation_cross",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 60,
-						"h": 60
+						"w": 64,
+						"h": 64
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 60,
-						"h": 60
+						"w": 64,
+						"h": 64
 					},
 					"frame": {
 						"x": 908,
 						"y": 384,
-						"w": 60,
-						"h": 60
+						"w": 64,
+						"h": 64
 					}
 				},
 				{
@@ -864,7 +864,7 @@
 						"h": 30
 					},
 					"frame": {
-						"x": 972,
+						"x": 976,
 						"y": 410,
 						"w": 30,
 						"h": 30
@@ -885,8 +885,8 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 1006,
-						"y": 410,
+						"x": 976,
+						"y": 444,
 						"w": 14,
 						"h": 31
 					}
@@ -906,7 +906,7 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 972,
+						"x": 994,
 						"y": 444,
 						"w": 14,
 						"h": 31
@@ -927,10 +927,73 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 990,
-						"y": 445,
+						"x": 994,
+						"y": 479,
 						"w": 14,
 						"h": 31
+					}
+				},
+				{
+					"filename": "ui_pad_playstation_dpad_vertical",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 772,
+						"y": 390,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_playstation_options",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 840,
+						"y": 390,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_switch_b",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 908,
+						"y": 452,
+						"w": 64,
+						"h": 64
 					}
 				},
 				{
@@ -948,8 +1011,8 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 1008,
-						"y": 445,
+						"x": 976,
+						"y": 479,
 						"w": 14,
 						"h": 31
 					}
@@ -969,10 +1032,136 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 1008,
-						"y": 480,
+						"x": 976,
+						"y": 514,
 						"w": 14,
 						"h": 31
+					}
+				},
+				{
+					"filename": "ui_pad_switch_dpad_vertical",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 2,
+						"y": 266,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_switch_plus",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 70,
+						"y": 266,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_xbox_a",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 138,
+						"y": 266,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_xbox_dpad_vertical",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 206,
+						"y": 266,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_xbox_menu",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 274,
+						"y": 266,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_crosshair",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 60,
+						"h": 60
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 60,
+						"h": 60
+					},
+					"frame": {
+						"x": 342,
+						"y": 281,
+						"w": 60,
+						"h": 60
 					}
 				},
 				{
@@ -990,8 +1179,8 @@
 						"h": 36
 					},
 					"frame": {
-						"x": 772,
-						"y": 390,
+						"x": 406,
+						"y": 281,
 						"w": 60,
 						"h": 36
 					}
@@ -1011,8 +1200,8 @@
 						"h": 36
 					},
 					"frame": {
-						"x": 836,
-						"y": 390,
+						"x": 406,
+						"y": 321,
 						"w": 60,
 						"h": 36
 					}
@@ -1032,8 +1221,8 @@
 						"h": 26
 					},
 					"frame": {
-						"x": 772,
-						"y": 430,
+						"x": 2,
+						"y": 334,
 						"w": 60,
 						"h": 26
 					}
@@ -1053,8 +1242,8 @@
 						"h": 26
 					},
 					"frame": {
-						"x": 836,
-						"y": 430,
+						"x": 66,
+						"y": 334,
 						"w": 60,
 						"h": 26
 					}
@@ -1074,8 +1263,8 @@
 						"h": 13
 					},
 					"frame": {
-						"x": 900,
-						"y": 448,
+						"x": 130,
+						"y": 334,
 						"w": 57,
 						"h": 13
 					}
@@ -1095,8 +1284,8 @@
 						"h": 13
 					},
 					"frame": {
-						"x": 900,
-						"y": 465,
+						"x": 191,
+						"y": 334,
 						"w": 57,
 						"h": 13
 					}

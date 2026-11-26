@@ -5,7 +5,7 @@ import WingTrails from "../components/WingTrails.ts";
 import Turret from "../components/Turret.ts";
 import type {PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
-import UiUtils from "../utils/UiUtils.ts";
+import UiUtils, {type HintPart} from "../utils/UiUtils.ts";
 import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 import type SaveManager from "../managers/SaveManager.ts";
@@ -40,7 +40,7 @@ export default class HomeScene extends Phaser.Scene {
     private _title: Phaser.GameObjects.Container;
     // The title and the prompt, on the portrait frame
     private _frame: Phaser.GameObjects.Container;
-    private _startPrompt: Phaser.GameObjects.Text;
+    private _startPrompt: Phaser.GameObjects.Container;
     private _joinPrompt: Phaser.GameObjects.Container;
     private _started: boolean = false;
     private saveManager: SaveManager;
@@ -132,7 +132,7 @@ export default class HomeScene extends Phaser.Scene {
                 .setOrigin(0.5).setShadow(0, 8, '#000', 0, false, true),
         ]);
 
-        this._startPrompt = UiUtils.addHint(this, centerX, UiLayout.HEIGHT - 220,
+        this._startPrompt = UiUtils.addPulsingButtonHint(this, centerX, UiLayout.HEIGHT - 220,
             this._getPromptText(this.gameInputManager.activeInputType));
         this._joinPrompt = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 150, []).setAlpha(0.5);
         this._updateJoinPrompt();
@@ -163,19 +163,19 @@ export default class HomeScene extends Phaser.Scene {
 
     private _onInputTypeChanged(type: InputType): void {
         if (!this._started) {
-            this._startPrompt.setText(this._getPromptText(type));
+            UiUtils.setButtonHint(this._startPrompt, this._getPromptText(type));
             this._updateJoinPrompt();
         }
     }
 
-    private _getPromptText(type: InputType): string {
-        return type === 'touch' ? 'TAP TO START' : 'PRESS SPACE TO START';
+    private _getPromptText(type: InputType): HintPart[] {
+        return type === 'touch' ? ['TAP TO START'] : ['PRESS', this.gameInputManager.keyHintPart('Space'), 'TO START'];
     }
 
     // Until player 2 joins. No coop on touch
     private _updateJoinPrompt(): void {
         const inputManager = this.gameInputManager;
-        UiUtils.setButtonHint(this._joinPrompt, UiUtils.joinHintParts(inputManager.gamepadIcon('confirm')));
+        UiUtils.setButtonHint(this._joinPrompt, inputManager.joinHintParts());
         this._joinPrompt.setVisible(!this._joinedDevice && inputManager.activeInputType !== 'touch');
     }
 

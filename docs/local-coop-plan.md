@@ -62,6 +62,7 @@ Two players on one screen, each on their own device, or one player with a bot. T
 - Home screen: only Space starts the run (or a tap on touch). Before that, Enter or a gamepad's A makes player 2 join, and B adds a bot: its ship flies in next to player 1's, both labeled with their controls ("P1 · WASD", "P2 · ARROWS"). The joined device goes to `MainGameScene` in the scene data.
 - During a run, `MainGameScene.updateJoining()` lets a second player in with the confirm of a key set or pad player 1 didn't use up to the last frame (Space, Enter or A). `EntityManager.joinPlayer()` flies the ship in from below the screen next to player 1, briefly invulnerable. The device goes into player 1's `excluded` list.
 - B adds a bot instead. `BotInput` steers toward its teammate past `FOLLOW_DISTANCE`, away from enemies inside `DANGER_RADIUS`, and toward the nearest free star. On level-up it picks a random card after `BOT_PICK_DELAY`.
+- Every input hint shows key and button icons. Keys follow the keyboard's labels where the browser reports the layout (Chrome, Edge), so KeyW shows Z on AZERTY.
 - Join hints show the gamepad's confirm button icon (Xbox A, PlayStation cross or Switch B, from the pad's id) only once a gamepad is detected. Browsers only report a pad after one of its buttons is pressed.
 - The HUD shows how to join at the bottom while there's room (not on touch), and a "PLAYER 2 JOINED" or "BOT JOINED" banner.
 - Joining raises the difficulty and the XP curve to the new player count.

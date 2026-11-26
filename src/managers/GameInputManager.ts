@@ -46,6 +46,13 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private static readonly GAMEPAD_BUTTON_NAMES: Record<GamepadButton, string> = {
         confirm: 'A', start: 'START', dpadVertical: 'UP / DOWN'
     };
+    // Kenney Input Prompts, by physical key
+    private static readonly KEY_ICONS: Record<string, string> = {
+        Space: 'ui_key_space', Enter: 'ui_key_enter', Escape: 'ui_key_escape', ArrowUp: 'ui_key_arrow_up',
+        ArrowDown: 'ui_key_arrow_down', KeyW: 'ui_key_w', KeyS: 'ui_key_s', KeyB: 'ui_key_b',
+    };
+    // Keys whose label moves between layouts: KeyW is Z on AZERTY
+    private static readonly LAYOUT_KEY_ICONS: Record<string, string> = {w: 'ui_key_w', z: 'ui_key_z'};
     private static readonly KEY_SET_NAMES: readonly KeyboardKeySet[] = ['wasd', 'arrows'];
     private static readonly KEYBOARD_DEVICES: Record<KeyboardKeySet, InputDevice> = {
         wasd: {type: 'keyboard', keys: 'wasd'},
@@ -86,6 +93,8 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private _lastUsedDevice: InputDevice = GameInputManager.KEYBOARD_DEVICES.wasd;
     private readonly _gamepadDevices = new Map<number, InputDevice>();
     private readonly _keySetDirection = new Phaser.Math.Vector2();
+    // The keyboard's labels by physical key, where the browser tells them (Chrome, Edge)
+    private _keyLabels: Map<string, string> | null = null;
 
     constructor(pluginManager: Plugins.PluginManager) {
         super(pluginManager);
@@ -96,6 +105,8 @@ export default class GameInputManager extends Plugins.BasePlugin {
         this.game.events.on(Phaser.Core.Events.BLUR, () => this._heldKeyCodes.clear());
 
         this._anyDeviceInput = this.getInput({type: 'any'});
+        (navigator as Navigator & { keyboard?: { getLayoutMap(): Promise<Map<string, string>> } }).keyboard
+            ?.getLayoutMap().then(labels => this._keyLabels = labels).catch(() => this._keyLabels = null);
 
         console.log('[GameInputManager] Initialized');
     }
@@ -145,6 +156,21 @@ export default class GameInputManager extends Plugins.BasePlugin {
             || id.includes('dualshock') ? 'playstation'
             : id.includes('057e') || id.includes('nintendo') || id.includes('pro controller') ? 'switch' : 'xbox';
         return GameInputManager.GAMEPAD_ICONS[family][button];
+    }
+
+    // A key's icon, by physical position, labeled as on this keyboard when the browser tells
+    public keyHintPart(code: string): HintPart {
+        const label: string | undefined = this._keyLabels?.get(code);
+        const icon: string | undefined = (label && GameInputManager.LAYOUT_KEY_ICONS[label])
+            || GameInputManager.KEY_ICONS[code];
+        return icon ? {icon} : code;
+    }
+
+    // How a second player joins. The gamepad's icon shows only once a gamepad is detected
+    public joinHintParts(): HintPart[] {
+        const gamepadIcon: string | null = this.gamepadIcon('confirm');
+        return ['P2: PRESS', this.keyHintPart('Enter'), ...(gamepadIcon ? ['OR', {icon: gamepadIcon}] : []),
+            'TO JOIN,', this.keyHintPart(GameInputManager.BOT_KEY_CODE), 'FOR A BOT'];
     }
 
     // The icon, or the button's name when no gamepad reports one
