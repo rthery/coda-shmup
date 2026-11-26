@@ -344,11 +344,12 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this._laserFlashFX.particleTint = fx.flashTint;
         this._laserFlashFX.explode(1, x, y);
 
+        const size: number = fx.impactSize ?? 1;
         this._laserSparksFX.ops.tint.loadConfig({ tint: fx.sparkTints });
-        this._laserSparksFX.explode(16, x, y);
+        this._laserSparksFX.explode(Math.round(16 * size), x, y);
 
         this._laserGlowFX.ops.tint.loadConfig({ tint: fx.glowTints });
-        this._laserGlowFX.explode(8, x, y);
+        this._laserGlowFX.explode(Math.round(8 * size), x, y);
     }
 
     public spawnCollisionImpact(x: number, y: number) {

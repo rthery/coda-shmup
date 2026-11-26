@@ -22,6 +22,14 @@ export default class Player extends Entity {
     // The turret fires once it points this close to its target
     private static readonly TURRET_AIM_TOLERANCE: number = Phaser.Math.DegToRad(15);
     private static readonly INVULNERABILITY_DURATION: number = 500; // ms
+    // HEAVY LASERS: the bolt's look by rank, from the thin default to a white-hot core.
+    // The body follows each texture's height: the circle stays centered on the bolt's tip
+    private static readonly HEAVY_LASER_LOOKS = [
+        {fromRank: 0, texture: 'laserBlue01', scale: 1.8, offsetX: 49, offsetY: -0.5, impactSize: 1},
+        {fromRank: 1, texture: 'laserBlue12', scale: 1.8, offsetX: 52, offsetY: 1.5, impactSize: 1.4},
+        {fromRank: 3, texture: 'laserBlue12', scale: 2.1, offsetX: 52, offsetY: 1.5, impactSize: 1.8},
+        {fromRank: 5, texture: 'laserBlue16', scale: 2.2, offsetX: 49, offsetY: 1.5, impactSize: 2.5},
+    ];
     // Random pitch, in cents, so rapid fire doesn't sound like a machine
     private static readonly LASER_DETUNE: number = 150;
     // Dev cheat, kept across restarts: F toggles the player's firing
@@ -180,6 +188,28 @@ export default class Player extends Entity {
         }
     }
 
+    // What each upgrade shows on the ship, its turret or its lasers
+    private updateUpgradeLook(upgrade: UpgradeData) {
+        const rank: number = this.getUpgradeRank(upgrade.id);
+        const maxRank: number = upgrade.maxRank ?? rank;
+        switch (upgrade.id) {
+            case 'fireRate':
+                this.getComponent(Turret)?.setRapidFire(rank / maxRank, rank >= maxRank);
+                break;
+            case 'range':
+                this.getComponent(Turret)?.setAimGuide(rank / maxRank);
+                break;
+            case 'damage': {
+                const look = Player.HEAVY_LASER_LOOKS.filter(look => rank >= look.fromRank).pop()!;
+                this._bulletData.texture = look.texture;
+                this._bulletData.scale = look.scale;
+                this._bulletData.body = {...this._bulletData.body, offsetX: look.offsetX, offsetY: look.offsetY};
+                this._bulletData.fx = {...this._bulletData.fx, impactSize: look.impactSize};
+                break;
+            }
+        }
+    }
+
     // Health above the hull is shield: hits take it first
     private updateShieldBubble() {
         const current: number = this.getComponent(Health)?.current ?? 0;
@@ -226,6 +256,7 @@ export default class Player extends Entity {
                 break;
         }
 
+        this.updateUpgradeLook(upgrade);
         console.log("[Player] Upgrade applied: " + upgrade.id);
     }
 
@@ -266,12 +297,12 @@ export default class Player extends Entity {
         const nearestTarget = this.findNearestTarget();
         const targetRotation: number | null = nearestTarget
             ? Phaser.Math.Angle.Between(this.x, this.y, nearestTarget.x, nearestTarget.y) : null;
-        turret?.aim(targetRotation);
-        turret?.update(deltaTime);
-        this.getComponent(ShieldBubble)?.update();
-
         const isInRange: boolean = nearestTarget !== null && Phaser.Math.Distance.Between(this.x, this.y,
             nearestTarget.x, nearestTarget.y) <= (this.getComponent(Weapon)?.range ?? 0);
+        turret?.aim(targetRotation);
+        turret?.setGuideTarget(isInRange ? nearestTarget : null);
+        turret?.update(deltaTime);
+        this.getComponent(ShieldBubble)?.update();
         if (!Player._isFiringDisabled && targetRotation !== null && isInRange && timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000
             && turret?.isAimedAt(targetRotation, Player.TURRET_AIM_TOLERANCE)) {
             this._shootDirection.setToPolar(turret.rotation);

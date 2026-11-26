@@ -14,6 +14,8 @@ export type BulletData = {
 }
 
 export type BulletFxData = {
+    // Multiplies the impact's sparks, 1 when missing
+    impactSize?: number;
     flashTint: number;
     sparkTints: number[];
     glowTints: number[];
