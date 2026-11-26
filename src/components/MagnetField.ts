@@ -66,7 +66,7 @@ export default class MagnetField implements IComponent {
         this._graphics.lineStyle(MagnetField.TETHER_WIDTH, MagnetField.COLOR, MagnetField.TETHER_ALPHA);
         gems.getChildren().forEach(child => {
             const gem = child as XpGem;
-            if (gem.active && gem.isAttracted)
+            if (gem.active && gem.isAttracted && gem.target === this._ship)
                 this._graphics.lineBetween(x, y, gem.x, gem.y);
         });
     }

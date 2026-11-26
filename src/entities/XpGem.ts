@@ -1,5 +1,6 @@
 import {GameObjects, Physics, Tweens} from "phaser";
-import Player from "./Player.ts";
+import type Player from "./Player.ts";
+import type Team from "../Team.ts";
 
 export default class XpGem extends Physics.Arcade.Sprite {
     private static readonly START_ATTRACT_SPEED: number = 0.4; // px/ms
@@ -8,20 +9,26 @@ export default class XpGem extends Physics.Arcade.Sprite {
 
     public readonly value: number = 1;
 
-    private _target: Player;
+    private _team: Team;
+    private _target: Player | null = null;
     private _attracted: boolean = false;
     private _attractSpeed: number = 0;
     private _tween: Tweens.Tween;
     private _trailFX: GameObjects.Particles.ParticleEmitter;
     private readonly _directionToTarget: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
-    // Flying to the player, once inside its magnet radius
+    // Flying to a player, once inside its magnet radius
     public get isAttracted(): boolean {
         return this._attracted;
     }
 
-    public init(target: Player, trailFX: GameObjects.Particles.ParticleEmitter) {
-        this._target = target;
+    // The player it flies to
+    public get target(): Player | null {
+        return this._target;
+    }
+
+    public init(team: Team, trailFX: GameObjects.Particles.ParticleEmitter) {
+        this._team = team;
         this._trailFX = trailFX;
         this.setTexture('sprites', 'star_gold');
 
@@ -43,13 +50,15 @@ export default class XpGem extends Physics.Arcade.Sprite {
     public enable(x: number, y: number) {
         this.enableBody(true, x, y, true, true);
         this._attracted = false;
+        this._target = null;
         this._attractSpeed = XpGem.START_ATTRACT_SPEED;
         this._tween.restart();
     }
 
     // MAGNET pickup: flies to the player from anywhere in the arena
-    public attract() {
+    public attract(player: Player) {
         this._attracted = true;
+        this._target = player;
     }
 
     public disable() {
@@ -60,16 +69,20 @@ export default class XpGem extends Physics.Arcade.Sprite {
     update(timeSinceLaunch: number, deltaTime: number) {
         super.update(timeSinceLaunch, deltaTime);
 
-        if (!this.active || !this._target.active)
+        if (!this.active)
             return;
 
-        // Once in the player's magnet radius, fly to the player faster and faster
-        if (!this._attracted
-            && Phaser.Math.Distance.Between(this.x, this.y, this._target.x, this._target.y) < this._target.magnetRadius) {
-            this._attracted = true;
+        // Once in a player's magnet radius, fly to that player faster and faster
+        if (!this._attracted) {
+            this._target = this._team.players.find(player => player.active
+                && Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < player.magnetRadius) ?? null;
+            this._attracted = this._target !== null;
         }
+        // Its player is gone: the nearest one takes it
+        if (this._attracted && !this._target?.active)
+            this._target = this._team.nearestPlayer(this.x, this.y);
 
-        if (this._attracted) {
+        if (this._attracted && this._target) {
             this._attractSpeed += XpGem.ATTRACT_ACCELERATION * deltaTime;
             this._directionToTarget.set(this._target.x - this.x, this._target.y - this.y).normalize();
             const step: number = this._attractSpeed * deltaTime;

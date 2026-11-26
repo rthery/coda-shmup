@@ -8,6 +8,7 @@ import CheatManager from "../managers/CheatManager.ts";
 import GameConstants from "../GameConstants.ts";
 import Experience from "../components/Experience.ts";
 import Team from "../Team.ts";
+import type {InputDevice} from "../managers/PlayerInput.ts";
 import Movement from "../components/Movement.ts";
 import Player from "../entities/Player.ts";
 import DifficultyCurve from "../utils/DifficultyCurve.ts";
@@ -42,11 +43,24 @@ export default class MainGameScene extends Scene {
     private _background: Phaser.GameObjects.TileSprite;
     private _planet: Phaser.GameObjects.Image;
     private _difficulty: DifficultyCurve;
-    private player: Player;
+    private _team: Team;
+    private _devices: InputDevice[];
     private readonly cameraLookAhead: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
     constructor() {
         super(GameConstants.SceneKeys.MAIN_GAME);
+    }
+
+    // noinspection JSUnusedGlobalSymbols
+    init(data: { devices?: InputDevice[] }) {
+        this._devices = data?.devices ?? MainGameScene.defaultDevices();
+    }
+
+    // Solo on every device. Dev builds: ?players=2 plays coop on WASD and the arrows
+    private static defaultDevices(): InputDevice[] {
+        if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('players') === '2')
+            return [{type: 'keyboard', keys: 'wasd'}, {type: 'keyboard', keys: 'arrows'}];
+        return [{type: 'any'}];
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -72,34 +86,20 @@ export default class MainGameScene extends Scene {
         // Keep the camera still during the player intro, then follow the player
         this.cameras.main.centerOn(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2);
         const team = new Team(difficultyData.xp);
+        this._team = team;
         this.game.events.emit(GameConstants.Events.TEAM_CREATED_EVENT, team);
-        const player = this.entityManager.initAndSpawnPlayer(team, () => {
-            this.cameras.main.startFollow(player, true, 0.15, 0.15);
+        const inputs = this._devices.map(device => this.gameInputManager.getInput(device));
+        const players = this.entityManager.initAndSpawnPlayers(team, inputs, () => {
+            this.cameras.main.startFollow(players[0], true, 0.15, 0.15);
         });
-        this.player = player;
         this.cheatManager.init({team, jumpThreatLevel: step => this.jumpThreatLevel(step)});
-        player.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
-            // Hide the player and let its explosions play before showing the game over screen
-            player.disableBody(true, true);
-            this.playPlayerDeath(player.x, player.y);
-            this.time.delayedCall(MainGameScene.DEATH_SEQUENCE_DURATION, this.endGame, [], this);
-        }, this);
+        players.forEach(player => this.initPlayer(player));
 
         // Freeze the game while the player picks an upgrade
         team.experience.on(Experience.LEVEL_UP_EVENT, (level: number) => {
             this.registry.set(RegistryConstants.Keys.PLAYER_LEVEL, level);
             this.scene.pause();
-            this.scene.launch(GameConstants.SceneKeys.LEVEL_UP, {player, level});
-        }, this);
-
-        // A hit breaks the combo
-        player.getComponent(Health)?.on(Health.CHANGE_EVENT, (current: number, previous: number) => {
-            if (current >= previous)
-                return;
-
-            if (this._killStreak > 0)
-                this.game.events.emit(GameConstants.Events.COMBO_BROKEN_EVENT);
-            this.setKillStreak(0);
+            this.scene.launch(GameConstants.SceneKeys.LEVEL_UP, {player: players[0], level});
         }, this);
 
         this.game.events.on(GameConstants.Events.ENEMY_KILLED_EVENT, this.onEnemyKilled, this);
@@ -115,6 +115,27 @@ export default class MainGameScene extends Scene {
         this.setKillStreak(0);
 
         console.log("MainGameScene created");
+    }
+
+    private initPlayer(player: Player) {
+        player.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
+            // Hide the player. Once no player is left, let the explosions play before showing the game over screen
+            player.disableBody(true, true);
+            if (this._team.players.some(teammate => teammate.active))
+                return;
+            this.playPlayerDeath(player.x, player.y);
+            this.time.delayedCall(MainGameScene.DEATH_SEQUENCE_DURATION, this.endGame, [], this);
+        }, this);
+
+        // A hit on any player breaks the combo
+        player.getComponent(Health)?.on(Health.CHANGE_EVENT, (current: number, previous: number) => {
+            if (current >= previous)
+                return;
+
+            if (this._killStreak > 0)
+                this.game.events.emit(GameConstants.Events.COMBO_BROKEN_EVENT);
+            this.setKillStreak(0);
+        }, this);
     }
 
     private playPlayerDeath(x: number, y: number) {
@@ -223,7 +244,7 @@ export default class MainGameScene extends Scene {
 
     // From Escape, P or a gamepad's Start
     private openPause() {
-        if (this.scene.isActive(GameConstants.SceneKeys.PAUSE) || !this.player?.active)
+        if (this.scene.isActive(GameConstants.SceneKeys.PAUSE) || !this._team?.players.some(player => player.active))
             return;
         this.scene.pause();
         this.scene.launch(GameConstants.SceneKeys.PAUSE);
@@ -236,7 +257,7 @@ export default class MainGameScene extends Scene {
         }
 
         if (this.gameInputManager.restartJustPressed()) {
-            this.scene.restart();
+            this.scene.restart({devices: this._devices});
         }
 
         // update() doesn't run while the scene is paused, so level-up screens don't count
@@ -248,7 +269,7 @@ export default class MainGameScene extends Scene {
         }
 
         // Look ahead in the move direction: the follow offset is subtracted from the target position
-        const velocity = this.player.getComponent(Movement)?.velocity;
+        const velocity = this._team.players[0].getComponent(Movement)?.velocity;
         if (velocity) {
             const lookAheadTime = 250;
             const smoothing = 1 - Math.exp(-deltaTime / 200);

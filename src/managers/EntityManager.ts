@@ -6,6 +6,7 @@ import Player from "../entities/Player.ts";
 import XpGem from "../entities/XpGem.ts";
 import Pickup from "../entities/Pickup.ts";
 import type Team from "../Team.ts";
+import type PlayerInput from "./PlayerInput.ts";
 import Thrusters from "../components/Thrusters.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
@@ -26,11 +27,12 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private static readonly DAMAGE_NUMBER_DURATION: number = 600;
     private static readonly DAMAGE_NUMBER_JITTER: number = 16;
     private static readonly PLAYER_EXPLOSION_SIZE: number = 2;
+    private static readonly PLAYER_START_SPACING: number = 220;
     // Extra explosion per combo level above X1
     private static readonly EXPLOSION_PER_COMBO: number = 0.5;
     private static readonly PICKUP_POOL_SIZE: number = 8;
     private static readonly REPAIR_HULL_POINTS: number = 1;
-    // The BOMB ring sweeps the screen from the player and destroys each enemy it reaches
+    // The BOMB ring sweeps the screen from the player who took it and destroys each enemy it reaches
     private static readonly BOMB_RING_DURATION: number = 450; // ms
     private static readonly BOMB_RING_WIDTH: number = 28;
     private static readonly MAGNET_RING_RADIUS: number = 500;
@@ -79,7 +81,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
     }
 
     private _team: Team;
-    private _player: Player;
+    private _players: Player[];
     private _playerBullets: Physics.Arcade.Group;
     private _enemies: Physics.Arcade.Group;
     private _enemyBullets: Physics.Arcade.Group;
@@ -114,32 +116,43 @@ export default class EntityManager extends Plugins.ScenePlugin {
         console.log("[EntityManager] Destroyed");
     }
 
-    public initAndSpawnPlayer(team: Team, onIntroComplete: () => void): Player {
+    public initAndSpawnPlayers(team: Team, inputs: PlayerInput[], onIntroComplete: () => void): readonly Player[] {
         this._team = team;
         this._playerBullets = this.scene!.physics.add.group(
             this.bulletGroupConfig(EntityManager.ENTITIES_DEPTHS.PLAYER_BULLETS, this.createLaserTrailFX()));
-        GroupUtils.populate(64, this._playerBullets);
+        GroupUtils.populate(64 * inputs.length, this._playerBullets);
 
-        this._player = new Player(this.scene!, 0, 0);
-        this._player.setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER);
-        this._player.init(this._playerBullets, this.scene!.gameInputManager.anyDeviceInput);
-        team.addPlayer(this._player);
-        // Fly in from below the screen to the arena center
-        const playerStartX: number = GameConstants.ARENA_WIDTH / 2;
+        // Side by side, flying in from below the screen to the arena center
+        const centerX: number = GameConstants.ARENA_WIDTH / 2;
         const playerEndY: number = GameConstants.ARENA_HEIGHT / 2;
-        this._player.setPosition(playerStartX, playerEndY + this.scene!.cameras.main.height / 2 + this._player.height);
-        this._player.setAngle(-90);
-        this._player.getComponent(Thrusters)?.setBoost(true);
-        this.scene!.tweens.add({
-            targets: this._player,
-            y: playerEndY,
-            duration: GameConstants.START_DELAY,
-            ease: Phaser.Math.Easing.Quadratic.Out,
-            onComplete: () => {
-                this._player.getComponent(Thrusters)?.setBoost(false);
-                onIntroComplete();
-            }
+        inputs.forEach((input, index) => {
+            const player = new Player(this.scene!, 0, 0);
+            player.setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER);
+            player.init(this._playerBullets, input);
+            team.addPlayer(player);
+
+            const x: number = centerX + (index - (inputs.length - 1) / 2) * EntityManager.PLAYER_START_SPACING;
+            player.setPosition(x, playerEndY + this.scene!.cameras.main.height / 2 + player.height);
+            player.setAngle(-90);
+            player.getComponent(Thrusters)?.setBoost(true);
+            this.scene!.tweens.add({
+                targets: player,
+                y: playerEndY,
+                duration: GameConstants.START_DELAY,
+                ease: Phaser.Math.Easing.Quadratic.Out,
+                onComplete: () => {
+                    player.getComponent(Thrusters)?.setBoost(false);
+                    if (index === 0)
+                        onIntroComplete();
+                }
+            });
+
+            // The game over screen waits for this explosion
+            player.getComponent(Health)?.once(Health.DEATH_START_EVENT, () => {
+                this.spawnExplosion(player.x, player.y, EntityManager.PLAYER_EXPLOSION_SIZE);
+            });
         });
+        this._players = [...team.players];
 
         // Create the enemy pools now, not at the end of the intro, to avoid a freeze
         this.initXpGems();
@@ -148,16 +161,11 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this.initGroupCollisions();
         this.initParticleEmitters();
 
-        // The game over screen waits for this explosion
-        this._player.getComponent(Health)?.once(Health.DEATH_START_EVENT, () => {
-            this.spawnExplosion(this._player.x, this._player.y, EntityManager.PLAYER_EXPLOSION_SIZE);
-        });
+        console.log("[EntityManager] " + inputs.length + " player(s) spawned");
 
-        console.log("[EntityManager] Player spawned");
+        this._players.forEach(player => this.game!.events.emit(GameConstants.Events.PLAYER_SPAWNED_EVENT, player));
 
-        this.game!.events.emit(GameConstants.Events.PLAYER_SPAWNED_EVENT, this._player);
-
-        return this._player;
+        return team.players;
     }
 
     public initEnemies(): Physics.Arcade.Group {
@@ -170,12 +178,12 @@ export default class EntityManager extends Plugins.ScenePlugin {
             defaultKey: 'sprites',
             defaultFrame: 'ufoRed',
             createCallback: (enemy) => {
-                (enemy as Enemy).init(this._enemyBullets, this._player);
+                (enemy as Enemy).init(this._enemyBullets, this._team);
                 (enemy as Enemy).setDepth(EntityManager.ENTITIES_DEPTHS.ENEMIES);
             }
         });
 
-        this._player.setTargets(this._enemies);
+        this._players.forEach(player => player.setTargets(this._enemies));
 
         // Spawn enemies indefinitely, faster over time, the first one when the player intro is over
         this._difficulty = new DifficultyCurve(this.scene!.cache.json.get('difficulty') as DifficultyData);
@@ -205,12 +213,12 @@ export default class EntityManager extends Plugins.ScenePlugin {
             maxSize: 256,
             runChildUpdate: true,
             createCallback: (gem) => {
-                (gem as XpGem).init(this._player, this._xpTrailFX);
+                (gem as XpGem).init(this._team, this._xpTrailFX);
                 (gem as XpGem).setDepth(EntityManager.ENTITIES_DEPTHS.XP_GEMS);
             }
         });
         GroupUtils.populate(128, this._xpGems);
-        this._player.setXpGems(this._xpGems);
+        this._players.forEach(player => player.setXpGems(this._xpGems));
 
         console.log("[EntityManager] XP gems initialized");
 
@@ -264,7 +272,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
             enemyHealth?.damage(damage);
         });
 
-        this.scene!.physics.add.overlap(this._player, this._enemyBullets, (player, bullet) => {
+        this.scene!.physics.add.overlap(this._players, this._enemyBullets, (player, bullet) => {
             this.spawnLaserImpact((bullet as Bullet).x, (bullet as Bullet).y, (bullet as Bullet).bulletData.fx);
 
             (bullet as Bullet).disable();
@@ -273,7 +281,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
             this.scene?.cameras.main.shake(100, 0.01);
         });
 
-        this.scene!.physics.add.overlap(this._player, this._enemies, (player, enemy) => {
+        this.scene!.physics.add.overlap(this._players, this._enemies, (player, enemy) => {
             this.spawnCollisionImpact((enemy as Enemy).x, (enemy as Enemy).y);
 
             const enemyHealth = (enemy as Enemy).getComponent(Health);
@@ -285,7 +293,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
             this.scene?.cameras.main.shake(100, 0.03);
         });
 
-        this.scene!.physics.add.overlap(this._player, this._xpGems, (_player, gem) => {
+        this.scene!.physics.add.overlap(this._players, this._xpGems, (_player, gem) => {
             const xpGem = gem as XpGem;
             xpGem.disable();
             // Screen position, before the XP change, so the HUD can tie the two together
@@ -295,8 +303,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
             this._team.experience.add(xpGem.value);
         });
 
-        this.scene!.physics.add.overlap(this._player, this._pickups, (_player, pickup) => {
-            this.collectPickup(pickup as Pickup);
+        this.scene!.physics.add.overlap(this._players, this._pickups, (player, pickup) => {
+            this.collectPickup(pickup as Pickup, player as Player);
         });
 
         console.log("[EntityManager] Group collisions initialized");
@@ -489,7 +497,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private rollPickupDrop(x: number, y: number) {
         const runTime: number = this.scene!.registry.get(RegistryConstants.Keys.RUN_TIME) ?? 0;
         for (const data of this._pickupsData) {
-            if (data.id === 'repair' && !this._player.isHullDamaged)
+            if (data.id === 'repair' && !this._players.some(player => player.active && player.isHullDamaged))
                 continue;
             if (runTime - (this._lastPickupDropTimes.get(data.id) ?? 0) < data.cooldown
                 || Math.random() >= data.dropChance)
@@ -504,35 +512,36 @@ export default class EntityManager extends Plugins.ScenePlugin {
         }
     }
 
-    private collectPickup(pickup: Pickup) {
+    private collectPickup(pickup: Pickup, collector: Player) {
         const data: PickupData = pickup.pickupData;
         pickup.disable();
 
         const tint: number = Phaser.Display.Color.HexStringToColor(data.glowTint).color;
         switch (data.id) {
             case 'bomb':
-                this.detonateBomb(tint);
+                this.detonateBomb(collector.x, collector.y, tint);
                 break;
             case 'magnet':
-                this._xpGems.getMatching('active', true).forEach(gem => (gem as XpGem).attract());
-                this.spawnRing(this._player.x, this._player.y, tint, EntityManager.MAGNET_RING_RADIUS,
+                this._xpGems.getMatching('active', true).forEach(gem => (gem as XpGem).attract(collector));
+                this.spawnRing(collector.x, collector.y, tint, EntityManager.MAGNET_RING_RADIUS,
                     EntityManager.MAGNET_RING_DURATION, EntityManager.PICKUP_RING_WIDTH);
                 Sfx.play(this.scene!, 'comboUp');
                 break;
             case 'repair':
-                this._player.repair(EntityManager.REPAIR_HULL_POINTS);
-                this.spawnRing(this._player.x, this._player.y, tint, EntityManager.REPAIR_RING_RADIUS,
-                    EntityManager.REPAIR_RING_DURATION, EntityManager.PICKUP_RING_WIDTH);
+                // Every player still in the fight
+                this._players.filter(player => player.active).forEach(player => {
+                    player.repair(EntityManager.REPAIR_HULL_POINTS);
+                    this.spawnRing(player.x, player.y, tint, EntityManager.REPAIR_RING_RADIUS,
+                        EntityManager.REPAIR_RING_DURATION, EntityManager.PICKUP_RING_WIDTH);
+                });
                 break;
         }
     }
 
     // Destroys every enemy on screen, as the ring reaches it
-    private detonateBomb(tint: number) {
+    private detonateBomb(x: number, y: number, tint: number) {
         const camera = this.scene!.cameras.main;
         const view = camera.worldView;
-        const x: number = this._player.x;
-        const y: number = this._player.y;
         const maxDistance: number = Math.max(
             Phaser.Math.Distance.Between(x, y, view.left, view.top),
             Phaser.Math.Distance.Between(x, y, view.right, view.top),

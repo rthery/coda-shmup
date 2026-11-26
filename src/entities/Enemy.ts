@@ -3,6 +3,7 @@ import Entity from './Entity.ts';
 import Health from "../components/Health.ts";
 import Movement from "../components/Movement.ts";
 import Weapon from "../components/Weapon.ts";
+import type Team from "../Team.ts";
 
 export default class Enemy extends Entity {
     private static readonly KNOCKBACK_SPEED: number = 0.9; // px/ms
@@ -29,12 +30,12 @@ export default class Enemy extends Entity {
     };
     private _shootTimerConfig: Phaser.Types.Time.TimerEventConfig;
     private _shootTimer: Phaser.Time.TimerEvent | undefined;
-    private _target: Entity;
+    private _team: Team;
     private readonly _directionToTarget: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _knockback: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
-    public init(bulletsGroup: Phaser.Physics.Arcade.Group, target: Entity) {
-        this._target = target;
+    public init(bulletsGroup: Phaser.Physics.Arcade.Group, team: Team) {
+        this._team = team;
 
         this.addComponent(new Health(1, this));
         this.addComponent(new Movement(0.2));
@@ -117,9 +118,13 @@ export default class Enemy extends Entity {
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
         super.preUpdate(timeSinceLaunch, deltaTime)
 
-        // Direction to the target: (target - me), normalized to keep only the direction
-        this._directionToTarget.set(this._target.x - this.x, this._target.y - this.y).normalize();
-        this.rotation = this._directionToTarget.angle();
+        // Direction to the nearest player: (target - me), normalized to keep only the direction.
+        // With no player left, keep going the same way
+        const target = this._team.nearestPlayer(this.x, this.y);
+        if (target) {
+            this._directionToTarget.set(target.x - this.x, target.y - this.y).normalize();
+            this.rotation = this._directionToTarget.angle();
+        }
 
         if (!this.isTinted)
             this.getComponent(Movement)?.move(this, this._directionToTarget, deltaTime);

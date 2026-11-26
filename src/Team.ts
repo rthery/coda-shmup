@@ -18,4 +18,20 @@ export default class Team {
     public addPlayer(player: Player) {
         this._players.push(player);
     }
+
+    // The nearest player still in the fight, null when there's none
+    public nearestPlayer(x: number, y: number): Player | null {
+        let nearest: Player | null = null;
+        let nearestDistanceSq: number = Infinity;
+        for (const player of this._players) {
+            if (!player.active)
+                continue;
+            const distanceSq: number = Phaser.Math.Distance.Squared(x, y, player.x, player.y);
+            if (distanceSq < nearestDistanceSq) {
+                nearest = player;
+                nearestDistanceSq = distanceSq;
+            }
+        }
+        return nearest;
+    }
 }
