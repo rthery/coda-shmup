@@ -11,6 +11,11 @@ import type SaveManager from "../managers/SaveManager.ts";
 
 export default class HomeScene extends Phaser.Scene {
     private static readonly BG_TILE_SCALE: number = 2;
+    private static readonly LOADING_BACKGROUND: number = 0x3a2e3f;
+    private static readonly LOADING_FILL: number = 0xf5c542;
+    private static readonly LOADING_BAR_WIDTH: number = 640;
+    private static readonly LOADING_BAR_HEIGHT: number = 24;
+    private static readonly LOADING_BAR_OFFSET_Y: number = 200;
     private static readonly BG_SCROLL_SPEED: number = 0.1; // texture px/ms
 
     private _bg: Phaser.GameObjects.TileSprite;
@@ -28,24 +33,7 @@ export default class HomeScene extends Phaser.Scene {
     }
 
     preload() {
-        const width: number = this.scale.width;
-        const y: number = this.scale.height / 2;
-
-        const progressBar = this.add.graphics();
-        const progressBox = this.add.graphics();
-        progressBox.fillStyle(0x222222, 0.8);
-        progressBox.fillRect(0, y, width, 64);
-        this.load.on(Loader.Events.PROGRESS, function (value: number) {
-            console.log("Loading : " + value);
-            progressBar.clear();
-            progressBar.fillStyle(0xffffff, 1);
-            progressBar.fillRect(0, y, width * value, 64);
-        });
-        this.load.on(Loader.Events.COMPLETE, function () {
-            console.log("Loading complete");
-            progressBar.destroy();
-            progressBox.destroy();
-        });
+        this.createLoadingBar();
 
         this.load.setPath('assets');
 
@@ -60,6 +48,35 @@ export default class HomeScene extends Phaser.Scene {
         this.load.json('difficulty', 'Data/difficulty.json');
         this.load.audio('sfx_laser2', 'Sounds/sfx_laser2.ogg');
         Sfx.preload(this.load);
+    }
+
+    // Drawn with shapes: nothing is loaded yet, neither the game's font nor its sprites.
+    // In the XP bar's colors, on the game's background
+    private createLoadingBar() {
+        const centerX: number = this.scale.width / 2;
+        const y: number = this.scale.height / 2 + HomeScene.LOADING_BAR_OFFSET_Y;
+        const width: number = HomeScene.LOADING_BAR_WIDTH;
+        const height: number = HomeScene.LOADING_BAR_HEIGHT;
+        const left: number = centerX - width / 2;
+
+        const background = this.add.rectangle(0, 0, this.scale.width, this.scale.height, HomeScene.LOADING_BACKGROUND)
+            .setOrigin(0);
+        const label = this.add.text(centerX, y - 48, 'LOADING',
+            {fontSize: '28px', color: '#8a92a3', fontFamily: 'sans-serif', fontStyle: 'bold', letterSpacing: 12})
+            .setOrigin(0.5);
+        const track = this.add.graphics()
+            .fillStyle(0x000000, 0.35).fillRoundedRect(left, y, width, height, height / 2)
+            .lineStyle(2, 0xffffff, 0.2).strokeRoundedRect(left, y, width, height, height / 2);
+        const fill = this.add.graphics();
+
+        this.load.on(Loader.Events.PROGRESS, (value: number) => {
+            // Never thinner than its rounded ends
+            const fillWidth: number = Math.max(height, width * value);
+            fill.clear().fillStyle(HomeScene.LOADING_FILL, 1).fillRoundedRect(left, y, fillWidth, height, height / 2);
+        });
+        this.load.once(Loader.Events.COMPLETE, () => {
+            [background, label, track, fill].forEach(gameObject => gameObject.destroy());
+        });
     }
 
     create() {
