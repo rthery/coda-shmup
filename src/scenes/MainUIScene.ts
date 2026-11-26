@@ -5,6 +5,7 @@ import Player from "../entities/Player.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
 import UiUtils from "../utils/UiUtils.ts";
+import UiLayout from "../utils/UiLayout.ts";
 import DifficultyCurve from "../utils/DifficultyCurve.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 import Sfx from "../audio/Sfx.ts";
@@ -19,9 +20,12 @@ export default class MainUIScene extends Scene {
     private static readonly LOST_LIFE_ALPHA: number = 0.25;
     private static readonly XP_BAR_Y: number = 216;
     private static readonly XP_BAR_X: number = 200;
+    // Thinner than the pack's bar, which reads too heavy across a landscape screen
+    private static readonly XP_BAR_SCALE_Y: number = 0.7;
     private static readonly BRACKET_INSET: number = 28;
     private static readonly BRACKET_LENGTH: number = 56;
     private static readonly THREAT_BANNER_Y: number = 560;
+    private static readonly THREAT_LINE_HEIGHT: number = 4;
     private static readonly THREAT_COLOR: string = '#ffb02e';
     private static readonly MAX_THREAT_COLOR: number = 0xff4a3d;
     private static readonly MAX_THREAT_COLOR_STRING: string = '#ff4a3d';
@@ -54,6 +58,7 @@ export default class MainUIScene extends Scene {
     private _lifeRow: GameObjects.Container;
     private _damageVignette: GameObjects.Image;
     private _scoreText: GameObjects.BitmapText;
+    private _cornerBrackets: GameObjects.Graphics;
     private _runTimeText: GameObjects.Text;
     private _difficulty: DifficultyCurve;
     private _threatLevel: number = 0;
@@ -66,8 +71,10 @@ export default class MainUIScene extends Scene {
     private _comboPips: GameObjects.Polygon[];
     private _filledComboPips: number;
     private _comboMaxText: GameObjects.Text;
+    private _xpBarTrack: GameObjects.NineSlice;
     private _xpBarFill: GameObjects.NineSlice;
     private _xpBarGhost: GameObjects.NineSlice;
+    private _xpBarGhostRatio: number = 0;
     private readonly _xpBarDisplay: { ratio: number } = {ratio: 0};
     private _displayedLevel: number;
     // While the level-up screen is open the bar stays full, the leftover XP shows once it closes
@@ -109,6 +116,8 @@ export default class MainUIScene extends Scene {
 
     // noinspection JSUnusedGlobalSymbols
     create() {
+        // Laid out on the portrait frame's height, across the screen's whole width: see layout()
+        UiLayout.fitCamera(this, false);
         this._lifeIcons = [];
         this.createDamageVignetteTexture();
         this._damageVignette = this.add.image(0, 0, MainUIScene.DAMAGE_VIGNETTE_KEY).setOrigin(0).setAlpha(0);
@@ -118,13 +127,13 @@ export default class MainUIScene extends Scene {
         if (this.registry.has(RegistryConstants.Keys.PLAYER_SCORE))
             scoreStr = this.registry.get(RegistryConstants.Keys.PLAYER_SCORE).toString()
                 .padStart(GameConstants.MAX_SCORE_DIGITS, "0");
-        this._scoreText = this.add.bitmapText(this.scale.width - MainUIScene.MARGIN, MainUIScene.MARGIN,
-            "future-bmp", scoreStr, 128).setOrigin(1, 0);
+        this._scoreText = this.add.bitmapText(0, MainUIScene.MARGIN, "future-bmp", scoreStr, 128).setOrigin(1, 0);
 
-        this.addCornerBrackets();
+        // Bare HUD: corner brackets frame the play area instead of panels
+        this._cornerBrackets = this.add.graphics();
 
         // The clock that drives the difficulty
-        this._runTimeText = this.add.text(this.scale.width / 2, MainUIScene.MARGIN + 26, "",
+        this._runTimeText = this.add.text(0, MainUIScene.MARGIN + 26, "",
             {fontSize: '44px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5).setAlpha(0.8);
         this._difficulty = new DifficultyCurve(this.cache.json.get('difficulty') as DifficultyData);
         this._threatLevel = 0;
@@ -132,18 +141,21 @@ export default class MainUIScene extends Scene {
         this.onRunTimeChanged(null, 0);
 
         const xpBarY: number = MainUIScene.XP_BAR_Y;
-        this._xpBarWidth = this.scale.width - MainUIScene.MARGIN - MainUIScene.XP_BAR_X;
-        const xpBarTrack = UiUtils.addBar(this, MainUIScene.XP_BAR_X, xpBarY, this._xpBarWidth, "ui_bar_track")
+        this._xpBarWidth = UiLayout.WIDTH - MainUIScene.MARGIN - MainUIScene.XP_BAR_X;
+        this._xpBarTrack = UiUtils.addBar(this, MainUIScene.XP_BAR_X, xpBarY, this._xpBarWidth, "ui_bar_track")
             .setOrigin(0, 0);
         // Shows the gain at once, the gold fill catches up
         this._xpBarGhost = UiUtils.addBar(this, MainUIScene.XP_BAR_X, xpBarY, this._xpBarWidth, "ui_bar_fill_yellow")
             .setOrigin(0, 0).setTintFill(0xffffff).setAlpha(0.8);
-        UiUtils.setBarFill(this._xpBarGhost, this._xpBarWidth, 0);
+        this.setXpBarGhostRatio(0);
         // Gold, like the XP stars
         this._xpBarFill = UiUtils.addBar(this, MainUIScene.XP_BAR_X, xpBarY, this._xpBarWidth, "ui_bar_fill_yellow")
             .setOrigin(0, 0);
         UiUtils.setBarFill(this._xpBarFill, this._xpBarWidth, 0);
-        this._levelText = this.add.text(MainUIScene.MARGIN, xpBarY + xpBarTrack.height / 2, "LV 1",
+        // Thinner around the same center line, so the level text and the flying stars still line up
+        [this._xpBarTrack, this._xpBarGhost, this._xpBarFill].forEach(bar => bar.setScale(1, MainUIScene.XP_BAR_SCALE_Y)
+            .setY(xpBarY + bar.height * (1 - MainUIScene.XP_BAR_SCALE_Y) / 2));
+        this._levelText = this.add.text(MainUIScene.MARGIN, xpBarY + this._xpBarTrack.height / 2, "LV 1",
             {fontSize: '40px', color: '#fff', fontFamily: 'future'}).setOrigin(0, 0.5);
 
         this._xpStars = this.add.group();
@@ -152,15 +164,10 @@ export default class MainUIScene extends Scene {
         const comboRowY: number = xpBarY + 96;
         this._comboPips = [];
         this._filledComboPips = 0;
-        const pipStep: number = MainUIScene.COMBO_PIP_WIDTH + MainUIScene.COMBO_PIP_GAP;
-        const firstPipX: number = this.scale.width - MainUIScene.MARGIN - MainUIScene.COMBO_PIP_WIDTH / 2
-            - (GameConstants.COMBO_KILLS_PER_STEP - 1) * pipStep;
-
-        this._comboTextX = firstPipX - MainUIScene.COMBO_PIP_WIDTH / 2 - 20;
-        this._comboText = this.add.text(this._comboTextX, comboRowY, "",
+        this._comboText = this.add.text(0, comboRowY, "",
             {fontSize: '40px', color: MainUIScene.COMBO_COLOR, fontStyle: 'bold'}).setOrigin(1, 0.5);
         // Under the full row of pips once the combo can't go higher
-        this._comboMaxText = this.add.text(this.scale.width - MainUIScene.MARGIN, comboRowY + 36, "MAX",
+        this._comboMaxText = this.add.text(0, comboRowY + 36, "MAX",
             {fontSize: '24px', color: MainUIScene.COMBO_COLOR, fontFamily: 'future'}).setOrigin(1, 0.5).setVisible(false);
         this.showCombo(1);
 
@@ -171,14 +178,41 @@ export default class MainUIScene extends Scene {
             0, MainUIScene.COMBO_PIP_HEIGHT
         ];
         for (let i = 0; i < GameConstants.COMBO_KILLS_PER_STEP; i++) {
-            const pip = this.add.polygon(firstPipX + i * pipStep, comboRowY, pipShape).setOrigin(0.5);
+            const pip = this.add.polygon(0, comboRowY, pipShape).setOrigin(0.5);
             this.setPipEmpty(pip);
             this._comboPips.push(pip);
         }
 
         this.scene.bringToTop();
+        UiLayout.onResize(this, () => this.layout());
 
         console.log("MainUIScene created");
+    }
+
+    // Pinned to the screen's edges: the HUD stretches over a landscape screen's extra width
+    private layout() {
+        UiLayout.fitCamera(this, false);
+        const area = UiLayout.visibleArea(this);
+        const right: number = area.width - MainUIScene.MARGIN;
+
+        this._damageVignette.setDisplaySize(area.width, area.height);
+        this._scoreText.setX(right);
+        this.drawCornerBrackets(area.width);
+        this._runTimeText.setX(area.width / 2);
+        this._threatBanner.setX(area.width / 2);
+        this._threatLines.forEach(line => line.setSize(area.width - 2 * MainUIScene.MARGIN, MainUIScene.THREAT_LINE_HEIGHT));
+
+        this._xpBarWidth = right - MainUIScene.XP_BAR_X;
+        this._xpBarTrack.setSize(this._xpBarWidth, this._xpBarTrack.height);
+        this.setXpBarGhostRatio(this._xpBarGhostRatio);
+        UiUtils.setBarFill(this._xpBarFill, this._xpBarWidth, this._xpBarDisplay.ratio);
+
+        const pipStep: number = MainUIScene.COMBO_PIP_WIDTH + MainUIScene.COMBO_PIP_GAP;
+        const firstPipX: number = right - MainUIScene.COMBO_PIP_WIDTH / 2 - (GameConstants.COMBO_KILLS_PER_STEP - 1) * pipStep;
+        this._comboPips.forEach((pip, index) => pip.setX(firstPipX + index * pipStep));
+        this._comboTextX = firstPipX - MainUIScene.COMBO_PIP_WIDTH / 2 - 20;
+        this._comboText.setX(this._comboTextX);
+        this._comboMaxText.setX(right);
     }
 
     private onRunTimeChanged(_: any, seconds: number) {
@@ -320,15 +354,14 @@ export default class MainUIScene extends Scene {
     }
 
     private createThreatBanner() {
-        const centerX: number = this.scale.width / 2;
         const warning = this.add.text(0, -56, "WARNING",
             {fontSize: '28px', color: MainUIScene.THREAT_COLOR, fontFamily: 'future', letterSpacing: 14}).setOrigin(0.5);
         this._threatTitle = this.add.text(0, 0, "",
             {fontSize: '64px', color: MainUIScene.THREAT_COLOR, fontFamily: 'future'}).setOrigin(0.5)
             .setShadow(0, 6, '#000', 0, false, true);
-        this._threatLines = [-100, 52].map(y => this.add.rectangle(0, y, this.scale.width - 2 * MainUIScene.MARGIN, 4,
+        this._threatLines = [-100, 52].map(y => this.add.rectangle(0, y, 1, MainUIScene.THREAT_LINE_HEIGHT,
             Phaser.Display.Color.HexStringToColor(MainUIScene.THREAT_COLOR).color));
-        this._threatBanner = this.add.container(centerX, MainUIScene.THREAT_BANNER_Y,
+        this._threatBanner = this.add.container(0, MainUIScene.THREAT_BANNER_Y,
             [...this._threatLines, warning, this._threatTitle]).setAlpha(0);
     }
 
@@ -396,12 +429,11 @@ export default class MainUIScene extends Scene {
         texture.refresh();
     }
 
-    // Bare HUD: corner brackets frame the play area instead of panels
-    private addCornerBrackets() {
+    private drawCornerBrackets(width: number) {
         const inset: number = MainUIScene.BRACKET_INSET;
         const length: number = MainUIScene.BRACKET_LENGTH;
-        const right: number = this.scale.width - inset;
-        this.add.graphics()
+        const right: number = width - inset;
+        this._cornerBrackets.clear()
             .lineStyle(6, 0xffffff, 0.4)
             .strokePoints([{x: inset, y: inset + length}, {x: inset, y: inset}, {x: inset + length, y: inset}])
             .strokePoints([{x: right - length, y: inset}, {x: right, y: inset}, {x: right, y: inset + length}]);
@@ -512,12 +544,13 @@ export default class MainUIScene extends Scene {
         this._displayedLevel = level;
         this._levelText.setText("LV " + level);
         this.setXpBarRatio(ratio);
-        UiUtils.setBarFill(this._xpBarGhost, this._xpBarWidth, ratio);
+        this.setXpBarGhostRatio(ratio);
     }
 
     // The collected star flies from the ship to the bar's end, the bar fills when it lands
     private onXpGemCollected(screenX: number, screenY: number) {
-        const star: GameObjects.Image = this._xpStars.get(screenX, screenY, "sprites", "star_gold");
+        const start = this.cameras.main.getWorldPoint(screenX, screenY);
+        const star: GameObjects.Image = this._xpStars.get(start.x, start.y, "sprites", "star_gold");
         star.setActive(true).setVisible(true).setAlpha(1).setScale(1.4).setAngle(0);
         this._pendingXpStar = star;
 
@@ -587,7 +620,7 @@ export default class MainUIScene extends Scene {
         }
 
         this.tweens.killTweensOf(this._xpBarDisplay);
-        UiUtils.setBarFill(this._xpBarGhost, this._xpBarWidth, ratio);
+        this.setXpBarGhostRatio(ratio);
         this.tweenXpBarTo(ratio, MainUIScene.XP_FILL_DELAY);
     }
 
@@ -596,7 +629,7 @@ export default class MainUIScene extends Scene {
         this.tweens.killTweensOf(this._xpBarDisplay);
         this._displayedLevel = level;
         this._heldXpRatio = ratio;
-        UiUtils.setBarFill(this._xpBarGhost, this._xpBarWidth, 1);
+        this.setXpBarGhostRatio(1);
         this.tweenXpBarTo(1, 0, () => {
             this._xpBarFill.setTintFill(0xffffff);
             this.time.delayedCall(120, () => this._xpBarFill.clearTint());
@@ -620,7 +653,7 @@ export default class MainUIScene extends Scene {
         const ratio: number = this._heldXpRatio;
         this._heldXpRatio = null;
         this.setXpBarRatio(0);
-        UiUtils.setBarFill(this._xpBarGhost, this._xpBarWidth, ratio);
+        this.setXpBarGhostRatio(ratio);
         this.tweenXpBarTo(ratio, MainUIScene.XP_FILL_DELAY);
     }
 
@@ -635,6 +668,12 @@ export default class MainUIScene extends Scene {
             onUpdate: () => UiUtils.setBarFill(this._xpBarFill, this._xpBarWidth, this._xpBarDisplay.ratio),
             onComplete: onComplete
         });
+    }
+
+    // Shows the gain at once, the gold fill catches up
+    private setXpBarGhostRatio(ratio: number) {
+        this._xpBarGhostRatio = ratio;
+        UiUtils.setBarFill(this._xpBarGhost, this._xpBarWidth, ratio);
     }
 
     private setXpBarRatio(ratio: number) {

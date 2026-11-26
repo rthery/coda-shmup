@@ -3,6 +3,7 @@ import GameConstants from "../GameConstants.ts";
 import type SaveManager from "../managers/SaveManager.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 import UiUtils from "../utils/UiUtils.ts";
+import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 
 type PauseRow = {
@@ -47,8 +48,8 @@ export default class PauseScene extends Scene {
         // Above the HUD, which stays on top of the game
         this.scene.bringToTop();
 
-        const centerX: number = this.scale.width / 2;
-        this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.7).setOrigin(0);
+        const centerX: number = UiLayout.WIDTH / 2;
+        UiLayout.fitMenu(this, this.add.rectangle(0, 0, 1, 1, 0x000000, 0.7).setOrigin(0));
 
         const width: number = PauseScene.PANEL_WIDTH;
         const panelTop: number = PauseScene.PANEL_CENTER_Y - PauseScene.PANEL_HEIGHT / 2;
@@ -68,7 +69,7 @@ export default class PauseScene extends Scene {
         ];
         this._rows.forEach((row, index) => this.createRow(row, index));
 
-        this._hintText = this.add.text(centerX, this.scale.height - 200, this.getHintText(this.gameInputManager.activeInputType),
+        this._hintText = this.add.text(centerX, UiLayout.HEIGHT - 200, this.getHintText(this.gameInputManager.activeInputType),
             {fontSize: '32px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
         this.game.events.on('input-type-changed', this.onInputTypeChanged, this);
         this.events.once('shutdown', () => {
@@ -79,7 +80,7 @@ export default class PauseScene extends Scene {
     }
 
     private createRow(row: PauseRow, index: number) {
-        const centerX: number = this.scale.width / 2;
+        const centerX: number = UiLayout.WIDTH / 2;
         const left: number = centerX - PauseScene.PANEL_WIDTH / 2 + PauseScene.ROW_PADDING;
         const right: number = centerX + PauseScene.PANEL_WIDTH / 2 - PauseScene.ROW_PADDING;
         const style = {fontSize: '40px', color: UiUtils.INK_COLOR, fontFamily: 'future'};
@@ -113,7 +114,7 @@ export default class PauseScene extends Scene {
         const row: PauseRow = this._rows[index];
         const width: number = PauseScene.PANEL_WIDTH - 2 * PauseScene.ROW_PADDING + 40;
         this._highlight.clear().fillStyle(PauseScene.HIGHLIGHT_COLOR, PauseScene.HIGHLIGHT_ALPHA)
-            .fillRoundedRect(this.scale.width / 2 - width / 2, row.y - PauseScene.ROW_HEIGHT / 2,
+            .fillRoundedRect(UiLayout.WIDTH / 2 - width / 2, row.y - PauseScene.ROW_HEIGHT / 2,
                 width, PauseScene.ROW_HEIGHT, 12);
     }
 

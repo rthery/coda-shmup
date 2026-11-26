@@ -6,6 +6,7 @@ import Turret from "../components/Turret.ts";
 import type {PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 import UiUtils from "../utils/UiUtils.ts";
+import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 import type SaveManager from "../managers/SaveManager.ts";
 
@@ -24,6 +25,8 @@ export default class HomeScene extends Phaser.Scene {
     private _wingTrails: WingTrails;
     private _turret: Turret;
     private _title: Phaser.GameObjects.Container;
+    // The title and the prompt, on the portrait frame
+    private _frame: Phaser.GameObjects.Container;
     private _startPrompt: Phaser.GameObjects.Text;
     private _started: boolean = false;
     private saveManager: SaveManager;
@@ -54,13 +57,16 @@ export default class HomeScene extends Phaser.Scene {
     // Drawn with shapes: nothing is loaded yet, neither the game's font nor its sprites.
     // In the XP bar's colors, on the game's background
     private createLoadingBar() {
-        const centerX: number = this.scale.width / 2;
-        const y: number = this.scale.height / 2 + HomeScene.LOADING_BAR_OFFSET_Y;
+        const centerX: number = UiLayout.WIDTH / 2;
+        const y: number = UiLayout.HEIGHT / 2 + HomeScene.LOADING_BAR_OFFSET_Y;
         const width: number = HomeScene.LOADING_BAR_WIDTH;
         const height: number = HomeScene.LOADING_BAR_HEIGHT;
         const left: number = centerX - width / 2;
 
-        const background = this.add.rectangle(0, 0, this.scale.width, this.scale.height, HomeScene.LOADING_BACKGROUND)
+        // Only shown while loading: sized once, without following resizes
+        UiLayout.fitCamera(this, true);
+        const area = UiLayout.visibleArea(this);
+        const background = this.add.rectangle(area.x, area.y, area.width, area.height, HomeScene.LOADING_BACKGROUND)
             .setOrigin(0);
         const label = this.add.text(centerX, y - 48, 'LOADING',
             {fontSize: '28px', color: '#8a92a3', fontFamily: 'sans-serif', fontStyle: 'bold', letterSpacing: 12})
@@ -90,12 +96,11 @@ export default class HomeScene extends Phaser.Scene {
 
         this._started = false;
 
-        this._bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg')
-            .setOrigin(0).setTileScale(HomeScene.BG_TILE_SCALE);
+        this._bg = this.add.tileSprite(0, 0, 1, 1, 'bg').setOrigin(0).setTileScale(HomeScene.BG_TILE_SCALE);
 
         const playerShipData = (this.cache.json.get('playerShips') as PlayerShipsData)[1];
         const playerShipOffsetX: number = 96;
-        this._playerShip = this.add.image(this.scale.width / 2 - playerShipOffsetX, this.scale.height / 2, 'sprites',
+        this._playerShip = this.add.image(UiLayout.WIDTH / 2 - playerShipOffsetX, UiLayout.HEIGHT / 2, 'sprites',
             playerShipData.texture).setAngle(-90).setDepth(10);
 
         this._thrusters = new Thrusters(this._playerShip);
@@ -109,22 +114,24 @@ export default class HomeScene extends Phaser.Scene {
 
         this.tweens.add({
             targets: this._playerShip,
-            x: this.cameras.main.centerX + playerShipOffsetX,
+            x: UiLayout.WIDTH / 2 + playerShipOffsetX,
             duration: 700,
             yoyo: true,
             repeat: -1,
             ease: 'Quad.easeInOut'
         });
 
-        const centerX: number = this.scale.width / 2;
+        const centerX: number = UiLayout.WIDTH / 2;
         const titleY: number = 560;
         this._title = this.add.container(0, 0, [
             this.add.text(centerX, titleY, 'FINAL ORBIT', {fontSize: '120px', color: '#fff', fontFamily: 'future'})
                 .setOrigin(0.5).setShadow(0, 8, '#000', 0, false, true),
         ]);
 
-        this._startPrompt = UiUtils.addHint(this, centerX, this.scale.height - 220,
+        this._startPrompt = UiUtils.addHint(this, centerX, UiLayout.HEIGHT - 220,
             this._getPromptText(this.gameInputManager.activeInputType));
+        this._frame = this.add.container(0, 0, [this._title, this._startPrompt]);
+        UiLayout.onResize(this, () => this.layout());
 
         this.game.events.on('input-type-changed', this._onInputTypeChanged, this);
         this.events.once('shutdown', () => {
@@ -132,6 +139,16 @@ export default class HomeScene extends Phaser.Scene {
         });
 
         console.log("HomeScene created");
+    }
+
+    // The ship and the stars at the game's scale, as in a run. Only the title and the prompt fit the frame
+    private layout() {
+        const camera = this.cameras.main;
+        camera.setOrigin(0.5).setZoom(1).centerOn(UiLayout.WIDTH / 2, UiLayout.HEIGHT / 2);
+        this._bg.setPosition(camera.scrollX, camera.scrollY).setSize(this.scale.width, this.scale.height);
+
+        const zoom: number = UiLayout.frameZoom(this);
+        this._frame.setScale(zoom).setPosition(UiLayout.WIDTH / 2 * (1 - zoom), UiLayout.HEIGHT / 2 * (1 - zoom));
     }
 
     private _onInputTypeChanged(type: InputType): void {
@@ -160,8 +177,8 @@ export default class HomeScene extends Phaser.Scene {
         this.tweens.add({targets: this._startPrompt, alpha: 0, duration: 200});
         this.tweens.add({
             targets: this._playerShip,
-            x: this.cameras.main.centerX,
-            y: -this._playerShip.height,
+            x: UiLayout.WIDTH / 2,
+            y: this.cameras.main.scrollY - this._playerShip.height,
             duration: 600,
             ease: 'Quad.easeIn',
             onComplete: () => {

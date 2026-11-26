@@ -8,13 +8,23 @@ import PauseScene from "./scenes/PauseScene.ts";
 import EntityManager from "./managers/EntityManager.ts";
 import GameInputManager from "./managers/GameInputManager.ts";
 import SaveManager from "./managers/SaveManager.ts";
+import GameConstants from "./GameConstants.ts";
+
+// The same area in the window's shape: wider in landscape, taller on a long phone
+function viewSize(): { width: number, height: number } {
+    const aspect: number = Math.min(Math.max(window.innerWidth / window.innerHeight, GameConstants.MIN_VIEW_ASPECT),
+        GameConstants.MAX_VIEW_ASPECT);
+    return {
+        width: Math.round(Math.sqrt(GameConstants.VIEW_AREA * aspect)),
+        height: Math.round(Math.sqrt(GameConstants.VIEW_AREA / aspect))
+    };
+}
 
 // Find out more information about the Game Config at:
 // https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
 const config: Types.Core.GameConfig = {
     type: AUTO,
-    width: 1080,
-    height: 1920,
+    ...viewSize(),
     parent: 'game-container',
     backgroundColor: '#000',
     input: {
@@ -58,5 +68,13 @@ const config: Types.Core.GameConfig = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    new Game(config);
+    const game = new Game(config);
+    window.addEventListener('resize', () => {
+        const size = viewSize();
+        if (size.width === game.scale.width && size.height === game.scale.height)
+            return;
+        // Measure the container now: Phaser only checks it every so often, and would fit the new size to the old one
+        game.scale.getParentBounds();
+        game.scale.setGameSize(size.width, size.height);
+    });
 });

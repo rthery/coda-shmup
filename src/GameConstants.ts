@@ -22,7 +22,13 @@ export default class GameConstants {
     public static readonly COMBO_KILLS_PER_STEP: number = 10;
     public static readonly MAX_COMBO: number = 5;
 
-    // Small enough for the planet, at the center, to stay visible from the arena corners
-    public static readonly ARENA_WIDTH: number = 3400;
-    public static readonly ARENA_HEIGHT: number = 4700;
+    // The game view shows this area on every screen, in the window's shape
+    public static readonly VIEW_AREA: number = 1080 * 1920;
+    // Past these width / height ratios the view stops stretching and the screen gets black bars
+    public static readonly MIN_VIEW_ASPECT: number = 9 / 21;
+    public static readonly MAX_VIEW_ASPECT: number = 21 / 9;
+
+    // Square, so no view shape is favored
+    public static readonly ARENA_WIDTH: number = 3800;
+    public static readonly ARENA_HEIGHT: number = 3800;
 }

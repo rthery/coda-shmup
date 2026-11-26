@@ -5,6 +5,7 @@ import type {UpgradeCategory, UpgradeData} from "../gameData/UpgradesData.ts";
 import Experience from "../components/Experience.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 import UiUtils, {type UiFrame} from "../utils/UiUtils.ts";
+import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 
 export default class LevelUpScene extends Scene {
@@ -74,9 +75,10 @@ export default class LevelUpScene extends Scene {
     // noinspection JSUnusedGlobalSymbols
     create() {
         Sfx.play(this, 'levelUp');
-        const centerX: number = this.scale.width / 2;
+        const centerX: number = UiLayout.WIDTH / 2;
 
-        const dim = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.7).setOrigin(0);
+        const dim = this.add.rectangle(0, 0, 1, 1, 0x000000, 0.7).setOrigin(0);
+        UiLayout.fitMenu(this, dim);
         this.tweens.add({targets: dim, alpha: {from: 0, to: 1}, duration: 150});
         const title = this.add.text(centerX, 440, 'LEVEL UP!',
             {fontSize: '80px', color: '#ffcc00', fontFamily: 'future'}).setOrigin(0.5);
@@ -113,11 +115,11 @@ export default class LevelUpScene extends Scene {
 
         this._crosshair = this.add.image(0, 0, "sprites", "ui_crosshair").setVisible(false);
 
-        this._hintText = this.add.text(centerX, this.scale.height - 200,
+        this._hintText = this.add.text(centerX, UiLayout.HEIGHT - 200,
             this.getHintText(this.gameInputManager.activeInputType),
             {fontSize: '32px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5).setAlpha(0);
 
-        const offscreenX: number = this.scale.width + LevelUpScene.CARD_WIDTH / 2;
+        const offscreenX: number = UiLayout.visibleArea(this).right + LevelUpScene.CARD_WIDTH / 2;
         // Off screen right away: a delayed tween only applies its start value once the delay is over
         this._cards.forEach((card, index) => this.tweens.add({
             targets: card.setX(offscreenX),

@@ -4,6 +4,7 @@ import SaveConstants from "../SaveConstants.ts";
 import type SaveManager from "../managers/SaveManager.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 import UiUtils from "../utils/UiUtils.ts";
+import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 
 export default class GameOverScene extends Phaser.Scene {
@@ -39,9 +40,9 @@ export default class GameOverScene extends Phaser.Scene {
         this._revealed = false;
         this._finalStates = [];
 
-        const centerX: number = this.scale.width / 2;
-        const dim = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, GameOverScene.DIM_ALPHA)
-            .setOrigin(0);
+        const centerX: number = UiLayout.WIDTH / 2;
+        const dim = this.add.rectangle(0, 0, 1, 1, 0x000000, GameOverScene.DIM_ALPHA).setOrigin(0);
+        UiLayout.fitMenu(this, dim);
         this.reveal(dim, 0, {alpha: {from: 0, to: 1}}, 300);
 
         const title = this.add.text(centerX, 560, 'GAME OVER', {fontSize: '120px', color: '#fff', fontFamily: 'future'})
@@ -87,7 +88,7 @@ export default class GameOverScene extends Phaser.Scene {
             {fontSize: '44px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future'}).setOrigin(0.5),
             linesDelay + 2 * GameOverScene.LINE_STAGGER);
 
-        this._promptText = UiUtils.addHint(this, centerX, this.scale.height - 220,
+        this._promptText = UiUtils.addHint(this, centerX, UiLayout.HEIGHT - 220,
             this._getPromptText(this.gameInputManager.activeInputType)).setVisible(false);
         this.time.delayedCall(linesDelay + 3 * GameOverScene.LINE_STAGGER + 300, () => this.finishReveal());
 
