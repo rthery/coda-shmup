@@ -146,7 +146,7 @@ export default class MainUIScene extends Scene {
     private updateLifeIcons(current: number, max: number, previous: number) {
         const isFirstBuild: boolean = this._lifeIcons.length === 0;
         while (this._lifeIcons.length < max) {
-            const icon = this.add.image(0, 0, "sprites", "playerLife1_blue").setScale(MainUIScene.LIFE_ICON_SCALE);
+            const icon = this.add.image(0, 0, "sprites", "playerLife3_blue").setScale(MainUIScene.LIFE_ICON_SCALE);
             icon.setPosition(
                 MainUIScene.MARGIN + icon.displayWidth / 2 +
                 this._lifeIcons.length * (icon.displayWidth + MainUIScene.LIFE_ICON_SPACING),
@@ -170,7 +170,7 @@ export default class MainUIScene extends Scene {
 
     private playLifeLost(icon: GameObjects.Image) {
         // A white copy breaks off and falls away
-        const shard = this.add.image(icon.x, icon.y, "sprites", "playerLife1_blue")
+        const shard = this.add.image(icon.x, icon.y, "sprites", "playerLife3_blue")
             .setScale(MainUIScene.LIFE_ICON_SCALE).setTintFill(0xffffff);
         this._lifeRow.add(shard);
         this.tweens.add({

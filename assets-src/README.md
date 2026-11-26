@@ -21,6 +21,7 @@ nommée comme le fichier sans son extension : `ufoRed.png` devient la frame `'uf
 
 Les sprites viennent du pack Kenney « Space Shooter Redux », licence CC0 (domaine public) : https://kenney.nl/assets/space-shooter-redux
 `ufoRed-shoot0` et `ufoRed-shoot1` n'en font pas partie : ce sont des variantes de `ufoRed` pour l'animation de tir.
+`playerLife3_blue` non plus : c'est `playerShip3_blue` tourné vers le haut et réduit au tiers, l'icône de vie du HUD.
 
 Les sprites `ui_*` viennent du pack Kenney « UI Pack - Sci-Fi », licence CC0 : https://kenney.nl/assets/ui-pack-sci-fi
 Ce sont les versions `Double` du pack, renommées. Les panneaux sont découpés en 9 (`nineslice`) par `src/utils/UiUtils.ts`.
