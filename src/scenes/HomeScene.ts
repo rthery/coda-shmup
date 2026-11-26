@@ -118,10 +118,7 @@ export default class HomeScene extends Phaser.Scene {
         const centerX: number = this.scale.width / 2;
         const titleY: number = 560;
         this._title = this.add.container(0, 0, [
-            this.add.text(centerX, titleY - 96, 'SURVIVAL',
-                {fontSize: '36px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future', letterSpacing: 12})
-                .setOrigin(0.5),
-            this.add.text(centerX, titleY, 'CODA ARENA', {fontSize: '120px', color: '#fff', fontFamily: 'future'})
+            this.add.text(centerX, titleY, 'FINAL ORBIT', {fontSize: '120px', color: '#fff', fontFamily: 'future'})
                 .setOrigin(0.5).setShadow(0, 8, '#000', 0, false, true),
         ]);
 
