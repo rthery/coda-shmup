@@ -22,6 +22,13 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private static readonly MOVE_RIGHT_CODE = 'KeyD';
     private static readonly MOVE_UP_CODE = 'KeyW';
     private static readonly MOVE_DOWN_CODE = 'KeyS';
+    // Arrows and their WASD positions, with the axis sign each one moves toward
+    private static readonly AXIS_SIGNS: Record<string, { axis: 'x' | 'y', sign: number }> = {
+        ArrowLeft: {axis: 'x', sign: -1}, KeyA: {axis: 'x', sign: -1},
+        ArrowRight: {axis: 'x', sign: 1}, KeyD: {axis: 'x', sign: 1},
+        ArrowUp: {axis: 'y', sign: -1}, KeyW: {axis: 'y', sign: -1},
+        ArrowDown: {axis: 'y', sign: 1}, KeyS: {axis: 'y', sign: 1},
+    };
 
     private _scene: Scene | null = null;
 
@@ -33,6 +40,9 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private _restartKey: Input.Keyboard.Key | null = null;
     // Phaser keys match key codes, which change with the layout: these are tracked by physical position
     private readonly _heldKeyCodes = new Set<string>();
+    // When both directions of an axis are held, the last one pressed wins instead of cancelling out:
+    // rolling from Up to Down would otherwise brake the ship for the overlap
+    private readonly _lastPressedSign = {x: 0, y: 0};
 
     // Touch: a floating joystick, the first touch sets its center
     private _touchPointerId: number = -1;
@@ -214,6 +224,9 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
     private _onAnyKeyDown(event: KeyboardEvent): void {
         this._heldKeyCodes.add(event.code);
+        const axisSign = GameInputManager.AXIS_SIGNS[event.code];
+        if (axisSign && !event.repeat)
+            this._lastPressedSign[axisSign.axis] = axisSign.sign;
         // Escape by position, P by character: P moves between layouts
         if (!event.repeat && (event.code === 'Escape' || event.key.toLowerCase() === 'p'))
             this._isPausePending = true;
@@ -309,10 +322,11 @@ export default class GameInputManager extends Plugins.BasePlugin {
         this._moveDirection.set(0, 0);
 
         const held = this._heldKeyCodes;
-        if (this._leftKey?.isDown || held.has(GameInputManager.MOVE_LEFT_CODE)) this._moveDirection.x -= 1;
-        if (this._rightKey?.isDown || held.has(GameInputManager.MOVE_RIGHT_CODE)) this._moveDirection.x += 1;
-        if (this._upKey?.isDown || held.has(GameInputManager.MOVE_UP_CODE)) this._moveDirection.y -= 1;
-        if (this._downKey?.isDown || held.has(GameInputManager.MOVE_DOWN_CODE)) this._moveDirection.y += 1;
+        this._moveDirection.set(
+            GameInputManager.resolveAxis(!!this._leftKey?.isDown || held.has(GameInputManager.MOVE_LEFT_CODE),
+                !!this._rightKey?.isDown || held.has(GameInputManager.MOVE_RIGHT_CODE), this._lastPressedSign.x),
+            GameInputManager.resolveAxis(!!this._upKey?.isDown || held.has(GameInputManager.MOVE_UP_CODE),
+                !!this._downKey?.isDown || held.has(GameInputManager.MOVE_DOWN_CODE), this._lastPressedSign.y));
 
         if (this._moveDirection.lengthSq() === 0) {
             this._moveDirection.copy(this._touchDirection);
@@ -331,6 +345,12 @@ export default class GameInputManager extends Plugins.BasePlugin {
         }
 
         return this._moveDirection;
+    }
+
+    private static resolveAxis(isNegativeHeld: boolean, isPositiveHeld: boolean, lastPressedSign: number): number {
+        if (isNegativeHeld && isPositiveHeld)
+            return lastPressedSign;
+        return (isPositiveHeld ? 1 : 0) - (isNegativeHeld ? 1 : 0);
     }
 
     public confirmJustPressed(): boolean {
