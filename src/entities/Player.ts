@@ -11,7 +11,7 @@ import Experience from "../components/Experience.ts";
 import Thrusters from "../components/Thrusters.ts";
 import WingTrails from "../components/WingTrails.ts";
 import Turret from "../components/Turret.ts";
-import type {UpgradeData} from "../gameData/UpgradesData.ts";
+import type {UpgradeData, UpgradeId, UpgradePreview} from "../gameData/UpgradesData.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 
 export default class Player extends Entity {
@@ -50,6 +50,7 @@ export default class Player extends Entity {
     private readonly _moveDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _shootDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _muzzle: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private readonly _upgradeRanks: Map<UpgradeId, number> = new Map();
     private _targets: Phaser.Physics.Arcade.Group;
     private _magnetRadius: number = 250;
     private _moveSpeedMultiplier: number = 1;
@@ -128,7 +129,44 @@ export default class Player extends Entity {
         this.getComponent(Turret)?.setTurret(this._playerShipData.turret);
     }
 
+    // Times the upgrade has been picked
+    public getUpgradeRank(id: UpgradeId): number {
+        return this._upgradeRanks.get(id) ?? 0;
+    }
+
+    public getUpgradePreview(upgrade: UpgradeData): UpgradePreview {
+        const value: number = upgrade.value;
+        switch (upgrade.id) {
+            case 'fireRate':
+                return Player.preview("FIRE RATE", 1 / this._rateOfFire, 1 / (this._rateOfFire * value), 1, " /S");
+            case 'damage':
+                return Player.preview("DAMAGE", this._bulletData.damage, this._bulletData.damage + value);
+            case 'range':
+                return Player.preview("RANGE", this._bulletData.range, this._bulletData.range + value);
+            case 'bulletSpeed':
+                return Player.preview("LASER SPEED", this._bulletData.speed, this._bulletData.speed * value);
+            case 'moveSpeed': {
+                const speed: number = this._playerShipData.movementSpeed * this._moveSpeedMultiplier * 1000;
+                return Player.preview("SPEED", speed, speed * value);
+            }
+            case 'maxHealth': {
+                const lives: number = this.getComponent(Health)?.max ?? 0;
+                return Player.preview("LIVES", lives, lives + value);
+            }
+            case 'pierce':
+                return Player.preview("PIERCE", this._bulletData.pierce, this._bulletData.pierce + value);
+            case 'magnet':
+                return Player.preview("MAGNET", this._magnetRadius, this._magnetRadius + value);
+        }
+    }
+
+    private static preview(stat: string, current: number, next: number, decimals: number = 0,
+                           unit: string = ""): UpgradePreview {
+        return {stat, current: current.toFixed(decimals), next: next.toFixed(decimals) + unit};
+    }
+
     public applyUpgrade(upgrade: UpgradeData) {
+        this._upgradeRanks.set(upgrade.id, this.getUpgradeRank(upgrade.id) + 1);
         switch (upgrade.id) {
             case 'fireRate':
                 this._rateOfFire *= upgrade.value;

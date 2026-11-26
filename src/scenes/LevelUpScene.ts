@@ -15,6 +15,16 @@ export default class LevelUpScene extends Scene {
     private static readonly SELECTED_CARD_SCALE: number = 1.04;
     private static readonly CARD_SCALE: number = 0.96;
     private static readonly CARD_ALPHA: number = 0.8;
+    // Rank pips in the header, left of the crosshair: slanted like the combo pips
+    private static readonly PIP_WIDTH: number = 26;
+    private static readonly PIP_HEIGHT: number = 20;
+    private static readonly PIP_SKEW: number = 7;
+    private static readonly PIP_GAP: number = 8;
+    private static readonly PIPS_RIGHT_MARGIN: number = 150;
+    private static readonly PIP_OWNED_COLOR: number = 0xf5c542;
+    private static readonly PIP_EMPTY_COLOR: number = 0x4a5263;
+    private static readonly PIP_EMPTY_ALPHA: number = 0.25;
+    private static readonly NEXT_VALUE_COLOR: string = '#2f8f52';
     private static readonly CATEGORY_FRAMES: Record<UpgradeCategory, UiFrame> = {
         weapon: 'ui_header_blade_red',
         ship: 'ui_header_blade_green',
@@ -54,8 +64,14 @@ export default class LevelUpScene extends Scene {
         this.add.text(centerX, 530, `LEVEL ${level} REACHED`,
             {fontSize: '36px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
 
+        // Maxed upgrades aren't offered anymore
         const allUpgrades = this.cache.json.get('upgrades') as UpgradeData[];
-        this._upgrades = Phaser.Utils.Array.Shuffle([...allUpgrades]).slice(0, LevelUpScene.CHOICE_COUNT);
+        const availableUpgrades = allUpgrades.filter(upgrade => this._player.getUpgradeRank(upgrade.id) < upgrade.maxRank);
+        this._upgrades = Phaser.Utils.Array.Shuffle(availableUpgrades).slice(0, LevelUpScene.CHOICE_COUNT);
+        if (this._upgrades.length === 0) {
+            this.close();
+            return;
+        }
 
         this._upgrades.forEach((upgrade, index) => {
             const cardY: number = 760 + index * LevelUpScene.CARD_SPACING;
@@ -90,10 +106,43 @@ export default class LevelUpScene extends Scene {
             .setOrigin(0, 0.5);
         const titleText = this.add.text(-halfWidth + 48, bodyCenterY - 28, upgrade.title,
             {fontSize: '52px', color: UiUtils.INK_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
-        const descriptionText = this.add.text(-halfWidth + 48, bodyCenterY + 36, upgrade.description,
-            {fontSize: '34px', color: UiUtils.INK_SOFT_COLOR}).setOrigin(0, 0.5);
+        // The exact change instead of a generic description: "FIRE RATE 2.0 -> 2.4 /S"
+        const preview = this._player.getUpgradePreview(upgrade);
+        const currentText = this.add.text(-halfWidth + 48, bodyCenterY + 40, `${preview.stat} ${preview.current} → `,
+            {fontSize: '32px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
+        const nextText = this.add.text(currentText.x + currentText.width, currentText.y, preview.next,
+            {fontSize: '32px', color: LevelUpScene.NEXT_VALUE_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
 
-        return this.add.container(x, y, [panel, categoryText, titleText, descriptionText]);
+        const pips = this.createRankPips(upgrade, halfWidth - LevelUpScene.PIPS_RIGHT_MARGIN, top + UiUtils.HEADER_HEIGHT / 2);
+        return this.add.container(x, y, [panel, categoryText, titleText, currentText, nextText, ...pips]);
+    }
+
+    // One pip per rank: gold when owned, the one this pick adds blinks
+    private createRankPips(upgrade: UpgradeData, right: number, y: number): GameObjects.Polygon[] {
+        const rank: number = this._player.getUpgradeRank(upgrade.id);
+        const step: number = LevelUpScene.PIP_WIDTH + LevelUpScene.PIP_GAP;
+        const firstX: number = right - LevelUpScene.PIP_WIDTH / 2 - (upgrade.maxRank - 1) * step;
+        const shape: number[] = [
+            LevelUpScene.PIP_SKEW, 0,
+            LevelUpScene.PIP_WIDTH, 0,
+            LevelUpScene.PIP_WIDTH - LevelUpScene.PIP_SKEW, LevelUpScene.PIP_HEIGHT,
+            0, LevelUpScene.PIP_HEIGHT
+        ];
+
+        const pips: GameObjects.Polygon[] = [];
+        for (let i = 0; i < upgrade.maxRank; i++) {
+            const pip = this.add.polygon(firstX + i * step, y, shape).setOrigin(0.5);
+            if (i < rank) {
+                pip.setFillStyle(LevelUpScene.PIP_OWNED_COLOR, 1);
+            } else if (i === rank) {
+                pip.setFillStyle(LevelUpScene.PIP_OWNED_COLOR, 1);
+                this.tweens.add({targets: pip, alpha: {from: 1, to: 0.2}, duration: 400, yoyo: true, repeat: -1});
+            } else {
+                pip.setFillStyle(LevelUpScene.PIP_EMPTY_COLOR, LevelUpScene.PIP_EMPTY_ALPHA);
+            }
+            pips.push(pip);
+        }
+        return pips;
     }
 
     private onInputTypeChanged(type: InputType) {
@@ -145,7 +194,10 @@ export default class LevelUpScene extends Scene {
         this._chosen = true;
 
         this._player.applyUpgrade(this._upgrades[index]);
+        this.close();
+    }
 
+    private close() {
         this.scene.stop();
         this.scene.resume(GameConstants.SceneKeys.MAIN_GAME);
         this.game.events.emit(GameConstants.Events.LEVEL_UP_CLOSED_EVENT);

@@ -8,4 +8,13 @@ export type UpgradeData = {
     title: string;
     description: string;
     value: number;
+    // Times it can be picked, it stops being offered after that
+    maxRank: number;
+}
+
+// The stat an upgrade changes, as shown on its card: "FIRE RATE 2.0 -> 2.4 /S"
+export type UpgradePreview = {
+    stat: string;
+    current: string;
+    next: string;
 }

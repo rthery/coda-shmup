@@ -4,55 +4,63 @@
     "category": "weapon",
     "title": "RAPID FIRE",
     "description": "Shoot 15% faster",
-    "value": 0.85
+    "value": 0.85,
+    "maxRank": 5
   },
   {
     "id": "damage",
     "category": "weapon",
     "title": "HEAVY LASERS",
     "description": "+1 laser damage",
-    "value": 1
+    "value": 1,
+    "maxRank": 5
   },
   {
     "id": "range",
     "category": "weapon",
     "title": "LONG RANGE",
     "description": "+150 laser range",
-    "value": 150
+    "value": 150,
+    "maxRank": 5
   },
   {
     "id": "bulletSpeed",
     "category": "weapon",
     "title": "FAST LASERS",
     "description": "Lasers fly 20% faster",
-    "value": 1.2
+    "value": 1.2,
+    "maxRank": 5
   },
   {
     "id": "moveSpeed",
     "category": "ship",
     "title": "THRUSTERS",
     "description": "Move 10% faster",
-    "value": 1.1
+    "value": 1.1,
+    "maxRank": 5
   },
   {
     "id": "maxHealth",
     "category": "ship",
     "title": "HULL PLATING",
     "description": "+1 max life, full repair",
-    "value": 1
+    "value": 1,
+    "maxRank": 5
   },
   {
     "id": "magnet",
     "category": "ship",
     "title": "MAGNET",
     "description": "Collect XP from further away",
-    "value": 100
+    "value": 100,
+    "maxRank": 5
   },
   {
     "id": "pierce",
     "category": "weapon",
     "title": "PIERCING",
     "description": "Lasers go through +1 enemy",
-    "value": 1
+    "value": 1,
+    "maxRank": 5
   }
 ]
