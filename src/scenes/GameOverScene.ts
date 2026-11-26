@@ -10,7 +10,7 @@ export default class GameOverScene extends Phaser.Scene {
     private static readonly SCORE_COUNT_DURATION: number = 900;
     private static readonly LINE_STAGGER: number = 150;
     private static readonly LINE_RISE: number = 30;
-    // The level-up cards' panel, with a neutral blue tab: red and green mean weapon and ship there
+    // The level-up cards' panel, with a green tab: red and blue mean weapon and ship there
     private static readonly PANEL_WIDTH: number = 880;
     private static readonly PANEL_HEIGHT: number = 600;
     private static readonly PANEL_CENTER_Y: number = 1000;
@@ -45,7 +45,7 @@ export default class GameOverScene extends Phaser.Scene {
         this.reveal(title, 100, {alpha: {from: 0, to: 1}, scale: {from: 1.6, to: 1}}, 400, 'Back.easeOut');
 
         const panel = UiUtils.addPanel(this, centerX, GameOverScene.PANEL_CENTER_Y, GameOverScene.PANEL_WIDTH,
-            GameOverScene.PANEL_HEIGHT, 'ui_header_blade_blue');
+            GameOverScene.PANEL_HEIGHT, 'ui_header_blade_green');
         this.reveal(panel, 350, {scaleY: {from: 0, to: UiUtils.PANEL_SCALE}, alpha: {from: 0, to: 1}}, 250);
         const panelTop: number = GameOverScene.PANEL_CENTER_Y - GameOverScene.PANEL_HEIGHT / 2;
         const tabText = this.add.text(centerX - GameOverScene.PANEL_WIDTH / 2 + 40, panelTop + UiUtils.HEADER_HEIGHT / 2,

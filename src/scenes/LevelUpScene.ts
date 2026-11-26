@@ -9,9 +9,14 @@ import UiUtils, {type UiFrame} from "../utils/UiUtils.ts";
 export default class LevelUpScene extends Scene {
     private static readonly CHOICE_COUNT: number = 3;
     private static readonly STICK_THRESHOLD: number = 0.5;
-    private static readonly CARD_WIDTH: number = 900;
-    private static readonly CARD_HEIGHT: number = 280;
-    private static readonly CARD_SPACING: number = 320;
+    private static readonly CARD_WIDTH: number = 960;
+    private static readonly CARD_HEIGHT: number = 320;
+    private static readonly CARD_SPACING: number = 360;
+    // Below the HUD, which stays on top of this screen
+    private static readonly FIRST_CARD_Y: number = 760;
+    private static readonly CARD_PADDING: number = 40;
+    private static readonly ICON_SCALE: number = 3;
+    private static readonly ICON_TEXT_GAP: number = 32;
     private static readonly SELECTED_CARD_SCALE: number = 1.04;
     private static readonly CARD_SCALE: number = 0.96;
     private static readonly CARD_ALPHA: number = 0.8;
@@ -31,7 +36,12 @@ export default class LevelUpScene extends Scene {
     private static readonly CARD_SLIDE_DURATION: number = 400;
     private static readonly CATEGORY_FRAMES: Record<UpgradeCategory, UiFrame> = {
         weapon: 'ui_header_blade_red',
-        ship: 'ui_header_blade_green',
+        // Blue like the ship
+        ship: 'ui_header_blade_blue',
+    };
+    private static readonly CATEGORY_ICONS: Record<UpgradeCategory, string> = {
+        weapon: 'ui_icon_weapon',
+        ship: 'ui_icon_ship',
     };
 
     private _player: Player;
@@ -95,7 +105,7 @@ export default class LevelUpScene extends Scene {
         }
 
         this._upgrades.forEach((upgrade, index) => {
-            const cardY: number = 760 + index * LevelUpScene.CARD_SPACING;
+            const cardY: number = LevelUpScene.FIRST_CARD_Y + index * LevelUpScene.CARD_SPACING;
             this._cards.push(this.createCard(upgrade, index, centerX, cardY));
         });
 
@@ -138,17 +148,22 @@ export default class LevelUpScene extends Scene {
         const categoryText = this.add.text(-halfWidth + 40, top + UiUtils.HEADER_HEIGHT / 2,
             upgrade.category.toUpperCase(), {fontSize: '32px', color: '#fff', fontFamily: 'future'})
             .setOrigin(0, 0.5);
-        const titleText = this.add.text(-halfWidth + 48, bodyCenterY - 28, upgrade.title,
-            {fontSize: '52px', color: UiUtils.INK_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
+        // The category icon on the left of the body, the texts beside it
+        const icon = this.add.image(0, bodyCenterY, 'sprites', LevelUpScene.CATEGORY_ICONS[upgrade.category])
+            .setScale(LevelUpScene.ICON_SCALE);
+        icon.setX(-halfWidth + LevelUpScene.CARD_PADDING + icon.displayWidth / 2);
+        const textX: number = icon.x + icon.displayWidth / 2 + LevelUpScene.ICON_TEXT_GAP;
+        const titleText = this.add.text(textX, bodyCenterY - 32, upgrade.title,
+            {fontSize: '60px', color: UiUtils.INK_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
         // The exact change instead of a generic description: "FIRE RATE 2.0 -> 2.4 /S"
         const preview = this._player.getUpgradePreview(upgrade);
-        const currentText = this.add.text(-halfWidth + 48, bodyCenterY + 40, `${preview.stat} ${preview.current} → `,
-            {fontSize: '32px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
+        const currentText = this.add.text(textX, bodyCenterY + 44, `${preview.stat} ${preview.current} → `,
+            {fontSize: '36px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
         const nextText = this.add.text(currentText.x + currentText.width, currentText.y, preview.next,
-            {fontSize: '32px', color: LevelUpScene.NEXT_VALUE_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
+            {fontSize: '36px', color: LevelUpScene.NEXT_VALUE_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
 
         const pips = this.createRankPips(upgrade, halfWidth - LevelUpScene.PIPS_RIGHT_MARGIN, top + UiUtils.HEADER_HEIGHT / 2);
-        return this.add.container(x, y, [panel, categoryText, titleText, currentText, nextText, ...pips]);
+        return this.add.container(x, y, [panel, categoryText, icon, titleText, currentText, nextText, ...pips]);
     }
 
     // One pip per rank: gold when owned, the one this pick adds blinks
