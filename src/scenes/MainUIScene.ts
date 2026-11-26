@@ -60,6 +60,7 @@ export default class MainUIScene extends Scene {
     private _threatBanner: GameObjects.Container;
     private _threatTitle: GameObjects.Text;
     private _threatLines: GameObjects.Rectangle[];
+    private _isThreatBannerOnHold: boolean = false;
     private _comboText: GameObjects.Text;
     private _comboTextX: number;
     private _comboPips: GameObjects.Polygon[];
@@ -357,6 +358,24 @@ export default class MainUIScene extends Scene {
                 duration: 400
             })
         });
+    }
+
+    // This HUD draws over the level-up, pause and game over screens: the banner hides and waits behind them
+    private holdThreatBannerBehindScreens() {
+        const isOnHold: boolean = this.scene.isActive(GameConstants.SceneKeys.LEVEL_UP)
+            || this.scene.isActive(GameConstants.SceneKeys.PAUSE)
+            || this.scene.isActive(GameConstants.SceneKeys.GAME_OVER);
+        if (isOnHold === this._isThreatBannerOnHold)
+            return;
+        this._isThreatBannerOnHold = isOnHold;
+
+        this._threatBanner.setVisible(!isOnHold);
+        this.tweens.getTweensOf([this._threatBanner, ...this._threatLines])
+            .forEach(tween => isOnHold ? tween.pause() : tween.resume());
+    }
+
+    update() {
+        this.holdThreatBannerBehindScreens();
     }
 
     // Red at the screen edges, clear in the middle, drawn once
