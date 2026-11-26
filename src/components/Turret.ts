@@ -11,8 +11,6 @@ type GuideTarget = { x: number; y: number; displayWidth: number };
 export default class Turret implements IComponent {
     public enabled: boolean = true;
 
-    private static readonly FRAME: string = 'playerTurret';
-    private static readonly TWIN_FRAME: string = 'playerTurretTwin';
     // Twin barrels sit this far either side of the turret's axis
     private static readonly TWIN_BARREL_OFFSET: number = 5;
     private static readonly HEAT_GLOW_TINT: number = 0x00ccff;
@@ -49,7 +47,8 @@ export default class Turret implements IComponent {
     private readonly _pivot: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _muzzle: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _recoil = {distance: 0};
-    private _data: TurretData = {x: 0, y: 0};
+    private _data: TurretData = {x: 0, y: 0, frame: 'playerTurret', twinFrame: 'playerTurretTwin'};
+    private _isTwin: boolean = false;
     private _targetRotation: number | null = null;
     private _timeWithoutTarget: number = 0; // ms
     // 0 on a single barrel, alternates between -1 and 1 on twin barrels
@@ -67,7 +66,7 @@ export default class Turret implements IComponent {
 
     constructor(ship: Ship) {
         this._ship = ship;
-        this._image = ship.scene.add.image(0, 0, 'sprites', Turret.FRAME);
+        this._image = ship.scene.add.image(0, 0, 'sprites', this._data.frame);
         this._image.setOrigin(Turret.BASE_RADIUS / this._image.width, 0.5).setRotation(ship.rotation);
         // Flame shapes point up, their base on the barrel's end
         this._flash = ship.scene.add.image(0, 0, 'shapes', Turret.FLASH_FRAMES[0])
@@ -82,7 +81,8 @@ export default class Turret implements IComponent {
     // RAPID FIRE: a hotter barrel after each shot, twin barrels at the max rank
     public setRapidFire(heat: number, isTwin: boolean) {
         this._heat = heat;
-        this._image.setFrame(isTwin ? Turret.TWIN_FRAME : Turret.FRAME);
+        this._isTwin = isTwin;
+        this._image.setFrame(isTwin ? this._data.twinFrame : this._data.frame);
         this._barrelSide = isTwin ? 1 : 0;
     }
 
@@ -142,6 +142,7 @@ export default class Turret implements IComponent {
 
     public setTurret(data: TurretData) {
         this._data = data;
+        this._image.setFrame(this._isTwin ? data.twinFrame : data.frame);
     }
 
     // null: back to the ship's heading

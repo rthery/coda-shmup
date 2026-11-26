@@ -19,7 +19,9 @@
     ],
     "turret": {
       "x": -17,
-      "y": 0
+      "y": 0,
+      "frame": "playerTurret",
+      "twinFrame": "playerTurretTwin"
     },
     "wingTips": [
       {
@@ -53,7 +55,9 @@
     ],
     "turret": {
       "x": -6,
-      "y": 0
+      "y": 0,
+      "frame": "playerTurret_orange",
+      "twinFrame": "playerTurretTwin_orange"
     },
     "wingTips": [
       {

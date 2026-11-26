@@ -28,6 +28,7 @@ Les sprites viennent du pack Kenney « Space Shooter Redux », licence CC0 (doma
 `ui_icon_ship` est `powerupBlue` avec l'icône `playerLife3_blue` en blanc dessus.
 `pickup_bomb` est `powerupRed_star`, `pickup_magnet` est `powerupYellow_star`, `pickup_repair` est `pill_green` (dossier `Power-ups`).
 `playerShip1_orange` (tourné vers la droite comme `playerShip3_blue`) et `playerLife1_orange` sont le vaisseau du joueur 2.
+`playerTurret_orange` et `playerTurretTwin_orange` reprennent les tourelles avec le dôme dans l'orange de ce vaisseau.
 
 Les sprites `ui_*` viennent du pack Kenney « UI Pack - Sci-Fi », licence CC0 : https://kenney.nl/assets/ui-pack-sci-fi
 Ce sont les versions `Double` du pack, renommées. Les panneaux sont découpés en 9 (`nineslice`) par `src/utils/UiUtils.ts`.
