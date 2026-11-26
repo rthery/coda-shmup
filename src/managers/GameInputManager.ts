@@ -81,6 +81,11 @@ export default class GameInputManager extends Plugins.BasePlugin {
         this._isFocusLossPending = true;
     }
 
+    // The pause key and the touch pause button both go through the next step's pauseJustPressed()
+    public requestPause(): void {
+        this._isPausePending = true;
+    }
+
     private _preUpdate(): void {
         this._updateSceneBinding();
 
@@ -380,6 +385,11 @@ export default class GameInputManager extends Plugins.BasePlugin {
     // The window lost focus or got hidden since the last step
     public focusJustLost(): boolean {
         return this._focusJustLost;
+    }
+
+    // The floating joystick while a finger holds it, in screen coordinates: null otherwise
+    public get touchJoystick(): { origin: Phaser.Math.Vector2, offset: Phaser.Math.Vector2 } | null {
+        return this._touchPointerId === -1 ? null : {origin: this._touchOrigin, offset: this._touchDirection};
     }
 
     public get activeInputType(): InputType {

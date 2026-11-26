@@ -9,9 +9,20 @@ import UiLayout from "../utils/UiLayout.ts";
 import DifficultyCurve from "../utils/DifficultyCurve.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 import Sfx from "../audio/Sfx.ts";
+import type {InputType} from "../managers/GameInputManager.ts";
 
 export default class MainUIScene extends Scene {
     private static readonly MARGIN: number = 64;
+    // Touch only: right of the run clock, clear of the score
+    private static readonly PAUSE_BUTTON_OFFSET_X: number = 190;
+    private static readonly PAUSE_BUTTON_RADIUS: number = 40;
+    private static readonly PAUSE_BUTTON_HIT_SIZE: number = 120;
+    private static readonly PAUSE_BAR_WIDTH: number = 10;
+    private static readonly PAUSE_BAR_HEIGHT: number = 30;
+    private static readonly PAUSE_BAR_GAP: number = 8;
+    // The floating joystick: a ring where the thumb landed, and a knob following it up to the ring
+    private static readonly JOYSTICK_RADIUS: number = 110;
+    private static readonly JOYSTICK_KNOB_RADIUS: number = 44;
     private static readonly LIFE_ICON_SCALE: number = 2;
     private static readonly LIFE_ICON_SPACING: number = 12;
     // Smaller and tighter than the hull icons, so 3 hull points and 3 shield cells stay clear of the run clock
@@ -67,6 +78,10 @@ export default class MainUIScene extends Scene {
     private _damageVignette: GameObjects.Image;
     private _scoreText: GameObjects.BitmapText;
     private _cornerBrackets: GameObjects.Graphics;
+    private _pauseButton: GameObjects.Container;
+    private _joystick: GameObjects.Graphics;
+    private readonly _joystickOrigin: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private readonly _joystickTip: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private _runTimeText: GameObjects.Text;
     private _difficulty: DifficultyCurve;
     private _threatLevel: number = 0;
@@ -111,6 +126,7 @@ export default class MainUIScene extends Scene {
         this.registry.events.on(RegistryConstants.Events.PLAYER_COMBO_CHANGE, this.onPlayerComboChanged, this);
         this.registry.events.on(RegistryConstants.Events.PLAYER_COMBO_PROGRESS_CHANGE, this.onComboProgressChanged, this);
         this.game.events.on(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
+        this.game.events.on('input-type-changed', this.onInputTypeChanged, this);
 
         this.events.once(Scenes.Events.SHUTDOWN, () => {
             this.game.events.off(GameConstants.Events.PLAYER_SPAWNED_EVENT, this.onPlayerSpawned, this);
@@ -121,6 +137,7 @@ export default class MainUIScene extends Scene {
             this.registry.events.off(RegistryConstants.Events.PLAYER_COMBO_CHANGE, this.onPlayerComboChanged, this);
             this.registry.events.off(RegistryConstants.Events.PLAYER_COMBO_PROGRESS_CHANGE, this.onComboProgressChanged, this);
             this.game.events.off(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
+            this.game.events.off('input-type-changed', this.onInputTypeChanged, this);
         }, this);
     }
 
@@ -193,6 +210,9 @@ export default class MainUIScene extends Scene {
             this._comboPips.push(pip);
         }
 
+        this._joystick = this.add.graphics();
+        this.createPauseButton();
+
         this.scene.bringToTop();
         UiLayout.onResize(this, () => this.layout());
 
@@ -209,6 +229,7 @@ export default class MainUIScene extends Scene {
         this._scoreText.setX(right);
         this.drawCornerBrackets(area.width);
         this._runTimeText.setX(area.width / 2);
+        this._pauseButton.setX(area.width / 2 + MainUIScene.PAUSE_BUTTON_OFFSET_X);
         this._threatBanner.setX(area.width / 2);
         this._threatBand.setSize(area.width, MainUIScene.THREAT_BAND_HEIGHT);
         this._hazardTapes.forEach(tape => tape.setSize(area.width, MainUIScene.HAZARD_TAPE_HEIGHT));
@@ -224,6 +245,43 @@ export default class MainUIScene extends Scene {
         this._comboTextX = firstPipX - MainUIScene.COMBO_PIP_WIDTH / 2 - 20;
         this._comboText.setX(this._comboTextX);
         this._comboMaxText.setX(right);
+    }
+
+    // Touch players have no pause key
+    private createPauseButton() {
+        const barX: number = (MainUIScene.PAUSE_BAR_WIDTH + MainUIScene.PAUSE_BAR_GAP) / 2;
+        const icon = this.add.graphics()
+            .fillStyle(0x000000, 0.35).fillCircle(0, 0, MainUIScene.PAUSE_BUTTON_RADIUS)
+            .lineStyle(3, 0xffffff, 0.4).strokeCircle(0, 0, MainUIScene.PAUSE_BUTTON_RADIUS)
+            .fillStyle(0xffffff, 0.8);
+        [-barX, barX].forEach(x => icon.fillRect(x - MainUIScene.PAUSE_BAR_WIDTH / 2, -MainUIScene.PAUSE_BAR_HEIGHT / 2,
+            MainUIScene.PAUSE_BAR_WIDTH, MainUIScene.PAUSE_BAR_HEIGHT));
+        // A finger-sized target, bigger than the icon
+        const hitZone = this.add.zone(0, 0, MainUIScene.PAUSE_BUTTON_HIT_SIZE, MainUIScene.PAUSE_BUTTON_HIT_SIZE)
+            .setInteractive()
+            .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => this.gameInputManager.requestPause());
+        this._pauseButton = this.add.container(0, MainUIScene.MARGIN + 26, [icon, hitZone]);
+        this.onInputTypeChanged(this.gameInputManager.activeInputType);
+    }
+
+    private onInputTypeChanged(type: InputType) {
+        this._pauseButton.setVisible(type === 'touch');
+    }
+
+    // Drawn only while a finger holds it during the run, not under the level-up or pause screens
+    private updateJoystick() {
+        this._joystick.clear();
+        const joystick = this.gameInputManager.touchJoystick;
+        if (!joystick || !this.scene.isActive(GameConstants.SceneKeys.MAIN_GAME))
+            return;
+
+        const camera = this.cameras.main;
+        camera.getWorldPoint(joystick.origin.x, joystick.origin.y, this._joystickOrigin);
+        camera.getWorldPoint(joystick.origin.x + joystick.offset.x, joystick.origin.y + joystick.offset.y, this._joystickTip);
+        this._joystickTip.subtract(this._joystickOrigin).limit(MainUIScene.JOYSTICK_RADIUS).add(this._joystickOrigin);
+        this._joystick
+            .lineStyle(4, 0xffffff, 0.3).strokeCircle(this._joystickOrigin.x, this._joystickOrigin.y, MainUIScene.JOYSTICK_RADIUS)
+            .fillStyle(0xffffff, 0.25).fillCircle(this._joystickTip.x, this._joystickTip.y, MainUIScene.JOYSTICK_KNOB_RADIUS);
     }
 
     private onRunTimeChanged(_: any, seconds: number) {
@@ -458,6 +516,7 @@ export default class MainUIScene extends Scene {
 
     update(_timeSinceLaunch: number, deltaTime: number) {
         this.holdThreatBannerBehindScreens();
+        this.updateJoystick();
 
         // The tape strips run in opposite directions while the banner shows
         if (this._isThreatBannerOnHold || this._threatBanner.alpha <= 0)
