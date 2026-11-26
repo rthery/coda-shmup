@@ -21,6 +21,8 @@ export default class LevelUpScene extends Scene {
     private static readonly ICON_TEXT_GAP: number = 32;
     // The selected card rises over its shadow, the others stay down and dimmer, like the pause buttons
     private static readonly CARD_LIFT: number = 14;
+    // And steps out of the column to the right: a lift alone reads as spacing in a vertical stack
+    private static readonly CARD_NUDGE: number = 30;
     private static readonly CARD_SHADOW_ALPHA: number = 0.45;
     private static readonly CARD_SHADOW_RADIUS: number = 18;
     private static readonly CARD_ALPHA: number = 0.8;
@@ -173,7 +175,7 @@ export default class LevelUpScene extends Scene {
             .fillRoundedRect(-halfWidth, top + LevelUpScene.CARD_LIFT, LevelUpScene.CARD_WIDTH, LevelUpScene.CARD_HEIGHT,
                 LevelUpScene.CARD_SHADOW_RADIUS);
         return this.add.container(x, y, [shadow, panel, categoryText, icon, titleText, currentText, nextText, ...rankBlock])
-            .setData('restY', y).setData('shadow', shadow);
+            .setData('restX', x).setData('restY', y).setData('shadow', shadow);
     }
 
     // One pip per rank: gold when owned, the one this pick adds blinks
@@ -264,6 +266,9 @@ export default class LevelUpScene extends Scene {
             const isSelected: boolean = cardIndex === index;
             card.setY(card.getData('restY') - (isSelected ? LevelUpScene.CARD_LIFT : 0))
                 .setAlpha(isSelected ? 1 : LevelUpScene.CARD_ALPHA);
+            // The entrance slide owns x until the cards land
+            if (this._isReady)
+                card.setX(card.getData('restX') + (isSelected ? LevelUpScene.CARD_NUDGE : 0));
             (card.getData('shadow') as GameObjects.Graphics).setVisible(isSelected);
         });
     }
