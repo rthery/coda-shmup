@@ -19,6 +19,11 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
     private static readonly XP_GEM_SCATTER_MIN_RADIUS: number = 24;
     private static readonly XP_GEM_SCATTER_MAX_RADIUS: number = 56;
+    private static readonly DAMAGE_NUMBER_RISE: number = 70;
+    private static readonly DAMAGE_NUMBER_DURATION: number = 600;
+    private static readonly DAMAGE_NUMBER_JITTER: number = 16;
+    // Extra explosion per combo level above X1
+    private static readonly EXPLOSION_PER_COMBO: number = 0.5;
 
     private static readonly ENTITIES_DEPTHS = {
         EFFECTS_TOP: 600,
@@ -50,6 +55,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private readonly _xpGemScatter: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private _difficulty: DifficultyCurve;
     private _explosionFireFX: GameObjects.Particles.ParticleEmitter;
+    private _damageNumbers: GameObjects.Group;
     private _explosionSmokeFX: GameObjects.Particles.ParticleEmitter;
     private _laserFlashFX: GameObjects.Particles.ParticleEmitter;
     private _laserSparksFX: GameObjects.Particles.ParticleEmitter;
@@ -178,9 +184,17 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
             this.spawnLaserImpact((bullet as Bullet).x, (bullet as Bullet).y, (bullet as Bullet).bulletData.fx);
 
+            const bulletVelocity = (bullet as Bullet).body!.velocity;
+            (enemy as Enemy).playHit(bulletVelocity.x, bulletVelocity.y);
             if (!(bullet as Bullet).pierce())
                 (bullet as Bullet).disable();
-            (enemy as Enemy).getComponent(Health)?.damage((bullet as Bullet).bulletData.damage);
+
+            const damage: number = (bullet as Bullet).bulletData.damage;
+            const enemyHealth = (enemy as Enemy).getComponent(Health);
+            // One-shot enemies would flood the screen with 1s
+            if (enemyHealth && enemyHealth.max > 1)
+                this.spawnDamageNumber((enemy as Enemy).x, (enemy as Enemy).y, damage, enemyHealth.current <= damage);
+            enemyHealth?.damage(damage);
         });
 
         this.scene!.physics.add.overlap(this._player, this._enemyBullets, (player, bullet) => {
@@ -218,6 +232,13 @@ export default class EntityManager extends Plugins.ScenePlugin {
     }
 
     public initParticleEmitters() {
+        this._damageNumbers = this.scene!.add.group({
+            classType: GameObjects.Text,
+            createCallback: (text) => {
+                (text as GameObjects.Text).setStyle({fontFamily: 'future', stroke: '#0a1a33', strokeThickness: 6})
+                    .setOrigin(0.5).setDepth(EntityManager.ENTITIES_DEPTHS.EFFECTS_TOP);
+            }
+        });
         this._initExplosionEmitters();
         this._initLaserEmitters();
         this._initCollisionEmitters();
@@ -331,9 +352,32 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this._collisionShockwaveFX.explode(6, x, y);
     }
 
-    public spawnExplosion(x: number, y: number) {
-        this._explosionFireFX.explode(8, x, y);
-        this._explosionSmokeFX.explode(12, x, y);
+    public spawnExplosion(x: number, y: number, size: number = 1) {
+        this._explosionFireFX.explode(Math.round(8 * size), x, y);
+        this._explosionSmokeFX.explode(Math.round(12 * size), x, y);
+    }
+
+    // HUD-like readout that rises and fades above the enemy: cyan, gold on the killing blow
+    public spawnDamageNumber(x: number, y: number, damage: number, isKill: boolean) {
+        const jitter: number = EntityManager.DAMAGE_NUMBER_JITTER;
+        const text: GameObjects.Text = this._damageNumbers.get(x + Phaser.Math.Between(-jitter, jitter), y);
+        text.setActive(true).setVisible(true).setAlpha(1).setText(damage.toString())
+            .setFontSize(isKill ? 44 : 32).setColor(isKill ? '#ffcc00' : '#7fe8ff');
+
+        this.scene!.tweens.add({targets: text, scale: {from: 1.3, to: 1}, duration: 120, ease: 'Quad.easeOut'});
+        this.scene!.tweens.add({
+            targets: text,
+            y: text.y - EntityManager.DAMAGE_NUMBER_RISE,
+            duration: EntityManager.DAMAGE_NUMBER_DURATION,
+            ease: 'Quad.easeOut'
+        });
+        this.scene!.tweens.add({
+            targets: text,
+            alpha: 0,
+            delay: EntityManager.DAMAGE_NUMBER_DURATION / 2,
+            duration: EntityManager.DAMAGE_NUMBER_DURATION / 2,
+            onComplete: () => this._damageNumbers.killAndHide(text)
+        });
     }
 
     // Several gems scatter around the kill, so they don't stack
@@ -373,9 +417,10 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this.game!.events.emit(GameConstants.Events.ENEMY_SPAWNED_EVENT, enemy);
 
         enemy.getComponent(Health)?.once(Health.DEATH_START_EVENT, () => {
-            this.spawnExplosion(enemy.x, enemy.y);
+            const combo: number = this.scene!.registry.get(RegistryConstants.Keys.PLAYER_COMBO) ?? 1;
+            this.spawnExplosion(enemy.x, enemy.y, 1 + (combo - 1) * EntityManager.EXPLOSION_PER_COMBO);
             // One gem per combo level: staying unhurt levels up faster
-            this.spawnXpGems(enemy.x, enemy.y, this.scene!.registry.get(RegistryConstants.Keys.PLAYER_COMBO) ?? 1);
+            this.spawnXpGems(enemy.x, enemy.y, combo);
             this.game!.events.emit(GameConstants.Events.ENEMY_KILLED_EVENT, enemy);
         });
 

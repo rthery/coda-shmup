@@ -8,14 +8,19 @@ import GameConstants from "../GameConstants.ts";
 import Experience from "../components/Experience.ts";
 import Movement from "../components/Movement.ts";
 import Player from "../entities/Player.ts";
+import type Enemy from "../entities/Enemy.ts";
 
 export default class MainGameScene extends Scene {
     private static readonly KILL_SCORE: number = 10;
+    private static readonly HIT_STOP_DURATION: number = 40; // ms
+    private static readonly HIT_STOP_COOLDOWN: number = 400; // ms
 
     private saveManager: SaveManager;
     private entityManager: EntityManager;
     private _killStreak: number = 0;
     private _runTime: number = 0; // ms
+    private _lastHitStopTime: number = -Infinity; // ms, real time
+    private _hitStopEndTime: number = 0; // ms, real time
     private player: Player;
     private readonly cameraLookAhead: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
@@ -73,6 +78,7 @@ export default class MainGameScene extends Scene {
         this.game.events.on(GameConstants.Events.ENEMY_KILLED_EVENT, this.onEnemyKilled, this);
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             this.game.events.off(GameConstants.Events.ENEMY_KILLED_EVENT, this.onEnemyKilled, this);
+            this.game.events.off(Phaser.Core.Events.POST_STEP, this.updateHitStop, this);
         }, this);
 
         this.registry.set(RegistryConstants.Keys.PLAYER_SCORE, 0);
@@ -84,10 +90,44 @@ export default class MainGameScene extends Scene {
         console.log("MainGameScene created");
     }
 
-    private onEnemyKilled() {
+    private onEnemyKilled(enemy: Enemy) {
+        // Only tougher enemies get the freeze, or a crowd of one-shot kills would stutter
+        if ((enemy.getComponent(Health)?.max ?? 1) > 1)
+            this.hitStop();
+
         this.registry.inc(RegistryConstants.Keys.PLAYER_SCORE,
             MainGameScene.KILL_SCORE * this.registry.get(RegistryConstants.Keys.PLAYER_COMBO));
         this.setKillStreak(this._killStreak + 1);
+    }
+
+    // Freezes the game for a few frames. The scene clock stops with it, so the game loop ends it, in real time
+    private hitStop() {
+        const now: number = performance.now();
+        if (now - this._lastHitStopTime < MainGameScene.HIT_STOP_COOLDOWN)
+            return;
+        this._lastHitStopTime = now;
+        this._hitStopEndTime = now + MainGameScene.HIT_STOP_DURATION;
+
+        this.scene.pause();
+        this.game.events.off(Phaser.Core.Events.POST_STEP, this.updateHitStop, this);
+        this.game.events.on(Phaser.Core.Events.POST_STEP, this.updateHitStop, this);
+    }
+
+    // After the scene manager's update, so the pause, queued during this scene's update, is applied
+    private updateHitStop() {
+        if (performance.now() < this._hitStopEndTime)
+            return;
+
+        // A level-up or game over screen may have paused the game for longer meanwhile: it resumes it itself
+        const isOtherPause: boolean = this.scene.isActive(GameConstants.SceneKeys.LEVEL_UP)
+            || this.scene.isActive(GameConstants.SceneKeys.GAME_OVER);
+        // On a long frame the pause may not be applied yet
+        if (!isOtherPause && !this.scene.isPaused())
+            return;
+
+        this.game.events.off(Phaser.Core.Events.POST_STEP, this.updateHitStop, this);
+        if (!isOtherPause)
+            this.scene.resume();
     }
 
     private setKillStreak(killStreak: number) {

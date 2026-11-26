@@ -5,6 +5,9 @@ import Movement from "../components/Movement.ts";
 import Weapon from "../components/Weapon.ts";
 
 export default class Enemy extends Entity {
+    private static readonly KNOCKBACK_SPEED: number = 0.9; // px/ms
+    private static readonly KNOCKBACK_DECAY: number = 0.012; // per ms
+
     private readonly _bulletData: BulletData = {
         scale: 1.5,
         texture: "laserRed03",
@@ -28,6 +31,7 @@ export default class Enemy extends Entity {
     private _shootTimer: Phaser.Time.TimerEvent | undefined;
     private _target: Entity;
     private readonly _directionToTarget: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private readonly _knockback: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group, target: Entity) {
         this._target = target;
@@ -79,6 +83,8 @@ export default class Enemy extends Entity {
         this.enableBody(true, x, y, true, true);
         this._shootTimer?.reset(this._shootTimerConfig);
 
+        this._knockback.reset();
+
         // Stats follow the difficulty curve, set again each time the enemy is reused from the pool
         this.getComponent(Health)?.resetMax(health);
         this.getComponent(Movement)?.setSpeed(speed);
@@ -91,6 +97,11 @@ export default class Enemy extends Entity {
         this.disableBody(true, true);
         if (this._shootTimer)
             this._shootTimer.paused = true;
+    }
+
+    // Pushed along the shot, so a hit that doesn't kill still lands
+    public playHit(directionX: number, directionY: number) {
+        this._knockback.set(directionX, directionY).normalize().scale(Enemy.KNOCKBACK_SPEED);
     }
 
     private shoot() {
@@ -114,5 +125,11 @@ export default class Enemy extends Entity {
             this.getComponent(Movement)?.move(this, this._directionToTarget, deltaTime);
         else
             this.getComponent(Movement)?.move(this, this._directionToTarget, deltaTime * 0.5);
+
+        if (this._knockback.lengthSq() > 0.0001) {
+            this.x += this._knockback.x * deltaTime;
+            this.y += this._knockback.y * deltaTime;
+            this._knockback.scale(Math.exp(-Enemy.KNOCKBACK_DECAY * deltaTime));
+        }
     }
 }
