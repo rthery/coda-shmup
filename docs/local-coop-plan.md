@@ -39,6 +39,7 @@ Two players on one screen, each on their own device, or one player with a bot. T
 - Pickups: the bomb goes off from the collector, the magnet pulls every gem to the collector, and repair heals every player in the fight (it drops when any of them is damaged).
 - Dev cheats (F, L, digits, M, +/-) live in the `CheatManager` scene plugin, dev builds only. Upgrade cheats act on player 1.
 - Ships cycle through `playerShips.json`: blue `playerShip3`, then orange `playerShip1`, a different shape. Each ship data has a `lifeIcon`, used by the HUD and the pod.
+- Each ship data also sets its turret sprites and its `laser` colors: bolt sprites (`laserBlue` or `laserOrange` + rank suffix), spark and glow tints. The first glow tint colors the bolt trail and the turret's heat glow.
 
 ### Camera
 
@@ -61,6 +62,7 @@ Two players on one screen, each on their own device, or one player with a bot. T
 - Home screen: only Space starts the run (or a tap on touch). Before that, Enter or a gamepad's A makes player 2 join, and B adds a bot: its ship flies in next to player 1's, both labeled with their controls ("P1 · WASD", "P2 · ARROWS"). The joined device goes to `MainGameScene` in the scene data.
 - During a run, `MainGameScene.updateJoining()` lets a second player in with the confirm of a key set or pad player 1 didn't use up to the last frame (Space, Enter or A). `EntityManager.joinPlayer()` flies the ship in from below the screen next to player 1, briefly invulnerable. The device goes into player 1's `excluded` list.
 - B adds a bot instead. `BotInput` steers toward its teammate past `FOLLOW_DISTANCE`, away from enemies inside `DANGER_RADIUS`, and toward the nearest free star. On level-up it picks a random card after `BOT_PICK_DELAY`.
+- Join hints show the gamepad's confirm button icon (Xbox A, PlayStation cross or Switch B, from the pad's id) only once a gamepad is detected. Browsers only report a pad after one of its buttons is pressed.
 - The HUD shows how to join at the bottom while there's room (not on touch), and a "PLAYER 2 JOINED" or "BOT JOINED" banner.
 - Joining raises the difficulty and the XP curve to the new player count.
 - Joined devices are kept across an R restart. Game over goes back home, solo.

@@ -41,6 +41,7 @@ export default class HomeScene extends Phaser.Scene {
     // The title and the prompt, on the portrait frame
     private _frame: Phaser.GameObjects.Container;
     private _startPrompt: Phaser.GameObjects.Text;
+    private _joinPrompt: Phaser.GameObjects.Container;
     private _started: boolean = false;
     private saveManager: SaveManager;
 
@@ -132,13 +133,19 @@ export default class HomeScene extends Phaser.Scene {
         ]);
 
         this._startPrompt = UiUtils.addHint(this, centerX, UiLayout.HEIGHT - 220,
-            this._getPromptText(this.gameInputManager.activeInputType)).setAlign('center');
-        this._frame = this.add.container(0, 0, [this._title, this._startPrompt]);
+            this._getPromptText(this.gameInputManager.activeInputType));
+        this._joinPrompt = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 150, []).setAlpha(0.5);
+        this._updateJoinPrompt();
+        this._frame = this.add.container(0, 0, [this._title, this._startPrompt, this._joinPrompt]);
         UiLayout.onResize(this, () => this.layout());
 
         this.game.events.on('input-type-changed', this._onInputTypeChanged, this);
+        this.game.events.on('gamepad-connected', this._updateJoinPrompt, this);
+        this.game.events.on('gamepad-disconnected', this._updateJoinPrompt, this);
         this.events.once('shutdown', () => {
             this.game.events.off('input-type-changed', this._onInputTypeChanged, this);
+            this.game.events.off('gamepad-connected', this._updateJoinPrompt, this);
+            this.game.events.off('gamepad-disconnected', this._updateJoinPrompt, this);
         });
 
         console.log("HomeScene created");
@@ -157,14 +164,19 @@ export default class HomeScene extends Phaser.Scene {
     private _onInputTypeChanged(type: InputType): void {
         if (!this._started) {
             this._startPrompt.setText(this._getPromptText(type));
+            this._updateJoinPrompt();
         }
     }
 
-    // No coop on touch
     private _getPromptText(type: InputType): string {
-        if (type === 'touch')
-            return 'TAP TO START';
-        return this._joinedDevice ? 'PRESS SPACE TO START' : 'PRESS SPACE TO START\nP2: PRESS ENTER OR A TO JOIN · B: BOT';
+        return type === 'touch' ? 'TAP TO START' : 'PRESS SPACE TO START';
+    }
+
+    // Until player 2 joins. No coop on touch
+    private _updateJoinPrompt(): void {
+        const inputManager = this.gameInputManager;
+        UiUtils.setButtonHint(this._joinPrompt, UiUtils.joinHintParts(inputManager.gamepadConfirmIcon));
+        this._joinPrompt.setVisible(!this._joinedDevice && inputManager.activeInputType !== 'touch');
     }
 
     private createShip(shipId: number, x: number, y: number): HomeShip {
@@ -210,9 +222,9 @@ export default class HomeScene extends Phaser.Scene {
             onComplete: () => joinedShip.thrusters.setBoost(false)});
         // Player 1 keeps the keyboard, minus the arrows if player 2 took them
         const playerControls: string = device.type === 'keyboard' ? 'WASD' : 'KEYBOARD';
-        this.addShipLabel(centerX - HomeScene.SHIP_SPACING_X, y, `P1 · ${playerControls}`, '#7fd4ff');
-        this.addShipLabel(joinedShip.image.x, y, `P2 · ${HomeScene.deviceLabel(device)}`, '#ff9a3c');
-        this._startPrompt.setText(this._getPromptText(inputManager.activeInputType));
+        this.addShipLabel(centerX - HomeScene.SHIP_SPACING_X, y, `P1 ${playerControls}`, '#7fd4ff');
+        this.addShipLabel(joinedShip.image.x, y, `P2 ${HomeScene.deviceLabel(device)}`, '#ff9a3c');
+        this._updateJoinPrompt();
     }
 
     private addShipLabel(x: number, shipY: number, text: string, color: string) {
@@ -239,7 +251,7 @@ export default class HomeScene extends Phaser.Scene {
         this.tweens.killTweensOf([...this._ships.map(ship => ship.image), this._startPrompt]);
         // The title clears the ships' way out
         this.tweens.add({targets: this._title, y: -200, alpha: 0, duration: 400, ease: 'Quad.easeIn'});
-        this.tweens.add({targets: [this._startPrompt, ...this._shipLabels], alpha: 0, duration: 200});
+        this.tweens.add({targets: [this._startPrompt, this._joinPrompt, ...this._shipLabels], alpha: 0, duration: 200});
         const joinedDevices: InputDevice[] = this._joinedDevice ? [this._joinedDevice] : [];
         this._ships.forEach((ship, index) => {
             ship.thrusters.setBoost(true);

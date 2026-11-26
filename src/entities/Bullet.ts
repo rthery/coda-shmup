@@ -110,6 +110,9 @@ export default class Bullet extends Physics.Arcade.Sprite {
             return;
 
         this._trailFX.setParticleLifespan(lifespan);
+        // The pool's bullets share the emitter, each player's in its own color
+        if (this._data.trailTint !== undefined)
+            this._trailFX.particleTint = this._data.trailTint;
         const distance: number = Phaser.Math.Distance.Between(this._lastTrailPosition.x, this._lastTrailPosition.y,
             this.x, this.y);
         for (let covered = Bullet.TRAIL_SPACING; covered <= distance; covered += Bullet.TRAIL_SPACING) {

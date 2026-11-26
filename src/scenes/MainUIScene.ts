@@ -34,6 +34,7 @@ export default class MainUIScene extends Scene {
     private static readonly BRACKET_LENGTH: number = 56;
     private static readonly THREAT_BANNER_Y: number = 560;
     private static readonly JOIN_BANNER_Y: number = 760;
+    private static readonly JOIN_HINT_FONT_SIZE: number = 28;
     private static readonly JOIN_BANNER_COLOR: string = '#ff9a3c';
     private static readonly JOIN_BANNER_DURATION: number = 1200; // ms
     private static readonly THREAT_LINE_HEIGHT: number = 4;
@@ -98,7 +99,7 @@ export default class MainUIScene extends Scene {
     private _xpBarWidth: number;
     private _levelText: GameObjects.Text;
     // Coop: how a second player joins, while there's room, and who just did
-    private _joinHint: GameObjects.Text;
+    private _joinHint: GameObjects.Container;
     private _joinBanner: GameObjects.Text;
 
     constructor() {
@@ -118,6 +119,8 @@ export default class MainUIScene extends Scene {
         this.game.events.on(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
         this.game.events.on(GameConstants.Events.PLAYER_JOINED_EVENT, this.onPlayerJoined, this);
         this.game.events.on('input-type-changed', this.updateJoinHint, this);
+        this.game.events.on('gamepad-connected', this.updateJoinHint, this);
+        this.game.events.on('gamepad-disconnected', this.updateJoinHint, this);
 
         this.events.once(Scenes.Events.SHUTDOWN, () => {
             this.game.events.off(GameConstants.Events.TEAM_CREATED_EVENT, this.onTeamCreated, this);
@@ -131,6 +134,8 @@ export default class MainUIScene extends Scene {
             this.game.events.off(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
             this.game.events.off(GameConstants.Events.PLAYER_JOINED_EVENT, this.onPlayerJoined, this);
             this.game.events.off('input-type-changed', this.updateJoinHint, this);
+            this.game.events.off('gamepad-connected', this.updateJoinHint, this);
+            this.game.events.off('gamepad-disconnected', this.updateJoinHint, this);
         }, this);
     }
 
@@ -202,8 +207,7 @@ export default class MainUIScene extends Scene {
             this._comboPips.push(pip);
         }
 
-        this._joinHint = this.add.text(0, 0, "P2: PRESS ENTER OR A TO JOIN · B: BOT",
-            {fontSize: '28px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5, 1).setAlpha(0.5);
+        this._joinHint = UiUtils.addButtonHint(this, 0, 0, [], MainUIScene.JOIN_HINT_FONT_SIZE).setAlpha(0.5);
         this._joinBanner = this.add.text(0, MainUIScene.JOIN_BANNER_Y, "",
             {fontSize: '56px', color: MainUIScene.JOIN_BANNER_COLOR, fontFamily: 'future'}).setOrigin(0.5)
             .setShadow(0, 6, '#000', 0, false, true).setAlpha(0);
@@ -227,7 +231,7 @@ export default class MainUIScene extends Scene {
         this._runTimeText.setX(area.width / 2);
         this._threatBanner.setX(area.width / 2);
         this._threatLines.forEach(line => line.setSize(area.width - 2 * MainUIScene.MARGIN, MainUIScene.THREAT_LINE_HEIGHT));
-        this._joinHint.setPosition(area.width / 2, area.height - MainUIScene.MARGIN);
+        this._joinHint.setPosition(area.width / 2, area.height - MainUIScene.MARGIN - MainUIScene.JOIN_HINT_FONT_SIZE);
         this._joinBanner.setX(area.width / 2);
 
         this._xpBarWidth = right - MainUIScene.XP_BAR_X;
@@ -395,7 +399,10 @@ export default class MainUIScene extends Scene {
 
     // Not on touch: coop takes keyboards and gamepads
     private updateJoinHint() {
-        this._joinHint?.setVisible(this._lifeRows.length < GameConstants.MAX_PLAYERS
+        if (!this._joinHint)
+            return;
+        UiUtils.setButtonHint(this._joinHint, UiUtils.joinHintParts(this.gameInputManager.gamepadConfirmIcon));
+        this._joinHint.setVisible(this._lifeRows.length < GameConstants.MAX_PLAYERS
             && this.gameInputManager.activeInputType !== 'touch');
     }
 

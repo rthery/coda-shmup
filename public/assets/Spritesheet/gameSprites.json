@@ -4,8 +4,8 @@
 			"image": "gameSprites.png",
 			"format": "RGBA8888",
 			"size": {
-				"w": 1013,
-				"h": 400
+				"w": 1017,
+				"h": 434
 			},
 			"scale": 1,
 			"frames": [
@@ -346,6 +346,27 @@
 					}
 				},
 				{
+					"filename": "laserOrange16",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 54,
+						"h": 13
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 54,
+						"h": 13
+					},
+					"frame": {
+						"x": 720,
+						"y": 151,
+						"w": 54,
+						"h": 13
+					}
+				},
+				{
 					"filename": "laserBlue01",
 					"rotated": false,
 					"trimmed": false,
@@ -361,7 +382,28 @@
 					},
 					"frame": {
 						"x": 720,
-						"y": 151,
+						"y": 168,
+						"w": 54,
+						"h": 9
+					}
+				},
+				{
+					"filename": "laserOrange01",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 54,
+						"h": 9
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 54,
+						"h": 9
+					},
+					"frame": {
+						"x": 720,
+						"y": 181,
 						"w": 54,
 						"h": 9
 					}
@@ -382,7 +424,7 @@
 					},
 					"frame": {
 						"x": 720,
-						"y": 164,
+						"y": 194,
 						"w": 34,
 						"h": 33
 					}
@@ -403,51 +445,9 @@
 					},
 					"frame": {
 						"x": 758,
-						"y": 164,
+						"y": 194,
 						"w": 14,
 						"h": 34
-					}
-				},
-				{
-					"filename": "playerLife1_orange",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 33,
-						"h": 26
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 33,
-						"h": 26
-					},
-					"frame": {
-						"x": 720,
-						"y": 201,
-						"w": 33,
-						"h": 26
-					}
-				},
-				{
-					"filename": "fire11",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 31
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 31
-					},
-					"frame": {
-						"x": 757,
-						"y": 202,
-						"w": 14,
-						"h": 31
 					}
 				},
 				{
@@ -472,66 +472,66 @@
 					}
 				},
 				{
-					"filename": "ui_crosshair",
+					"filename": "ui_pad_playstation_cross",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 60,
-						"h": 60
+						"w": 64,
+						"h": 64
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 60,
-						"h": 60
+						"w": 64,
+						"h": 64
 					},
 					"frame": {
 						"x": 704,
-						"y": 237,
-						"w": 60,
-						"h": 60
+						"y": 232,
+						"w": 64,
+						"h": 64
 					}
 				},
 				{
-					"filename": "playerTurretTwin",
+					"filename": "ui_pad_switch_b",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 60,
-						"h": 36
+						"w": 64,
+						"h": 64
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 60,
-						"h": 36
+						"w": 64,
+						"h": 64
 					},
 					"frame": {
 						"x": 704,
-						"y": 301,
-						"w": 60,
-						"h": 36
+						"y": 300,
+						"w": 64,
+						"h": 64
 					}
 				},
 				{
-					"filename": "playerTurretTwin_orange",
+					"filename": "ui_pad_xbox_a",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 60,
-						"h": 36
+						"w": 64,
+						"h": 64
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 60,
-						"h": 36
+						"w": 64,
+						"h": 64
 					},
 					"frame": {
 						"x": 704,
-						"y": 341,
-						"w": 60,
-						"h": 36
+						"y": 368,
+						"w": 64,
+						"h": 64
 					}
 				},
 				{
@@ -619,24 +619,24 @@
 					}
 				},
 				{
-					"filename": "playerTurret",
+					"filename": "ui_crosshair",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
 						"w": 60,
-						"h": 26
+						"h": 60
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
 						"w": 60,
-						"h": 26
+						"h": 60
 					},
 					"frame": {
 						"x": 620,
 						"y": 332,
 						"w": 60,
-						"h": 26
+						"h": 60
 					}
 				},
 				{
@@ -661,7 +661,7 @@
 					}
 				},
 				{
-					"filename": "fire15",
+					"filename": "fire11",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -682,24 +682,66 @@
 					}
 				},
 				{
-					"filename": "playerTurret_orange",
+					"filename": "fire15",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 684,
+						"y": 367,
+						"w": 14,
+						"h": 31
+					}
+				},
+				{
+					"filename": "playerTurretTwin",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
 						"w": 60,
-						"h": 26
+						"h": 36
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
 						"w": 60,
-						"h": 26
+						"h": 36
 					},
 					"frame": {
-						"x": 618,
-						"y": 362,
+						"x": 772,
+						"y": 254,
 						"w": 60,
-						"h": 26
+						"h": 36
+					}
+				},
+				{
+					"filename": "playerTurretTwin_orange",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 60,
+						"h": 36
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 60,
+						"h": 36
+					},
+					"frame": {
+						"x": 836,
+						"y": 254,
+						"w": 60,
+						"h": 36
 					}
 				},
 				{
@@ -717,10 +759,94 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 682,
-						"y": 367,
+						"x": 900,
+						"y": 254,
 						"w": 14,
 						"h": 31
+					}
+				},
+				{
+					"filename": "fireNeutral",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 900,
+						"y": 289,
+						"w": 14,
+						"h": 31
+					}
+				},
+				{
+					"filename": "playerTurret",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 60,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 60,
+						"h": 26
+					},
+					"frame": {
+						"x": 918,
+						"y": 316,
+						"w": 60,
+						"h": 26
+					}
+				},
+				{
+					"filename": "playerLife1_orange",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 33,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 33,
+						"h": 26
+					},
+					"frame": {
+						"x": 982,
+						"y": 316,
+						"w": 33,
+						"h": 26
+					}
+				},
+				{
+					"filename": "playerTurret_orange",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 60,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 60,
+						"h": 26
+					},
+					"frame": {
+						"x": 772,
+						"y": 294,
+						"w": 60,
+						"h": 26
 					}
 				},
 				{
@@ -738,10 +864,52 @@
 						"h": 13
 					},
 					"frame": {
-						"x": 768,
-						"y": 254,
+						"x": 836,
+						"y": 294,
 						"w": 57,
 						"h": 13
+					}
+				},
+				{
+					"filename": "laserOrange12",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 57,
+						"h": 13
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 57,
+						"h": 13
+					},
+					"frame": {
+						"x": 836,
+						"y": 311,
+						"w": 57,
+						"h": 13
+					}
+				},
+				{
+					"filename": "fireNeutralBoost",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 897,
+						"y": 324,
+						"w": 14,
+						"h": 31
 					}
 				},
 				{
@@ -759,8 +927,8 @@
 						"h": 26
 					},
 					"frame": {
-						"x": 829,
-						"y": 254,
+						"x": 772,
+						"y": 324,
 						"w": 32,
 						"h": 26
 					}
@@ -780,31 +948,10 @@
 						"h": 30
 					},
 					"frame": {
-						"x": 865,
-						"y": 254,
+						"x": 808,
+						"y": 328,
 						"w": 31,
 						"h": 30
-					}
-				},
-				{
-					"filename": "fireNeutral",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 31
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 31
-					},
-					"frame": {
-						"x": 900,
-						"y": 284,
-						"w": 14,
-						"h": 31
 					}
 				},
 				{
@@ -822,31 +969,10 @@
 						"h": 30
 					},
 					"frame": {
-						"x": 768,
-						"y": 271,
+						"x": 772,
+						"y": 354,
 						"w": 30,
 						"h": 30
-					}
-				},
-				{
-					"filename": "fireNeutralBoost",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 31
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 31
-					},
-					"frame": {
-						"x": 802,
-						"y": 271,
-						"w": 14,
-						"h": 31
 					}
 				}
 			]

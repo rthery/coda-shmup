@@ -33,7 +33,19 @@
         "y": 46
       }
     ],
-    "lifeIcon": "playerLife3_blue"
+    "lifeIcon": "playerLife3_blue",
+    "laser": {
+      "texturePrefix": "laserBlue",
+      "sparkTints": [
+        "#ffffff",
+        "#00eeff",
+        "#aaddff"
+      ],
+      "glowTints": [
+        "#00ccff",
+        "#ffffff"
+      ]
+    }
   },
   "2": {
     "movementSpeed": 0.6,
@@ -69,6 +81,18 @@
         "y": 47
       }
     ],
-    "lifeIcon": "playerLife1_orange"
+    "lifeIcon": "playerLife1_orange",
+    "laser": {
+      "texturePrefix": "laserOrange",
+      "sparkTints": [
+        "#ffffff",
+        "#ffb030",
+        "#ffd9a0"
+      ],
+      "glowTints": [
+        "#ff9a20",
+        "#ffffff"
+      ]
+    }
   }
 }

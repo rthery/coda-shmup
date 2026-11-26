@@ -140,6 +140,12 @@ export default class Turret implements IComponent {
         });
     }
 
+    // The laser's color, for the heat glow and the speed ring
+    public setGlowTint(tint: number) {
+        this._heatGlow.setTint(tint);
+        this._speedRing.setTint(tint);
+    }
+
     public setTurret(data: TurretData) {
         this._data = data;
         this._image.setFrame(this._isTwin ? data.twinFrame : data.frame);

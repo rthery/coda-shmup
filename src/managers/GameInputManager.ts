@@ -120,6 +120,21 @@ export default class GameInputManager extends Plugins.BasePlugin {
         return this.readConfirmJustPressed(GameInputManager.KEYBOARD_DEVICES.wasd) || this._touchJustDown;
     }
 
+    // The confirm button's icon for the first connected gamepad, null without one.
+    // Browsers only report a gamepad once one of its buttons was pressed
+    public get gamepadConfirmIcon(): string | null {
+        const pad = this._getConnectedGamepads()[0];
+        if (!pad)
+            return null;
+        const id: string = pad.id.toLowerCase();
+        if (id.includes('054c') || id.includes('playstation') || id.includes('dualsense') || id.includes('dualshock'))
+            return 'ui_pad_playstation_cross';
+        // The bottom button is B on Nintendo pads
+        if (id.includes('057e') || id.includes('nintendo') || id.includes('pro controller'))
+            return 'ui_pad_switch_b';
+        return 'ui_pad_xbox_a';
+    }
+
     public botJustPressed(): boolean {
         return this._justPressedKeyCodes.has(GameInputManager.BOT_KEY_CODE);
     }

@@ -11,6 +11,7 @@ export type BulletData = {
     pierce: number;
     // FAST LASERS: how long the trail dots last, 0 or missing for no trail
     trailLifespan?: number; // ms
+    trailTint?: number;
     // PIERCING: stretches the bolt into a lance, 1 when missing
     lengthScale?: number;
     body: CircleBodyData;

@@ -131,7 +131,7 @@ export default class LevelUpScene extends Scene {
         this._crosshair.setVisible(false);
         this._hintText.setAlpha(0).setText(this.getHintText());
         const picker: string = this.isBotPicking ? 'BOT' : `PLAYER ${this._pickIndex + 1}`;
-        this._levelText.setText(this.isCoop ? `LEVEL ${this._level} · ${picker}` : `LEVEL ${this._level} REACHED`);
+        this._levelText.setText(this.isCoop ? `LEVEL ${this._level}, ${picker} PICKS` : `LEVEL ${this._level} REACHED`);
 
         // Maxed upgrades aren't offered anymore
         const allUpgrades = this.cache.json.get('upgrades') as UpgradeData[];

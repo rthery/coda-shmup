@@ -30,10 +30,10 @@ export default class Player extends Entity {
     // HEAVY LASERS: the bolt's look by rank, from the thin default to a white-hot core.
     // The body follows each texture's height: the circle stays centered on the bolt's tip
     private static readonly HEAVY_LASER_LOOKS = [
-        {fromRank: 0, texture: 'laserBlue01', scale: 1.8, offsetX: 49, offsetY: -0.5, impactSize: 1},
-        {fromRank: 1, texture: 'laserBlue12', scale: 1.8, offsetX: 52, offsetY: 1.5, impactSize: 1.4},
-        {fromRank: 3, texture: 'laserBlue12', scale: 2.1, offsetX: 52, offsetY: 1.5, impactSize: 1.8},
-        {fromRank: 5, texture: 'laserBlue16', scale: 2.2, offsetX: 49, offsetY: 1.5, impactSize: 2.5},
+        {fromRank: 0, textureSuffix: '01', scale: 1.8, offsetX: 49, offsetY: -0.5, impactSize: 1},
+        {fromRank: 1, textureSuffix: '12', scale: 1.8, offsetX: 52, offsetY: 1.5, impactSize: 1.4},
+        {fromRank: 3, textureSuffix: '12', scale: 2.1, offsetX: 52, offsetY: 1.5, impactSize: 1.8},
+        {fromRank: 5, textureSuffix: '16', scale: 2.2, offsetX: 49, offsetY: 1.5, impactSize: 2.5},
     ];
     // FAST LASERS: trail dot lifespan per rank
     private static readonly TRAIL_LIFESPAN_PER_RANK: number = 40; // ms
@@ -136,6 +136,7 @@ export default class Player extends Entity {
         this.angle = -90;
 
         this.selectPlayerShip(this._shipId);
+        this.applyLaserColors();
 
         this._rateOfFire = 0.5;
         this._lastShotTime = 0;
@@ -167,6 +168,17 @@ export default class Player extends Entity {
         this.getComponent(Thrusters)?.setThrusters(this._playerShipData.thrusters);
         this.getComponent(WingTrails)?.setWingTips(this._playerShipData.wingTips);
         this.getComponent(Turret)?.setTurret(this._playerShipData.turret);
+    }
+
+    // In the ship's colors: the bolts, their impacts, their trail and the turret's heat glow
+    private applyLaserColors() {
+        const laser = this._playerShipData.laser;
+        const toColor = (hex: string): number => Phaser.Display.Color.HexStringToColor(hex).color;
+        const glowTints: number[] = laser.glowTints.map(toColor);
+        this._bulletData.texture = laser.texturePrefix + Player.HEAVY_LASER_LOOKS[0].textureSuffix;
+        this._bulletData.fx = {...this._bulletData.fx, sparkTints: laser.sparkTints.map(toColor), glowTints};
+        this._bulletData.trailTint = glowTints[0];
+        this.getComponent(Turret)?.setGlowTint(glowTints[0]);
     }
 
     // Offered until their max rank
@@ -243,7 +255,7 @@ export default class Player extends Entity {
                 break;
             case 'damage': {
                 const look = Player.HEAVY_LASER_LOOKS.filter(look => rank >= look.fromRank).pop()!;
-                this._bulletData.texture = look.texture;
+                this._bulletData.texture = this._playerShipData.laser.texturePrefix + look.textureSuffix;
                 this._bulletData.scale = look.scale;
                 this._bulletData.body = {...this._bulletData.body, offsetX: look.offsetX, offsetY: look.offsetY};
                 this._bulletData.fx = {...this._bulletData.fx, impactSize: look.impactSize};

@@ -4,6 +4,9 @@ export type UiFrame = 'ui_header_blade_red' | 'ui_header_blade_green' | 'ui_head
 
 type Slices = { left: number; right: number; top: number; bottom: number };
 
+// A piece of a hint line: text, or a button icon from the sprites atlas
+export type HintPart = string | { icon: string };
+
 // Kenney UI Pack Sci-Fi: header frames keep the coloured header band and the blade in their fixed slices
 const SLICES: Record<UiFrame, Slices> = {
     ui_header_blade_red: {left: 230, right: 30, top: 72, bottom: 30},
@@ -21,6 +24,9 @@ export default class UiUtils {
 
     private static readonly BAR_CAP_WIDTH: number = 24;
     private static readonly HINT_ALPHA: number = 0.7;
+    // Kenney Input Prompts icons are 64 px: a bit taller than the text they sit in
+    private static readonly HINT_ICON_HEIGHT_RATIO: number = 1.4;
+    private static readonly HINT_PART_GAP: number = 10;
 
     public static addPanel(scene: Scene, x: number, y: number, width: number, height: number,
                            frame: UiFrame): GameObjects.NineSlice {
@@ -63,5 +69,39 @@ export default class UiUtils {
             ease: 'Sine.easeInOut'
         });
         return hint;
+    }
+
+    // How a second player joins: the gamepad's confirm icon shows only once a gamepad is detected
+    public static joinHintParts(gamepadConfirmIcon: string | null): HintPart[] {
+        if (!gamepadConfirmIcon)
+            return ['P2: PRESS ENTER TO JOIN, B FOR A BOT'];
+        return ['P2: PRESS ENTER OR', {icon: gamepadConfirmIcon}, 'TO JOIN, B FOR A BOT'];
+    }
+
+    // A hint line mixing text and button icons, centered on x. setButtonHint changes its parts
+    public static addButtonHint(scene: Scene, x: number, y: number, parts: HintPart[],
+                                fontSize: number = 36): GameObjects.Container {
+        const hint: GameObjects.Container = scene.add.container(x, y).setData('fontSize', fontSize);
+        UiUtils.setButtonHint(hint, parts);
+        return hint;
+    }
+
+    public static setButtonHint(hint: GameObjects.Container, parts: HintPart[]) {
+        const scene: Scene = hint.scene;
+        const fontSize: number = hint.getData('fontSize');
+        hint.removeAll(true);
+        let width: number = 0;
+        for (const part of parts) {
+            const item: GameObjects.Text | GameObjects.Image = typeof part === 'string'
+                ? scene.add.text(width, 0, part, {fontSize: `${fontSize}px`, color: '#fff', fontFamily: 'future'})
+                : scene.add.image(width, 0, 'sprites', part.icon);
+            if (item instanceof GameObjects.Image)
+                item.setScale(fontSize * UiUtils.HINT_ICON_HEIGHT_RATIO / item.height);
+            item.setOrigin(0, 0.5);
+            hint.add(item);
+            width += item.displayWidth + UiUtils.HINT_PART_GAP;
+        }
+        width -= UiUtils.HINT_PART_GAP;
+        hint.each((item: GameObjects.Text | GameObjects.Image) => item.setX(item.x - width / 2));
     }
 }
