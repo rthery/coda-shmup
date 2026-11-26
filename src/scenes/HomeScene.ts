@@ -9,6 +9,15 @@ import UiUtils from "../utils/UiUtils.ts";
 import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 import type SaveManager from "../managers/SaveManager.ts";
+import type {InputDevice} from "../managers/PlayerInput.ts";
+
+// A ship on the home screen, cruising forward
+type HomeShip = {
+    image: Phaser.GameObjects.Image;
+    thrusters: Thrusters;
+    wingTrails: WingTrails;
+    turret: Turret;
+}
 
 export default class HomeScene extends Phaser.Scene {
     private static readonly BG_TILE_SCALE: number = 2;
@@ -18,12 +27,16 @@ export default class HomeScene extends Phaser.Scene {
     private static readonly LOADING_BAR_HEIGHT: number = 24;
     private static readonly LOADING_BAR_OFFSET_Y: number = 200;
     private static readonly BG_SCROLL_SPEED: number = 0.1; // texture px/ms
+    private static readonly SHIP_SWAY_X: number = 96;
+    // Player 2's ship, joined: the two ships side by side
+    private static readonly SHIP_SPACING_X: number = 140;
+    private static readonly SHIP_LABEL_OFFSET_Y: number = 90;
 
     private _bg: Phaser.GameObjects.TileSprite;
-    private _playerShip: Phaser.GameObjects.Image;
-    private _thrusters: Thrusters;
-    private _wingTrails: WingTrails;
-    private _turret: Turret;
+    private _ships: HomeShip[];
+    // Player 2, joined before the run starts: its device, or a bot
+    private _joinedDevice: InputDevice | null;
+    private _shipLabels: Phaser.GameObjects.Text[];
     private _title: Phaser.GameObjects.Container;
     // The title and the prompt, on the portrait frame
     private _frame: Phaser.GameObjects.Container;
@@ -95,26 +108,16 @@ export default class HomeScene extends Phaser.Scene {
         console.log(this.sys.game.renderer.type === Phaser.WEBGL ? 'WebGL' : 'Canvas');
 
         this._started = false;
+        this._ships = [];
+        this._joinedDevice = null;
+        this._shipLabels = [];
 
         this._bg = this.add.tileSprite(0, 0, 1, 1, 'bg').setOrigin(0).setTileScale(HomeScene.BG_TILE_SCALE);
 
-        const playerShipData = (this.cache.json.get('playerShips') as PlayerShipsData)[1];
-        const playerShipOffsetX: number = 96;
-        this._playerShip = this.add.image(UiLayout.WIDTH / 2 - playerShipOffsetX, UiLayout.HEIGHT / 2, 'sprites',
-            playerShipData.texture).setAngle(-90).setDepth(10);
-
-        this._thrusters = new Thrusters(this._playerShip);
-        this._thrusters.setThrusters(playerShipData.thrusters);
-        // The streaks drift down with the background, in px/s
-        const bgScreenSpeed: number = HomeScene.BG_SCROLL_SPEED * HomeScene.BG_TILE_SCALE * 1000;
-        this._wingTrails = new WingTrails(this._playerShip, bgScreenSpeed);
-        this._wingTrails.setWingTips(playerShipData.wingTips);
-        this._turret = new Turret(this._playerShip);
-        this._turret.setTurret(playerShipData.turret);
-
+        const playerShip: HomeShip = this.createShip(1, UiLayout.WIDTH / 2 - HomeScene.SHIP_SWAY_X, UiLayout.HEIGHT / 2);
         this.tweens.add({
-            targets: this._playerShip,
-            x: UiLayout.WIDTH / 2 + playerShipOffsetX,
+            targets: playerShip.image,
+            x: UiLayout.WIDTH / 2 + HomeScene.SHIP_SWAY_X,
             duration: 700,
             yoyo: true,
             repeat: -1,
@@ -129,7 +132,7 @@ export default class HomeScene extends Phaser.Scene {
         ]);
 
         this._startPrompt = UiUtils.addHint(this, centerX, UiLayout.HEIGHT - 220,
-            this._getPromptText(this.gameInputManager.activeInputType));
+            this._getPromptText(this.gameInputManager.activeInputType)).setAlign('center');
         this._frame = this.add.container(0, 0, [this._title, this._startPrompt]);
         UiLayout.onResize(this, () => this.layout());
 
@@ -157,11 +160,74 @@ export default class HomeScene extends Phaser.Scene {
         }
     }
 
+    // No coop on touch
     private _getPromptText(type: InputType): string {
-        switch (type) {
-            case 'touch': return 'TAP TO START';
-            case 'gamepad': return 'PRESS A OR START';
-            default: return 'PRESS SPACE TO START';
+        if (type === 'touch')
+            return 'TAP TO START';
+        return this._joinedDevice ? 'PRESS SPACE TO START' : 'PRESS SPACE TO START\nP2: PRESS ENTER OR A TO JOIN · B: BOT';
+    }
+
+    private createShip(shipId: number, x: number, y: number): HomeShip {
+        const data = (this.cache.json.get('playerShips') as PlayerShipsData)[shipId];
+        const image = this.add.image(x, y, 'sprites', data.texture).setAngle(-90).setDepth(10);
+        const thrusters = new Thrusters(image);
+        thrusters.setThrusters(data.thrusters);
+        // The streaks drift down with the background, in px/s
+        const bgScreenSpeed: number = HomeScene.BG_SCROLL_SPEED * HomeScene.BG_TILE_SCALE * 1000;
+        const wingTrails = new WingTrails(image, bgScreenSpeed);
+        wingTrails.setWingTips(data.wingTips);
+        const turret = new Turret(image);
+        turret.setTurret(data.turret);
+        const ship: HomeShip = {image, thrusters, wingTrails, turret};
+        this._ships.push(ship);
+        return ship;
+    }
+
+    // Enter, a gamepad's A or B for a bot: player 2's ship flies in next to player 1's, labeled with its controls
+    private _updateJoining(): void {
+        if (this._joinedDevice)
+            return;
+        const inputManager = this.gameInputManager;
+        let device: InputDevice | null = inputManager.botJustPressed() ? {type: 'bot'} : inputManager.findConfirmingDevice();
+        // Space starts the run
+        if (device?.type === 'keyboard' && device.keys === 'wasd')
+            device = null;
+        if (!device)
+            return;
+
+        this._joinedDevice = device;
+        Sfx.play(this, 'launch');
+        const centerX: number = UiLayout.WIDTH / 2;
+        const y: number = UiLayout.HEIGHT / 2;
+        const playerShip: HomeShip = this._ships[0];
+        this.tweens.killTweensOf(playerShip.image);
+        this.tweens.add({targets: playerShip.image, x: centerX - HomeScene.SHIP_SPACING_X, duration: 400, ease: 'Quad.easeOut'});
+
+        const joinedShip: HomeShip = this.createShip(2, centerX + HomeScene.SHIP_SPACING_X,
+            this.cameras.main.worldView.bottom + 100);
+        joinedShip.thrusters.setBoost(true);
+        this.tweens.add({targets: joinedShip.image, y, duration: 600, ease: 'Quad.easeOut',
+            onComplete: () => joinedShip.thrusters.setBoost(false)});
+        // Player 1 keeps the keyboard, minus the arrows if player 2 took them
+        const playerControls: string = device.type === 'keyboard' ? 'WASD' : 'KEYBOARD';
+        this.addShipLabel(centerX - HomeScene.SHIP_SPACING_X, y, `P1 · ${playerControls}`, '#7fd4ff');
+        this.addShipLabel(joinedShip.image.x, y, `P2 · ${HomeScene.deviceLabel(device)}`, '#ff9a3c');
+        this._startPrompt.setText(this._getPromptText(inputManager.activeInputType));
+    }
+
+    private addShipLabel(x: number, shipY: number, text: string, color: string) {
+        const label = this.add.text(x, shipY + HomeScene.SHIP_LABEL_OFFSET_Y, text,
+            {fontSize: '32px', color, fontFamily: 'future'}).setOrigin(0.5).setAlpha(0);
+        this.tweens.add({targets: label, alpha: 1, delay: 400, duration: 250});
+        this._shipLabels.push(label);
+    }
+
+    private static deviceLabel(device: InputDevice): string {
+        switch (device.type) {
+            case 'bot': return 'BOT';
+            case 'gamepad': return 'GAMEPAD';
+            case 'keyboard': return device.keys === 'wasd' ? 'WASD' : 'ARROWS';
+            default: return '';
         }
     }
 
@@ -170,21 +236,24 @@ export default class HomeScene extends Phaser.Scene {
         Sfx.play(this, 'start');
         Sfx.play(this, 'launch');
 
-        this.tweens.killTweensOf([this._playerShip, this._startPrompt]);
-        this._thrusters.setBoost(true);
-        // The title clears the ship's way out
+        this.tweens.killTweensOf([...this._ships.map(ship => ship.image), this._startPrompt]);
+        // The title clears the ships' way out
         this.tweens.add({targets: this._title, y: -200, alpha: 0, duration: 400, ease: 'Quad.easeIn'});
-        this.tweens.add({targets: this._startPrompt, alpha: 0, duration: 200});
-        this.tweens.add({
-            targets: this._playerShip,
-            x: UiLayout.WIDTH / 2,
-            y: this.cameras.main.scrollY - this._playerShip.height,
-            duration: 600,
-            ease: 'Quad.easeIn',
-            onComplete: () => {
-                this.scene.launch(GameConstants.SceneKeys.MAIN_UI);
-                this.scene.start(GameConstants.SceneKeys.MAIN_GAME);
-            }
+        this.tweens.add({targets: [this._startPrompt, ...this._shipLabels], alpha: 0, duration: 200});
+        const joinedDevices: InputDevice[] = this._joinedDevice ? [this._joinedDevice] : [];
+        this._ships.forEach((ship, index) => {
+            ship.thrusters.setBoost(true);
+            this.tweens.add({
+                targets: ship.image,
+                x: this._ships.length > 1 ? ship.image.x : UiLayout.WIDTH / 2,
+                y: this.cameras.main.scrollY - ship.image.height,
+                duration: 600,
+                ease: 'Quad.easeIn',
+                onComplete: index > 0 ? undefined : () => {
+                    this.scene.launch(GameConstants.SceneKeys.MAIN_UI);
+                    this.scene.start(GameConstants.SceneKeys.MAIN_GAME, {joinedDevices});
+                }
+            });
         });
     }
 
@@ -192,12 +261,17 @@ export default class HomeScene extends Phaser.Scene {
         super.update(timeSinceLaunch, deltaTime);
         this._bg.tilePositionY -= HomeScene.BG_SCROLL_SPEED * deltaTime;
         // Cruising forward, as the background scrolls
-        this._thrusters.update(true, 1, deltaTime);
-        this._wingTrails.update(true);
-        this._turret.update(deltaTime);
-
-        if (!this._started && this.gameInputManager.confirmJustPressed()) {
-            this._startGame();
+        for (const ship of this._ships) {
+            ship.thrusters.update(true, 1, deltaTime);
+            ship.wingTrails.update(true);
+            ship.turret.update(deltaTime);
         }
+
+        if (this._started)
+            return;
+        if (this.gameInputManager.startJustPressed())
+            this._startGame();
+        else
+            this._updateJoining();
     }
 }

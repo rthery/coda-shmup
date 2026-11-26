@@ -11,7 +11,7 @@ Two players on one screen, each on their own device, or one player with a bot. T
 - Score, combo and run time are shared. A hit on any player breaks the combo.
 - One best score, saved with the number of players who made it, shown on game over as "BEST 012345 · 2P".
 - No touch in coop: touch only drives a solo run.
-- A second player joins anytime during a run, from a device player 1 isn't using, or B adds a bot instead.
+- A second player joins on the home screen or anytime during a run, from a device player 1 isn't using, or B adds a bot instead. Only Space starts a run.
 - Difficulty scales with the number of players who joined (not the number alive).
 - Solo plays exactly as it did before.
 
@@ -58,7 +58,7 @@ Two players on one screen, each on their own device, or one player with a bot. T
 
 ### Joining
 
-- The home screen is unchanged: any confirm starts the run.
+- Home screen: only Space starts the run (or a tap on touch). Before that, Enter or a gamepad's A makes player 2 join, and B adds a bot: its ship flies in next to player 1's, both labeled with their controls ("P1 · WASD", "P2 · ARROWS"). The joined device goes to `MainGameScene` in the scene data.
 - During a run, `MainGameScene.updateJoining()` lets a second player in with the confirm of a key set or pad player 1 didn't use up to the last frame (Space, Enter or A). `EntityManager.joinPlayer()` flies the ship in from below the screen next to player 1, briefly invulnerable. The device goes into player 1's `excluded` list.
 - B adds a bot instead. `BotInput` steers toward its teammate past `FOLLOW_DISTANCE`, away from enemies inside `DANGER_RADIUS`, and toward the nearest free star. On level-up it picks a random card after `BOT_PICK_DELAY`.
 - The HUD shows how to join at the bottom while there's room (not on touch), and a "PLAYER 2 JOINED" or "BOT JOINED" banner.

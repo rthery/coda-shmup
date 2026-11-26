@@ -202,7 +202,7 @@ export default class MainUIScene extends Scene {
             this._comboPips.push(pip);
         }
 
-        this._joinHint = this.add.text(0, 0, "PLAYER 2: PRESS SPACE, ENTER OR A TO JOIN · B: BOT",
+        this._joinHint = this.add.text(0, 0, "P2: PRESS ENTER OR A TO JOIN · B: BOT",
             {fontSize: '28px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5, 1).setAlpha(0.5);
         this._joinBanner = this.add.text(0, MainUIScene.JOIN_BANNER_Y, "",
             {fontSize: '56px', color: MainUIScene.JOIN_BANNER_COLOR, fontFamily: 'future'}).setOrigin(0.5)

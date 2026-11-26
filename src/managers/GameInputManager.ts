@@ -115,6 +115,11 @@ export default class GameInputManager extends Plugins.BasePlugin {
         return null;
     }
 
+    // Home: only Space starts a run, or a tap on touch screens. The other confirms make a player join
+    public startJustPressed(): boolean {
+        return this.readConfirmJustPressed(GameInputManager.KEYBOARD_DEVICES.wasd) || this._touchJustDown;
+    }
+
     public botJustPressed(): boolean {
         return this._justPressedKeyCodes.has(GameInputManager.BOT_KEY_CODE);
     }
