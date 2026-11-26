@@ -22,12 +22,26 @@ export default class MainUIScene extends Scene {
     private static readonly XP_FILL_DURATION: number = 300;
     private static readonly XP_STAR_FLIGHT_DURATION: number = 450;
     private static readonly LEVEL_UP_FILL_DURATION: number = 200;
+    private static readonly COMBO_PIP_WIDTH: number = 22;
+    private static readonly COMBO_PIP_HEIGHT: number = 18;
+    private static readonly COMBO_PIP_SKEW: number = 6;
+    private static readonly COMBO_PIP_GAP: number = 6;
+    private static readonly COMBO_PIP_COLOR: number = 0xffcc00;
+    private static readonly COMBO_PIP_EMPTY_ALPHA: number = 0.15;
+    private static readonly COMBO_IDLE_ALPHA: number = 0.5;
+    private static readonly COMBO_COLOR: string = '#ffcc00';
+    private static readonly COMBO_BROKEN_COLOR: string = '#ff4040';
+    private static readonly COMBO_BROKEN_FILL: number = 0xff4040;
 
     private _lifeIcons: GameObjects.Image[];
     private _lifeRow: GameObjects.Container;
     private _damageFlash: GameObjects.Rectangle;
     private _scoreText: GameObjects.BitmapText;
     private _comboText: GameObjects.Text;
+    private _comboTextX: number;
+    private _comboPips: GameObjects.Polygon[];
+    private _filledComboPips: number;
+    private _comboMaxText: GameObjects.Text;
     private _xpBarFill: GameObjects.NineSlice;
     private _xpBarGhost: GameObjects.NineSlice;
     private readonly _xpBarDisplay: { ratio: number } = {ratio: 0};
@@ -51,6 +65,8 @@ export default class MainUIScene extends Scene {
         this.game.events.on(GameConstants.Events.LEVEL_UP_CLOSED_EVENT, this.onLevelUpClosed, this);
         this.registry.events.on(RegistryConstants.Events.PLAYER_SCORE_CHANGE, this.onPlayerScoreChanged, this);
         this.registry.events.on(RegistryConstants.Events.PLAYER_COMBO_CHANGE, this.onPlayerComboChanged, this);
+        this.registry.events.on(RegistryConstants.Events.PLAYER_COMBO_PROGRESS_CHANGE, this.onComboProgressChanged, this);
+        this.game.events.on(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
 
         this.events.once(Scenes.Events.SHUTDOWN, () => {
             this.game.events.off(GameConstants.Events.PLAYER_SPAWNED_EVENT, this.onPlayerSpawned, this);
@@ -58,6 +74,8 @@ export default class MainUIScene extends Scene {
             this.game.events.off(GameConstants.Events.LEVEL_UP_CLOSED_EVENT, this.onLevelUpClosed, this);
             this.registry.events.off(RegistryConstants.Events.PLAYER_SCORE_CHANGE, this.onPlayerScoreChanged, this);
             this.registry.events.off(RegistryConstants.Events.PLAYER_COMBO_CHANGE, this.onPlayerComboChanged, this);
+            this.registry.events.off(RegistryConstants.Events.PLAYER_COMBO_PROGRESS_CHANGE, this.onComboProgressChanged, this);
+            this.game.events.off(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
         }, this);
     }
 
@@ -94,8 +112,33 @@ export default class MainUIScene extends Scene {
 
         this._xpStars = this.add.group();
 
-        this._comboText = this.add.text(this.scale.width - MainUIScene.MARGIN, xpBarY + 72, "",
-            {fontSize: '40px', color: '#ffcc00', fontStyle: 'bold'}).setOrigin(1, 0);
+        // One slanted pip per kill towards the next combo step, unlike the XP bar, with the combo on their left
+        const comboRowY: number = xpBarY + 96;
+        this._comboPips = [];
+        this._filledComboPips = 0;
+        const pipStep: number = MainUIScene.COMBO_PIP_WIDTH + MainUIScene.COMBO_PIP_GAP;
+        const firstPipX: number = this.scale.width - MainUIScene.MARGIN - MainUIScene.COMBO_PIP_WIDTH / 2
+            - (GameConstants.COMBO_KILLS_PER_STEP - 1) * pipStep;
+
+        this._comboTextX = firstPipX - MainUIScene.COMBO_PIP_WIDTH / 2 - 20;
+        this._comboText = this.add.text(this._comboTextX, comboRowY, "",
+            {fontSize: '40px', color: MainUIScene.COMBO_COLOR, fontStyle: 'bold'}).setOrigin(1, 0.5);
+        // Under the full row of pips once the combo can't go higher
+        this._comboMaxText = this.add.text(this.scale.width - MainUIScene.MARGIN, comboRowY + 36, "MAX",
+            {fontSize: '24px', color: MainUIScene.COMBO_COLOR, fontFamily: 'future'}).setOrigin(1, 0.5).setVisible(false);
+        this.showCombo(1);
+
+        const pipShape: number[] = [
+            MainUIScene.COMBO_PIP_SKEW, 0,
+            MainUIScene.COMBO_PIP_WIDTH, 0,
+            MainUIScene.COMBO_PIP_WIDTH - MainUIScene.COMBO_PIP_SKEW, MainUIScene.COMBO_PIP_HEIGHT,
+            0, MainUIScene.COMBO_PIP_HEIGHT
+        ];
+        for (let i = 0; i < GameConstants.COMBO_KILLS_PER_STEP; i++) {
+            const pip = this.add.polygon(firstPipX + i * pipStep, comboRowY, pipShape).setOrigin(0.5);
+            this.setPipEmpty(pip);
+            this._comboPips.push(pip);
+        }
 
         this.scene.bringToTop();
 
@@ -111,12 +154,98 @@ export default class MainUIScene extends Scene {
         if (combo === previousCombo)
             return;
 
-        // Only worth showing once it multiplies something
-        this._comboText.setText(combo > 1 ? "COMBO X" + combo : "");
+        this.showCombo(combo);
 
         if (combo > previousCombo) {
             this.tweens.add({targets: this._comboText, scale: {from: 1.4, to: 1}, duration: 200, ease: 'Back.easeOut'});
         }
+    }
+
+    // Dim at X1, it only multiplies the score from X2
+    private showCombo(combo: number) {
+        this._comboText.setText("COMBO X" + combo).setAlpha(combo > 1 ? 1 : MainUIScene.COMBO_IDLE_ALPHA);
+
+        const isMax: boolean = combo === GameConstants.MAX_COMBO;
+        if (isMax === this._comboMaxText.visible)
+            return;
+        this.tweens.killTweensOf(this._comboMaxText);
+        this._comboMaxText.setVisible(isMax).setScale(1).setAlpha(1);
+        if (!isMax)
+            return;
+        this.tweens.add({targets: this._comboMaxText, scale: {from: 1.8, to: 1}, duration: 300, ease: 'Back.easeOut'});
+        this.tweens.add({
+            targets: this._comboMaxText,
+            alpha: 0.4,
+            delay: 300,
+            duration: 500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+
+    private onComboProgressChanged(_: any, progress: number) {
+        const filled: number = Math.round(progress * GameConstants.COMBO_KILLS_PER_STEP);
+        if (filled > this._filledComboPips) {
+            for (let i = this._filledComboPips; i < filled; i++) {
+                const pip = this._comboPips[i];
+                pip.setFillStyle(MainUIScene.COMBO_PIP_COLOR, 1);
+                this.tweens.add({targets: pip, scale: {from: 1.6, to: 1}, duration: 250, ease: 'Back.easeOut'});
+            }
+        } else if (filled < this._filledComboPips) {
+            // Next combo step: the full row flashes white and empties
+            this._comboPips.forEach((pip, index) => {
+                pip.setFillStyle(0xffffff, 1);
+                this.time.delayedCall(150, () => this.emptyPipIfUnfilled(pip, index));
+            });
+        }
+        this._filledComboPips = filled;
+    }
+
+    // A kill may have refilled the pip while it was animating
+    private emptyPipIfUnfilled(pip: GameObjects.Polygon, index: number) {
+        if (index >= this._filledComboPips)
+            this.setPipEmpty(pip);
+    }
+
+    private setPipEmpty(pip: GameObjects.Polygon) {
+        pip.setFillStyle(0xffffff, MainUIScene.COMBO_PIP_EMPTY_ALPHA);
+    }
+
+    // Sent before the reset, so the text still shows the lost combo
+    private onComboBroken() {
+        const shard = this.add.text(this._comboText.x, this._comboText.y, this._comboText.text,
+            {fontSize: '40px', color: MainUIScene.COMBO_BROKEN_COLOR, fontStyle: 'bold'}).setOrigin(1, 0.5);
+        this.tweens.add({
+            targets: shard,
+            y: shard.y + 70,
+            angle: -12,
+            alpha: 0,
+            duration: 550,
+            ease: 'Quad.easeIn',
+            onComplete: () => shard.destroy()
+        });
+
+        this.tweens.add({
+            targets: this._comboText,
+            x: {from: this._comboTextX + 18, to: this._comboTextX},
+            duration: 450,
+            ease: 'Elastic.easeOut'
+        });
+
+        // The filled pips turn red and drop out from the right
+        for (let i = this._filledComboPips - 1; i >= 0; i--) {
+            const pip = this._comboPips[i];
+            pip.setFillStyle(MainUIScene.COMBO_BROKEN_FILL, 1);
+            this.tweens.add({
+                targets: pip,
+                scale: {from: 1.4, to: 1},
+                delay: (this._filledComboPips - 1 - i) * 30,
+                duration: 200,
+                onComplete: () => this.emptyPipIfUnfilled(pip, i)
+            });
+        }
+        this._filledComboPips = 0;
     }
 
     private onPlayerSpawned(player: Player) {

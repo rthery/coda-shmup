@@ -11,8 +11,6 @@ import Player from "../entities/Player.ts";
 
 export default class MainGameScene extends Scene {
     private static readonly KILL_SCORE: number = 10;
-    private static readonly KILLS_PER_COMBO_STEP: number = 10;
-    private static readonly MAX_COMBO: number = 5;
 
     private saveManager: SaveManager;
     private entityManager: EntityManager;
@@ -63,8 +61,12 @@ export default class MainGameScene extends Scene {
 
         // A hit breaks the combo
         player.getComponent(Health)?.on(Health.CHANGE_EVENT, (current: number, previous: number) => {
-            if (current < previous)
-                this.setKillStreak(0);
+            if (current >= previous)
+                return;
+
+            if (this._killStreak > 0)
+                this.game.events.emit(GameConstants.Events.COMBO_BROKEN_EVENT);
+            this.setKillStreak(0);
         }, this);
 
         this.game.events.on(GameConstants.Events.ENEMY_KILLED_EVENT, this.onEnemyKilled, this);
@@ -88,7 +90,10 @@ export default class MainGameScene extends Scene {
     private setKillStreak(killStreak: number) {
         this._killStreak = killStreak;
 
-        const combo: number = Math.min(1 + Math.floor(killStreak / MainGameScene.KILLS_PER_COMBO_STEP), MainGameScene.MAX_COMBO);
+        const combo: number = Math.min(1 + Math.floor(killStreak / GameConstants.COMBO_KILLS_PER_STEP), GameConstants.MAX_COMBO);
+        const progress: number = combo === GameConstants.MAX_COMBO ? 1
+            : (killStreak % GameConstants.COMBO_KILLS_PER_STEP) / GameConstants.COMBO_KILLS_PER_STEP;
+        this.registry.set(RegistryConstants.Keys.PLAYER_COMBO_PROGRESS, progress);
         this.registry.set(RegistryConstants.Keys.PLAYER_COMBO, combo);
     }
 
