@@ -22,6 +22,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private static readonly DAMAGE_NUMBER_RISE: number = 70;
     private static readonly DAMAGE_NUMBER_DURATION: number = 600;
     private static readonly DAMAGE_NUMBER_JITTER: number = 16;
+    private static readonly PLAYER_EXPLOSION_SIZE: number = 2;
     // Extra explosion per combo level above X1
     private static readonly EXPLOSION_PER_COMBO: number = 0.5;
 
@@ -111,7 +112,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
         // The game over screen waits for this explosion
         this._player.getComponent(Health)?.once(Health.DEATH_START_EVENT, () => {
-            this.spawnExplosion(this._player.x, this._player.y);
+            this.spawnExplosion(this._player.x, this._player.y, EntityManager.PLAYER_EXPLOSION_SIZE);
         });
 
         console.log("[EntityManager] Player spawned");

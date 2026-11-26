@@ -16,6 +16,15 @@ export default class MainGameScene extends Scene {
     private static readonly KILL_SCORE: number = 10;
     private static readonly HIT_STOP_DURATION: number = 30; // ms
     private static readonly HIT_STOP_COOLDOWN: number = 400; // ms
+    // The wreck keeps blowing up, bigger each time, while the camera closes in
+    private static readonly DEATH_EXPLOSIONS = [
+        {delay: 200, size: 1.5},
+        {delay: 500, size: 2.5},
+        {delay: 850, size: 3.5},
+    ];
+    private static readonly DEATH_EXPLOSION_SPREAD: number = 60;
+    private static readonly DEATH_ZOOM: number = 1.3;
+    private static readonly DEATH_SEQUENCE_DURATION: number = 1800; // ms
     // Background and planet tints at the last difficulty keyframe: the arena reddens as the threat rises
     private static readonly MAX_THREAT_BACKGROUND_TINT: number = 0xff8a80;
     private static readonly MAX_THREAT_PLANET_TINT: number = 0xffb0a0;
@@ -73,9 +82,10 @@ export default class MainGameScene extends Scene {
         });
         this.player = player;
         player.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
-            // Hide the player and let its explosion play before showing the game over screen
+            // Hide the player and let its explosions play before showing the game over screen
             player.disableBody(true, true);
-            this.time.delayedCall(1000, this.endGame, [], this);
+            this.playPlayerDeath(player.x, player.y);
+            this.time.delayedCall(MainGameScene.DEATH_SEQUENCE_DURATION, this.endGame, [], this);
         }, this);
 
         // Freeze the game while the player picks an upgrade
@@ -108,6 +118,22 @@ export default class MainGameScene extends Scene {
         this.setKillStreak(0);
 
         console.log("MainGameScene created");
+    }
+
+    private playPlayerDeath(x: number, y: number) {
+        const camera = this.cameras.main;
+        camera.flash(200, 255, 255, 255);
+        camera.shake(600, 0.025);
+        camera.zoomTo(MainGameScene.DEATH_ZOOM, MainGameScene.DEATH_SEQUENCE_DURATION, 'Quad.easeOut');
+
+        const spread: number = MainGameScene.DEATH_EXPLOSION_SPREAD;
+        MainGameScene.DEATH_EXPLOSIONS.forEach(explosion => {
+            this.time.delayedCall(explosion.delay, () => {
+                this.entityManager.spawnExplosion(x + Phaser.Math.Between(-spread, spread),
+                    y + Phaser.Math.Between(-spread, spread), explosion.size);
+                camera.shake(200, 0.01 * explosion.size, true);
+            });
+        });
     }
 
     private onEnemyKilled(enemy: Enemy) {
