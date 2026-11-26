@@ -27,6 +27,7 @@
         "vite": "^7.1.9"
     },
     "dependencies": {
+        "atlas": "^1.0.0-alpha.0",
         "phaser": "^3.90.0",
         "terser": "^5.44.0"
     }

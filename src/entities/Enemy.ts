@@ -3,6 +3,7 @@ import Entity from './Entity.ts';
 import Health from "../components/Health.ts";
 import Movement from "../components/Movement.ts";
 import Weapon from "../components/Weapon.ts";
+import {EnemyShipData, EnemyShipsData} from "../gameData/EnemyShipData.tx.ts";
 
 export default class Enemy extends Entity {
     private readonly _bulletData: BulletData = {
@@ -14,13 +15,17 @@ export default class Enemy extends Entity {
     };
     private _shootTimerConfig: Phaser.Types.Time.TimerEventConfig;
     private _shootTimer: Phaser.Time.TimerEvent;
+    private _enemyShipData: EnemyShipData;
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
+        const enemyShipsData = this.scene.cache.json.get('enemyShips') as EnemyShipsData;
+        this._enemyShipData = enemyShipsData[1];
         this.addComponent(new Health(1, this));
-        this.addComponent(new Movement(0.2));
+        this.addComponent(new Movement(this._enemyShipData.movement));
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
 
-        // Listen once per enemy, not on every enable(): pooled enemies are reused many times
+        this.selectEnemyShip(1);
+
         const health = this.getComponent(Health);
         health?.on(Health.CHANGE_EVENT, () => {
             this.setTintFill(0xffffff);
@@ -50,7 +55,6 @@ export default class Enemy extends Entity {
         };
         this._shootTimer = this.scene.time.addEvent(this._shootTimerConfig);
 
-        // Create animation when enemy is about to shoot in the global animation manager
         if (!this.scene.anims.exists('ufoShoot')) {
             this.scene.anims.create({
                 key: 'ufoShoot',
@@ -62,15 +66,26 @@ export default class Enemy extends Entity {
                 frameRate: 4,
             });
         }
+    }
 
-        this.arcadeBody.setCircle(this.displayWidth / 2);
+    public selectEnemyShip(enemyShipDataId: number) {
+        const enemyShipsData = this.scene.cache.json.get('enemyShips') as EnemyShipsData;
+        this._enemyShipData = enemyShipsData[enemyShipDataId];
+
+        this.setTexture('sprites', this._enemyShipData.texture);
+        const bodyData = this._enemyShipData.body;
+        const movementData = this._enemyShipData.movement;
+        this.arcadeBody.setCircle(bodyData.radius, bodyData.offsetX, bodyData.offsetY);
+
+        this.getComponent(Movement)?.setSpeed(movementData.speedMovement);
     }
 
     public enable(x: number, y: number) {
         this.enableBody(true, x, y - this.displayHeight, true, true);
+        this.getComponent(Movement)?.reset(this.x);
+
         this._shootTimer.reset(this._shootTimerConfig);
 
-        // Restore health, in case the enemy is reused from the pool, without emitting events
         const health = this.getComponent(Health);
         health?.heal(health!.max, false);
     }
@@ -96,14 +111,13 @@ export default class Enemy extends Entity {
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
         super.preUpdate(timeSinceLaunch, deltaTime)
 
-        // Destroy entities when out of screen
         if (this.y > this.scene.cameras.main.height + this.displayHeight) {
             this.disable();
         }
 
         if (!this.isTinted)
-            this.getComponent(Movement)?.moveVertically(this, deltaTime);
+            this.getComponent(Movement)?.move(this, deltaTime);
         else
-            this.getComponent(Movement)?.moveVertically(this, deltaTime * 0.5);
+            this.getComponent(Movement)?.move(this, deltaTime * 0.5);
     }
 }
