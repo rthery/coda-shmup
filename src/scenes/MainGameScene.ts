@@ -58,7 +58,7 @@ export default class MainGameScene extends Scene {
 
         this._background = this.add.tileSprite(0, 0, GameConstants.ARENA_WIDTH, GameConstants.ARENA_HEIGHT, 'bg')
             .setOrigin(0).setTileScale(2);
-        this._planet = this.add.image(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2, 'planet').setScale(7.5);
+        this._planet = this.add.image(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2, 'planet').setScale(2.5);
         this._difficulty = new DifficultyCurve(this.cache.json.get('difficulty') as DifficultyData);
 
         // Dev cheats: + (or =) and - jump the run clock to the next or previous threat level.
