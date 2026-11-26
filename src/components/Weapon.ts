@@ -23,13 +23,17 @@ export default class Weapon implements IComponent {
         if (!this.enabled)
             return;
 
+        this.spawnBullet(source, 0);
+    }
+
+    protected spawnBullet(source: Entity, angleOffset: number) {
         if (!this._bullets)
             return;
 
         const bullet: Bullet = this._bullets.get() as Bullet;
         if (bullet) {
             // Get forward vector of the source entity
-            const sourceForward: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0).rotate(source.rotation);
+            const sourceForward: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0).rotate(source.rotation + angleOffset);
             const bulletVelocity: Phaser.Math.Vector2 = sourceForward.clone().scale(this._bulletData.speed);
             bullet.enable(source.x + sourceForward.x * source.arcadeBody.radius, source.y + sourceForward.y * source.arcadeBody.radius,
                 bulletVelocity.x, bulletVelocity.y, this._bulletData);

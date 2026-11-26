@@ -5,20 +5,20 @@ import Movement from "../components/Movement.ts";
 import Weapon from "../components/Weapon.ts";
 
 export default class Enemy extends Entity {
-    private readonly _bulletData: BulletData = {
+    protected _bulletData: BulletData = {
         width: 12,
         height: 12,
         color: 0xf25f5c,
         speed: 512,
         damage: 1,
     };
-    private _shootTimerConfig: Phaser.Types.Time.TimerEventConfig;
-    private _shootTimer: Phaser.Time.TimerEvent;
+    protected _shootTimerConfig: Phaser.Types.Time.TimerEventConfig;
+    protected _shootTimer: Phaser.Time.TimerEvent;
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
         this.addComponent(new Health(1, this));
         this.addComponent(new Movement(0.2));
-        this.addComponent(new Weapon(bulletsGroup, this._bulletData));
+        this.addComponent(this.createWeapon(bulletsGroup));
 
         // Listen once per enemy, not on every enable(): pooled enemies are reused many times
         const health = this.getComponent(Health);
@@ -31,7 +31,7 @@ export default class Enemy extends Entity {
             }
 
             this.scene.time.delayedCall(50, () => {
-                this.clearTint();
+                this.restoreDefaultTint();
 
                 if (health?.current == 0)
                 {
@@ -83,7 +83,15 @@ export default class Enemy extends Entity {
         this._shootTimer.paused = true;
     }
 
-    private shoot() {
+    protected createWeapon(bulletsGroup: Phaser.Physics.Arcade.Group): Weapon {
+        return new Weapon(bulletsGroup, this._bulletData);
+    }
+
+    protected restoreDefaultTint() {
+        this.clearTint();
+    }
+
+    protected shoot() {
         this.play('ufoShoot');
         this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
             this.setTexture('sprites', 'ufoRed');
@@ -94,14 +102,18 @@ export default class Enemy extends Entity {
     }
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
-        super.preUpdate(timeSinceLaunch, deltaTime)
+        super.preUpdate(timeSinceLaunch, deltaTime);
 
         // Destroy entities when out of screen
         if (this.y > this.scene.cameras.main.height + this.displayHeight) {
             this.disable();
         }
 
-        if (!this.isTinted)
+        this.move(deltaTime);
+    }
+
+    protected move(deltaTime: number) {
+        if (!this.tintFill)
             this.getComponent(Movement)?.moveVertically(this, deltaTime);
         else
             this.getComponent(Movement)?.moveVertically(this, deltaTime * 0.5);

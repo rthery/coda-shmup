@@ -1,0 +1,11 @@
+{
+    "spawnRateMs": 3000,
+    "movement": {
+        "frequency": 0.003,
+        "amplitude": 60
+    },
+    "spreadShot": {
+        "bulletCount": 3,
+        "spreadAngleDeg": 30
+    }
+}
