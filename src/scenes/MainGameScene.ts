@@ -32,6 +32,8 @@ export default class MainGameScene extends Scene {
     // Background and planet tints at the last difficulty keyframe: the arena reddens as the threat rises
     private static readonly MAX_THREAT_BACKGROUND_TINT: number = 0xff8a80;
     private static readonly MAX_THREAT_PLANET_TINT: number = 0xffb0a0;
+    // Coop: ships stay this far inside the screen's edges, so they can't lose each other
+    private static readonly LEASH_MARGIN: number = 160;
 
     private saveManager: SaveManager;
     private entityManager: EntityManager;
@@ -46,6 +48,10 @@ export default class MainGameScene extends Scene {
     private _team: Team;
     private _devices: InputDevice[];
     private readonly cameraLookAhead: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    // The camera follows the middle of the ships still in the fight
+    private readonly _cameraTarget: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private readonly _playersCenter: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private readonly _averageVelocity: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
     constructor() {
         super(GameConstants.SceneKeys.MAIN_GAME);
@@ -85,12 +91,13 @@ export default class MainGameScene extends Scene {
 
         // Keep the camera still during the player intro, then follow the player
         this.cameras.main.centerOn(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2);
+        this._cameraTarget.set(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2);
         const team = new Team(difficultyData.xp);
         this._team = team;
         this.game.events.emit(GameConstants.Events.TEAM_CREATED_EVENT, team);
         const inputs = this._devices.map(device => this.gameInputManager.getInput(device));
         const players = this.entityManager.initAndSpawnPlayers(team, inputs, () => {
-            this.cameras.main.startFollow(players[0], true, 0.15, 0.15);
+            this.cameras.main.startFollow(this._cameraTarget, true, 0.15, 0.15);
         });
         this.cheatManager.init({team, jumpThreatLevel: step => this.jumpThreatLevel(step)});
         players.forEach(player => this.initPlayer(player));
@@ -268,14 +275,59 @@ export default class MainGameScene extends Scene {
             this.updateThreatTint(runSeconds);
         }
 
+        this.updateLeashes();
+        this.updateCamera(deltaTime);
+    }
+
+    private updateCamera(deltaTime: number) {
+        this._playersCenter.reset();
+        this._averageVelocity.reset();
+        let count: number = 0;
+        for (const player of this._team.players) {
+            if (!player.active)
+                continue;
+            count++;
+            this._playersCenter.add(player);
+            const velocity = player.getComponent(Movement)?.velocity;
+            if (velocity)
+                this._averageVelocity.add(velocity);
+        }
+        // The last ship destroyed: the camera stays on its wreck
+        if (count === 0)
+            return;
+        this._cameraTarget.copy(this._playersCenter.scale(1 / count));
+        this._averageVelocity.scale(1 / count);
+
         // Look ahead in the move direction: the follow offset is subtracted from the target position
-        const velocity = this._team.players[0].getComponent(Movement)?.velocity;
-        if (velocity) {
-            const lookAheadTime = 250;
-            const smoothing = 1 - Math.exp(-deltaTime / 200);
-            this.cameraLookAhead.x += (-velocity.x * lookAheadTime - this.cameraLookAhead.x) * smoothing;
-            this.cameraLookAhead.y += (-velocity.y * lookAheadTime - this.cameraLookAhead.y) * smoothing;
-            this.cameras.main.setFollowOffset(this.cameraLookAhead.x, this.cameraLookAhead.y);
+        const lookAheadTime = 250;
+        const smoothing = 1 - Math.exp(-deltaTime / 200);
+        this.cameraLookAhead.x += (-this._averageVelocity.x * lookAheadTime - this.cameraLookAhead.x) * smoothing;
+        this.cameraLookAhead.y += (-this._averageVelocity.y * lookAheadTime - this.cameraLookAhead.y) * smoothing;
+        this.cameras.main.setFollowOffset(this.cameraLookAhead.x, this.cameraLookAhead.y);
+    }
+
+    // Two ships can't be farther apart than the screen, minus a margin: the one moving away stops
+    private updateLeashes() {
+        const camera = this.cameras.main;
+        const maxSpreadX: number = camera.width / camera.zoom - 2 * MainGameScene.LEASH_MARGIN;
+        const maxSpreadY: number = camera.height / camera.zoom - 2 * MainGameScene.LEASH_MARGIN;
+        const players = this._team.players;
+        for (const player of players) {
+            if (!player.active)
+                continue;
+            let minX: number = Infinity, maxX: number = -Infinity, minY: number = Infinity, maxY: number = -Infinity;
+            for (const teammate of players) {
+                if (teammate === player || !teammate.active)
+                    continue;
+                minX = Math.min(minX, teammate.x);
+                maxX = Math.max(maxX, teammate.x);
+                minY = Math.min(minY, teammate.y);
+                maxY = Math.max(maxY, teammate.y);
+            }
+            if (minX === Infinity)
+                player.clearLeash();
+            else
+                player.setLeash(maxX - maxSpreadX, maxY - maxSpreadY, minX + maxSpreadX, minY + maxSpreadY);
         }
     }
 }

@@ -72,6 +72,8 @@ export default class Player extends Entity {
     private _magnetRadius: number = 250;
     private _moveSpeedMultiplier: number = 1;
     private _input: PlayerInput;
+    private readonly _leashBounds: Phaser.Geom.Rectangle = new Phaser.Geom.Rectangle();
+    private _leash: Phaser.Geom.Rectangle | null = null;
 
     public get magnetRadius(): number {
         return this._magnetRadius;
@@ -299,9 +301,12 @@ export default class Player extends Entity {
                 this._playerShipData.turnSpeed * deltaTime);
         }
 
-        // Stop player from leaving the arena, and kill the velocity pushing into the wall
-        const clampedX = Phaser.Math.Clamp(this.x, this.displayWidth / 2, GameConstants.ARENA_WIDTH - this.displayWidth / 2);
-        const clampedY = Phaser.Math.Clamp(this.y, this.displayHeight / 2, GameConstants.ARENA_HEIGHT - this.displayHeight / 2);
+        // Stop player from leaving the arena or its leash, and kill the velocity pushing into the wall
+        const leash = this._leash;
+        const clampedX = Phaser.Math.Clamp(this.x, Math.max(this.displayWidth / 2, leash?.left ?? -Infinity),
+            Math.min(GameConstants.ARENA_WIDTH - this.displayWidth / 2, leash?.right ?? Infinity));
+        const clampedY = Phaser.Math.Clamp(this.y, Math.max(this.displayHeight / 2, leash?.top ?? -Infinity),
+            Math.min(GameConstants.ARENA_HEIGHT - this.displayHeight / 2, leash?.bottom ?? Infinity));
         if (movement && clampedX != this.x)
             movement.velocity.x = 0;
         if (movement && clampedY != this.y)
@@ -336,6 +341,15 @@ export default class Player extends Entity {
 
             this._lastShotTime = timeSinceLaunch;
         }
+    }
+
+    // Coop: where the ship can go without leaving its teammates' screen, null for anywhere
+    public setLeash(left: number, top: number, right: number, bottom: number) {
+        this._leash = this._leashBounds.setTo(left, top, right - left, bottom - top);
+    }
+
+    public clearLeash() {
+        this._leash = null;
     }
 
     public setTargets(targets: Phaser.Physics.Arcade.Group) {
