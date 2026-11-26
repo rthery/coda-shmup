@@ -9,7 +9,7 @@ npm run build        # site statique dans dist/
 npm run export:pdf   # slides-export.pdf
 ```
 
-- `slides.md` importe `content/partie-1.md`, `partie-2.md`, `partie-3.md` (les parties suivent les commits, pas les jours).
+- `slides.md` importe `content/partie-1.md`, `partie-2.md`, `partie-3.md` (les parties suivent les commits).
 - Layouts dans `layouts/` : `chapter` (ouverture d'une partie), `part` (intercalaire), `split` (texte à gauche, code à droite avec `::right::`).
 - Thème dans `styles/index.css`, coloration du code dans `setup/shiki.ts`.
 - Un bloc de code se présente avec son fichier source au-dessus : `<div class="file">src/...</div>`. `{2-3|5}` surligne des lignes, clic après clic.

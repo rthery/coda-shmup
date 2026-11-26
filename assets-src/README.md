@@ -9,7 +9,7 @@ nommée comme le fichier sans son extension : `ufoRed.png` devient la frame `'uf
 2. Lancer `npm run atlas`
 3. L'utiliser dans le jeu : `this.add.sprite(x, y, 'sprites', 'monSprite')`
 
-`npm run atlas` lance `tools/pack-atlas.mts`, un script TypeScript que Node 24 (ou plus récent) exécute directement.
+`npm run atlas` lance `tools/pack-atlas.mts`, un script TypeScript que Node 22.18 (ou plus récent) exécute directement.
 `gameSprites.png` et `gameSprites.json` sont générés par le script : ne jamais les modifier à la main.
 
 ## Voir ce que contient l'atlas

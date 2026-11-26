@@ -1,27 +1,21 @@
 # Utiliser la librairie Phaser pour créer un jeu web
 
 ## Slides du cours
-Les slides des 3 jours (game loop, scènes, patterns, etc.) sont dans [slides/](slides/), un projet Slidev indépendant du jeu : `npm install` puis `npm run dev` dans `slides/`.
+Les slides des 3 parties du cours (game loop, scènes, patterns, etc.) sont dans [slides/](slides/), un projet Slidev indépendant du jeu : `npm install` puis `npm run dev` dans `slides/`.
 
 ## Setup du projet
-Installer NodeJS LTS (via nvm, volta, etc.)
+Installer NodeJS LTS (via nvm, volta, etc.), git et un éditeur (WebStorm ou VS Code).
 
-```npm create @phaserjs/game@latest```
-1. Nommer le projet
-2. Web Bundler
-3. vite
-4. Minimal
-5. TypeScript
+1. Forker `rthery/coda-shmup` sur GitHub, puis cloner **votre** fork
+2. Installer une fois l'alias `git go` (commande dans le `README.md`)
+3. `git go 02`, puis `npm install` et `npm run dev-nolog`
 
-Mettre à jour les packages  
-Principalement pour vite et TS
-1. ```npx npm-check-updates -u```
+Vous devriez pouvoir voir la page du "jeu" sur <http://localhost:8080> pour valider que tout fonctionne.
+On refait ensuite le jeu commit par commit : `git go NN` place la branche `cours` sur le commit numéro NN des slides
+(et efface vos changements locaux).
 
-Ouvrir le projet dans votre IDE
-1. ```npm install```
-2. ```npm run dev```
-
-Vous devriez pouvoir voir la page du "jeu" dans votre browser pour valider que tout fonctionne
+Pour info, le commit 01 a été généré avec le template officiel : `npm create @phaserjs/game@latest` (Web Bundler, Vite,
+Minimal, TypeScript), et le commit 02 met les packages à jour avec `npx npm-check-updates -u`.
 
 > Note : les commandes `npm run dev` / `npm run build` du template Phaser exécutent `log.js`, qui envoie un ping **anonyme** (nom du template, dev/prod, version de Phaser) vers `gryzor.co`. Aucune donnée personnelle n'est envoyée (voir `README_PHASER.md`, section « About log.js »). Pour désactiver cet envoi : `npm run dev-nolog` / `npm run build-nolog`.
 
@@ -60,7 +54,7 @@ par-dessus par exemple).
 
 Dans le code : les scènes sont `src/scenes/HomeScene.ts`, `MainGameScene.ts`, `MainUIScene.ts`, `GameOverScene.ts`,
 enregistrées dans `src/main.ts:36-41`. Plusieurs scènes actives en même temps : `HomeScene` lance la scène UI et
-démarre la partie avec `scene.launch` + `scene.start` (`src/scenes/HomeScene.ts:49-52`) ; `MainUIScene` se place
+démarre la partie avec `scene.launch` + `scene.start` (`src/scenes/HomeScene.ts:50-56`) ; `MainUIScene` se place
 au-dessus avec `scene.bringToTop()` (`src/scenes/MainUIScene.ts:40`).
 
 ### Game Objects
@@ -124,35 +118,46 @@ Optimiser vos performances en assemblant vos images dans des atlas/spritesheets
   à la même taille. On peut donc facilement en déduire la position de chaque image dans la spritesheet sans fichier de donnée externe
   comme pour un atlas
 
+Dans le projet, l'atlas du jeu est généré à partir d'un PNG par sprite (voir `assets-src/README.md`) :
+1. Déposer le PNG dans `assets-src/sprites/`
+2. Lancer `npm run atlas` : `tools/pack-atlas.mts` packe tous les PNG dans `public/assets/Spritesheet/gameSprites.png` + `gameSprites.json`
+3. L'utiliser dans le jeu par le nom du fichier sans `.png` : `this.add.sprite(x, y, 'sprites', 'ufoRed')`
+
+`gameSprites.png` et `gameSprites.json` sont générés, ne jamais les modifier à la main. Pour lister les frames chargées :
+`console.log(this.textures.get('sprites').getFrameNames())`. Les images répétées (le fond `darkPurple`) restent hors de
+l'atlas : le filtrage de la carte graphique ferait apparaître des joints entre les tuiles.
+
 ### Données
 
 Utilisation de fichiers JSON pour stocker les données de configuration du jeu, comme les niveaux, les ennemis, les power-ups, etc.
-Cela permet de facilement les lires et éditer, et de les charger dynamiquement dans le jeu.
+Cela permet de facilement les lire et les éditer, et de les charger dynamiquement dans le jeu.
 
 Exemple dans le code : `public/assets/Data/playerShips.json` est chargé dans `HomeScene.preload` (`src/scenes/HomeScene.ts:38`)
-avec `this.load.json`, puis lu via `this.scene.cache.json.get('playerShips')` (`src/entities/Player.ts:57`) et typé dans
+avec `this.load.json`, puis lu via `this.scene.cache.json.get('playerShips')` (`src/entities/Player.ts:59`) et typé dans
 `src/gameData/PlayerShipsData.ts`. C'est ce pattern qu'il faut généraliser pour rendre un ennemi configurable via JSON
 (cf. évaluation).
 
 ### Outils
 - Editer des images: <https://www.photopea.com/>
-- Créer des atlas/spritesheets: <https://free-tex-packer.com/app/>
+- Créer l'atlas du jeu : `npm run atlas` (basé sur [free-tex-packer-core](https://www.npmjs.com/package/free-tex-packer-core))
 
 ## Game Logic et Design Patterns
 
 L'historique git de ce repo montre la progression prototype → architecture (pooling, Entity+Components, managers,
-scènes, sauvegarde) : `git log --oneline` puis `git show <commit>` (ex. `656f1ec` pooling, `37fe043` Entity,
-`b037885` composants, `26935b2` EntityManager, `af68a37` registry, `e5118de` SaveManager, `ae68120` scène UI).
+scènes, sauvegarde) : `git log --oneline` puis `git show <commit>` (numéro des slides et hash : 21 `262ba0b` pooling
+des balles, 22 `959dbd7` Entity, 23 `7a48be8` pooling des ennemis, 24 `04d27ae` composants, 30 `d9817fb` registry,
+31 `4460ded` SaveManager, 32 `095c65d` EntityManager, 33 `ca42290` scène UI).
 
 ### Pooling
 Le pooling est une technique de gestion des ressources qui consiste à réutiliser des objets au lieu de les 
 créer/détruire.
 Attention ! Cela vous oblige à gérer correctement l'état de ces objets et de le réinitialiser correctement avant de les réutiliser.
 
-Exemple dans le code : `GroupUtils.populate` pré-remplit et désactive les objets (`src/utils/GroupUtils.ts:5-18`),
+Exemple dans le code : `GroupUtils.populate` pré-remplit et désactive les objets (`src/utils/GroupUtils.ts:5-17`),
 les groupes de balles/ennemis sont configurés dans `src/managers/EntityManager.ts:15-22,42-43,56-57`, et chaque objet
-pooled a un `enable`/`disable` qui remet l'état à zéro (`src/entities/Bullet.ts:20-49`, `src/entities/Enemy.ts:49-83`
-— bien remettre la vie à fond sans émettre d'événement : `heal(max, false)`, `Enemy.ts:73`).
+pooled a un `enable`/`disable` qui remet l'état à zéro (`src/entities/Bullet.ts:20-49`, `src/entities/Enemy.ts:69-84`
+— bien remettre la vie à fond sans émettre d'événement : `heal(max, false)`, `Enemy.ts:75`). Les listeners sont posés
+une seule fois dans `init()` (`Enemy.ts:23-41`), pas dans `enable()`, sinon ils s'accumulent à chaque réutilisation.
 
 ### Entity/Component
 Utilisez une classe, Entity, pour définir les entités de votre jeu, ne pas hésiter à hériter d'une classe du moteur, tel que Sprite
@@ -161,9 +166,9 @@ Par exemple en ajoutant un component pour le mouvement, le tir ou la vie
 
 Utilisez des events pour laisser les components communiquer avec le reste de la logique
 
-Exemple dans le code : `Entity.addComponent` / `getComponent<T>` (`src/entities/Entity.ts:25-45`), les entités
+Exemple dans le code : `Entity.addComponent` / `getComponent<T>` (`src/entities/Entity.ts:25-41`), les entités
 `src/entities/Player.ts`, `Enemy.ts`, et les composants `src/components/` (`Health` avec ses événements
-`CHANGE_EVENT`/`DEATH_EVENT`, `Movement`, `Weapon` — le tir est dans `Weapon.shoot`, `src/components/Weapon.ts:22-46`).
+`CHANGE_EVENT`/`DEATH_EVENT`, `Movement`, `Weapon` — le tir est dans `Weapon.shoot`, `src/components/Weapon.ts:22-45`).
 
 ### Game State
 
@@ -176,10 +181,10 @@ Le Game State sert aussi de base pour les systèmes de sauvegarde et de chargeme
 vous pouvez retrouver la partie plus tard exactement là où elle s’était arrêtée.
 
 Dans le code : le score vit dans le **registry** Phaser (`src/RegistryConstants.ts`, `this.registry.set(...)` dans
-`src/scenes/MainGameScene.ts:46`, `registry.inc(...)` dans `src/managers/EntityManager.ts:83,97`) et ses changements
+`src/scenes/MainGameScene.ts:50`, `registry.inc(...)` dans `src/managers/EntityManager.ts:83,97`) et ses changements
 sont notifiés via `registry.events` (écouté dans `src/scenes/MainUIScene.ts:18`). La **persistance** (localStorage)
 est gérée par le `SaveManager` (`src/managers/SaveManager.ts`, clé `phaserSaveData`, best score sauvegardé à la mort
-du joueur dans `src/scenes/MainGameScene.ts:51-61`).
+du joueur dans `MainGameScene.endGame`, `src/scenes/MainGameScene.ts:55-64`).
 
 ### Managers/Services
 Centralisez la gestion de certaines fonctionnalités dans des classes dédiées, comme un EntityManager pour gérer les entités.
@@ -203,7 +208,7 @@ On essaye généralement que la couche logique n'ait aucune dépendance à celle
 tourner sans l'UI), pour qu'il soit plus maintenable et moins sujet aux bugs.
 
 Exemple dans le code : `src/scenes/MainUIScene.ts` ne fait qu'écouter — le score via les événements du registry
-(`MainUIScene.ts:18`) et la vie du joueur via `game.events` + l'événement du composant `Health` (`MainUIScene.ts:17,50-57`,
+(`MainUIScene.ts:18`) et la vie du joueur via `game.events` + l'événement du composant `Health` (`MainUIScene.ts:17,50-56`,
 avec nettoyage des listeners au `SHUTDOWN`, lignes 20-24) — pendant que la logique tourne dans `MainGameScene`.
 
 ### Références
@@ -224,9 +229,10 @@ mais qu'ils ressentent quand elles manquent.
 - Musique et effets sonores
 
 Exemples dans le code : shake de caméra (`src/managers/EntityManager.ts:93,105`), flash blanc quand un ennemi est
-touché (`src/entities/Enemy.ts:55`), explosion en tween à la mort (`src/components/Health.ts:52-71`), sons laser
-(`src/entities/Player.ts:91`, `src/entities/Enemy.ts:90`), touche R pour redémarrer la scène
-(`src/scenes/MainGameScene.ts:41`), barre de chargement au preload (`src/scenes/HomeScene.ts:13-28`).
+touché (`src/entities/Enemy.ts:26`), joueur invulnérable 50 ms après un coup (`src/entities/Player.ts:46-54`),
+explosion en tween à la mort (`src/components/Health.ts:50-72`), sons laser (`src/entities/Player.ts:93`,
+`src/entities/Enemy.ts:92`), touche R pour redémarrer la scène (`src/scenes/MainGameScene.ts:45`), barre de chargement
+au preload (`src/scenes/HomeScene.ts:13-29`).
 
 ### Références
 - <https://www.youtube.com/watch?v=Fy0aCDmgnxg>
@@ -236,19 +242,32 @@ touché (`src/entities/Enemy.ts:55`), explosion en tween à la mort (`src/compon
 
 ## Publication du jeu
 
-Utilisation de la plateforme [itch.io](https://itch.io/) pour publier le jeu via Github Actions.
+Utilisation de la plateforme [itch.io](https://itch.io/) pour publier le jeu via Github Actions : à chaque push sur
+`main`, le jeu est buildé puis déployé.
 Un jeton butler doit être généré pour permettre l'upload du jeu depuis Github, attention a bien le saisir via les secrets du repository
-(secret `BUTLER_CREDENTIALS`, voir `.github/workflows/main.yml`). Si vous forkez ce repo, pensez aussi à personnaliser
-`ITCH_USER` / `ITCH_GAME` dans le workflow (valeur en dur : `surmoi`).
+(secret `BUTLER_CREDENTIALS` dans Settings > Secrets and variables > Actions, voir `.github/workflows/main.yml`).
+Si vous forkez ce repo, changez `ITCH_USER` dans le workflow (valeur en dur : `surmoi`) ; `ITCH_GAME` reprend le nom du repo.
 
 ## Features additionnelles
 
 ### Processus de développement
 - Publier votre projet actuel sur Github
-- Créer une feature branch pour chaque feature que vous implémentez
-- Faites des [commits atomiques](https://dev.to/samuelfaure/how-atomic-git-commits-dramatically-increased-my-productivity-and-will-increase-yours-too-4a84) sur votre branche
-- Créer une Pull Request (PR) pour chaque feature afin de permettre aux autres de la review
-- Pensez à bien relire votre code et vos commits avant de la soumettre
+- Créer une feature branch pour chaque feature que vous implémentez (`git switch -c feature/...`), jamais de commit sur `main`
+- Faites des [commits atomiques](https://dev.to/samuelfaure/how-atomic-git-commits-dramatically-increased-my-productivity-and-will-increase-yours-too-4a84) sur votre branche : un commit = une idée, comme l'historique de `main`
+- Créer une Pull Request (PR) pour chaque feature afin de permettre aux autres de la review, ouverte en draft tant qu'elle n'est pas prête
+- Avant chaque PR : `npm run build-nolog` et un playtest manuel, puis relisez votre code et vos commits
+
+### Coder avec un agent IA
+Facultatif pendant le TD, avec n'importe quel agent :
+- Une branche feature dédiée, jamais `main`, pas de secrets dans les prompts
+- D'abord un **tech plan sans code** (approche, fichiers touchés, étapes de commit, vérification, risques, questions) :
+  on le relit, on répond aux questions, on le fait corriger, puis seulement « implémente ce plan, une étape à la fois »
+- Vérifier que le plan respecte les patterns du cours (Entity/Component, pooling avec reset, JSON typé, UI découplée)
+  et réutilise l'existant au lieu de le réinventer
+- L'agent peut se vérifier lui-même (build, lancer le jeu, capture, playtest), mais un humain vérifie toujours à la fin
+- PR en draft, review humaine avant de merger. Si le code ne va pas, améliorez la doc du repo et les skills de l'agent
+  plutôt que le prompt
+- Le code généré reste **votre** responsabilité
 
 ### Idées de features additionnelles
 - Spawn enemies in waves/pattern
@@ -260,7 +279,6 @@ Un jeton butler doit être généré pour permettre l'upload du jeu depuis Githu
   - Le rendre persistant sur le disque (via localStorage)
   - Le rendre online (si le backend ne vous fait pas peur)
 - Ajouter plus de game feel
-  - Explosion des vaisseaux
   - Améliorer les bullets (utilisation d'une image/sprite au lieu de rectangle)
   - Améliorer l'audio (musique, sons...)
 - Ajouter plusieurs niveaux, dont le contenu est défini via un json
@@ -276,7 +294,7 @@ assurez-vous d'avoir les droits d'utilisation et
 garder une certaine coherence visuelle)
 - Ajouter un tutoriel (expliquer les contrôles, tuto diégétique)
 - Ajouter mouvement vertical pour le joueur
-- Migrer le jeu vers Phaser 4 (sorti en avril 2026)
+- Migrer le jeu vers Phaser 4
 
 Vous vous aussi proposer des features additionnelles, n'hésitez pas à en discuter en amont d'abord
 

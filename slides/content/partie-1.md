@@ -365,7 +365,7 @@ class: commit-slide
 
 <!--
 preload :27-28, create :38-39, update :142-143.
-CC0 = utilisable librement, y compris commercialement. Outils : photopea.com, free-tex-packer.com.
+CC0 = utilisable librement, y compris commercialement. Outil : photopea.com.
 Ordre d'affichage : le fond est créé avant le joueur, donc dessiné dessous (et le joueur a setDepth(100)).
 -->
 
@@ -423,7 +423,7 @@ class: commit-slide
 <!--
 MainGameScene.ts:30. Les noms de frame perdent leur extension : 'ufoRed.png' devient 'ufoRed' (ici et dans playerShips.json).
 Ajouter un sprite : déposer le PNG dans assets-src/sprites, lancer npm run atlas, utiliser son nom de fichier sans .png.
-tools/pack-atlas.mts est du TypeScript que Node 24 (LTS) exécute directement, sans compilation : .mts = module TypeScript, comme .mjs pour JavaScript.
+tools/pack-atlas.mts est du TypeScript que Node 22.18 ou plus récent exécute directement, sans compilation : .mts = module TypeScript, comme .mjs pour JavaScript.
 gameSprites.png et gameSprites.json sont générés : on ne les édite pas à la main. Voir assets-src/README.md
 (source Kenney « Space Shooter Redux », CC0 ; le fond qui se répète reste hors de l'atlas).
 Pour voir ce que contient l'atlas, dans la console du navigateur ou dans create() :
