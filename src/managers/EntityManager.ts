@@ -12,6 +12,7 @@ import RegistryConstants from "../RegistryConstants.ts";
 import DifficultyCurve from "../utils/DifficultyCurve.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 import {BulletFxData} from "../gameData/BulletData.ts";
+import Sfx from "../audio/Sfx.ts";
 
 export default class EntityManager extends Plugins.ScenePlugin {
     public static readonly PLUGIN_KEY: string = 'EntityManager';
@@ -217,6 +218,9 @@ export default class EntityManager extends Plugins.ScenePlugin {
             // One-shot enemies would flood the screen with 1s
             if (enemyHealth && enemyHealth.max > 1)
                 this.spawnDamageNumber((enemy as Enemy).x, (enemy as Enemy).y, damage, enemyHealth.current <= damage);
+            // The kill plays its explosion instead
+            if (enemyHealth && enemyHealth.current > damage)
+                Sfx.play(this.scene!, 'enemyHit');
             enemyHealth?.damage(damage);
         });
 
@@ -463,6 +467,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
         enemy.getComponent(Health)?.once(Health.DEATH_START_EVENT, () => {
             const combo: number = this.scene!.registry.get(RegistryConstants.Keys.PLAYER_COMBO) ?? 1;
             this.spawnExplosion(enemy.x, enemy.y, 1 + (combo - 1) * EntityManager.EXPLOSION_PER_COMBO);
+            // A little louder and deeper as the combo builds
+            Sfx.play(this.scene!, 'explosion', {volumeScale: 1 + (combo - 1) * 0.1, detune: -(combo - 1) * 60});
             // One gem per combo level: staying unhurt levels up faster
             this.spawnXpGems(enemy.x, enemy.y, combo);
             this.game!.events.emit(GameConstants.Events.ENEMY_KILLED_EVENT, enemy);

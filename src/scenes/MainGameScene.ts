@@ -11,6 +11,7 @@ import Player from "../entities/Player.ts";
 import DifficultyCurve from "../utils/DifficultyCurve.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 import type Enemy from "../entities/Enemy.ts";
+import Sfx from "../audio/Sfx.ts";
 
 export default class MainGameScene extends Scene {
     private static readonly KILL_SCORE: number = 10;
@@ -129,6 +130,7 @@ export default class MainGameScene extends Scene {
         const spread: number = MainGameScene.DEATH_EXPLOSION_SPREAD;
         MainGameScene.DEATH_EXPLOSIONS.forEach(explosion => {
             this.time.delayedCall(explosion.delay, () => {
+                Sfx.play(this, 'explosion', {volumeScale: explosion.size / 2, detune: -300});
                 this.entityManager.spawnExplosion(x + Phaser.Math.Between(-spread, spread),
                     y + Phaser.Math.Between(-spread, spread), explosion.size);
                 camera.shake(200, 0.01 * explosion.size, true);

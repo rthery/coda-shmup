@@ -4,6 +4,7 @@ import SaveConstants from "../SaveConstants.ts";
 import type SaveManager from "../managers/SaveManager.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 import UiUtils from "../utils/UiUtils.ts";
+import Sfx from "../audio/Sfx.ts";
 
 export default class GameOverScene extends Phaser.Scene {
     private static readonly DIM_ALPHA: number = 0.7;
@@ -29,6 +30,9 @@ export default class GameOverScene extends Phaser.Scene {
     }
 
     create() {
+        Sfx.play(this, 'gameOver');
+        // The music steps back behind the results
+        Sfx.fadeMusic(this, 0.4, 800);
         this.scene.stop(GameConstants.SceneKeys.MAIN_UI);
 
         this._started = false;
@@ -130,6 +134,7 @@ export default class GameOverScene extends Phaser.Scene {
         });
         this.time.delayedCall(delay + 150, () => {
             stars.explode(32);
+            Sfx.play(this, 'newBest');
             this.cameras.main.flash(150, 255, 220, 120);
         });
     }
@@ -144,7 +149,10 @@ export default class GameOverScene extends Phaser.Scene {
             delay,
             duration: GameOverScene.SCORE_COUNT_DURATION,
             ease: 'Quad.easeOut',
-            onUpdate: () => text.setText(GameOverScene.formatScore(counter.value)),
+            onUpdate: () => {
+                text.setText(GameOverScene.formatScore(counter.value));
+                Sfx.play(this, 'scoreTick');
+            },
             onComplete: () => {
                 text.setText(GameOverScene.formatScore(score));
                 this.tweens.add({targets: text, scale: {from: 1.15, to: 1}, duration: 200, ease: 'Back.easeOut'});
@@ -187,6 +195,7 @@ export default class GameOverScene extends Phaser.Scene {
                 return;
             }
             this._started = true;
+            Sfx.play(this, 'uiConfirm');
             this.scene.stop(GameConstants.SceneKeys.MAIN_GAME);
             this.scene.start(GameConstants.SceneKeys.HOME);
         }

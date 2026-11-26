@@ -7,6 +7,7 @@ import RegistryConstants from "../RegistryConstants.ts";
 import UiUtils from "../utils/UiUtils.ts";
 import DifficultyCurve from "../utils/DifficultyCurve.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
+import Sfx from "../audio/Sfx.ts";
 
 export default class MainUIScene extends Scene {
     private static readonly MARGIN: number = 64;
@@ -25,6 +26,13 @@ export default class MainUIScene extends Scene {
     private static readonly MAX_THREAT_COLOR: number = 0xff4a3d;
     private static readonly MAX_THREAT_COLOR_STRING: string = '#ff4a3d';
     private static readonly DAMAGE_VIGNETTE_KEY: string = 'damageVignette';
+    private static readonly COMBO_STEP_DETUNE: number = 200; // cents
+    private static readonly THREAT_ALARM_GAP: number = 300; // ms
+    private static readonly MAX_THREAT_ALARM_DETUNE: number = -400; // cents
+    // Stars landing in a row climb in pitch, like coins, back to the base note after a pause
+    private static readonly XP_PICKUP_STREAK_RESET: number = 600; // ms
+    private static readonly XP_PICKUP_DETUNE_STEP: number = 30; // cents
+    private static readonly XP_PICKUP_MAX_DETUNE: number = 400; // cents
     private static readonly DAMAGE_VIGNETTE_DURATION: number = 600;
     private static readonly LAST_LIFE_TINT: number = 0xff6060;
     private static readonly XP_FILL_DELAY: number = 120;
@@ -64,6 +72,8 @@ export default class MainUIScene extends Scene {
     // While the level-up screen is open the bar stays full, the leftover XP shows once it closes
     private _heldXpRatio: number | null = null;
     private _xpStars: GameObjects.Group;
+    private _xpPickupStreak: number = 0;
+    private _lastXpPickupTime: number = -Infinity; // ms, real time
     // The star just spawned, waiting for the XP change its gem caused
     private _pendingXpStar: GameObjects.Image | null = null;
     private _xpBarWidth: number;
@@ -198,6 +208,8 @@ export default class MainUIScene extends Scene {
 
         if (combo > previousCombo) {
             this.tweens.add({targets: this._comboText, scale: {from: 1.4, to: 1}, duration: 200, ease: 'Back.easeOut'});
+            // Higher at each step
+            Sfx.play(this, 'comboUp', {detune: (combo - 2) * MainUIScene.COMBO_STEP_DETUNE});
         }
     }
 
@@ -254,6 +266,7 @@ export default class MainUIScene extends Scene {
 
     // Sent before the reset, so the text still shows the lost combo
     private onComboBroken() {
+        Sfx.play(this, 'comboBreak');
         const shard = this.add.text(this._comboText.x, this._comboText.y, this._comboText.text,
             {fontSize: '40px', color: MainUIScene.COMBO_BROKEN_COLOR, fontStyle: 'bold'}).setOrigin(1, 0.5);
         this.tweens.add({
@@ -321,6 +334,10 @@ export default class MainUIScene extends Scene {
     // Lines open from the center, the text blinks like an alarm, then it all fades out
     private showThreatBanner(level: number) {
         const isMax: boolean = level >= this._difficulty.maxThreatLevel;
+        // A two-beat alarm, lower for the last level
+        const alarmDetune: number = isMax ? MainUIScene.MAX_THREAT_ALARM_DETUNE : 0;
+        Sfx.play(this, 'threatAlarm', {detune: alarmDetune});
+        this.time.delayedCall(MainUIScene.THREAT_ALARM_GAP, () => Sfx.play(this, 'threatAlarm', {detune: alarmDetune}));
         this._threatTitle.setText(isMax ? "MAXIMUM THREAT" : "THREAT LEVEL " + (level + 1))
             .setColor(isMax ? MainUIScene.MAX_THREAT_COLOR_STRING : MainUIScene.THREAT_COLOR);
 
@@ -499,7 +516,17 @@ export default class MainUIScene extends Scene {
         });
     }
 
+    private playXpPickup() {
+        const now: number = performance.now();
+        this._xpPickupStreak = now - this._lastXpPickupTime < MainUIScene.XP_PICKUP_STREAK_RESET
+            ? this._xpPickupStreak + 1 : 0;
+        this._lastXpPickupTime = now;
+        Sfx.play(this, 'xpPickup',
+            {detune: Math.min(this._xpPickupStreak * MainUIScene.XP_PICKUP_DETUNE_STEP, MainUIScene.XP_PICKUP_MAX_DETUNE)});
+    }
+
     private landXpStar(star: GameObjects.Image) {
+        this.playXpPickup();
         this.applyXp(star.getData('ratio'), star.getData('level'));
         this.tweens.add({
             targets: star,

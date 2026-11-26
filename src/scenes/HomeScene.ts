@@ -6,6 +6,7 @@ import Turret from "../components/Turret.ts";
 import type {PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 import UiUtils from "../utils/UiUtils.ts";
+import Sfx from "../audio/Sfx.ts";
 
 export default class HomeScene extends Phaser.Scene {
     private static readonly BG_TILE_SCALE: number = 2;
@@ -55,11 +56,13 @@ export default class HomeScene extends Phaser.Scene {
         this.load.json('playerShips', 'Data/playerShips.json');
         this.load.json('upgrades', 'Data/upgrades.json');
         this.load.json('difficulty', 'Data/difficulty.json');
-        this.load.audio('sfx_laser1', 'Sounds/sfx_laser1.ogg');
         this.load.audio('sfx_laser2', 'Sounds/sfx_laser2.ogg');
+        Sfx.preload(this.load);
     }
 
     create() {
+        // Plays across scenes, from the first input on (browsers block sound until then)
+        Sfx.startMusic(this);
         console.log(this.sys.game.renderer.type === Phaser.WEBGL ? 'WebGL' : 'Canvas');
 
         this._started = false;
@@ -127,6 +130,8 @@ export default class HomeScene extends Phaser.Scene {
 
     private _startGame(): void {
         this._started = true;
+        Sfx.play(this, 'start');
+        Sfx.play(this, 'launch');
 
         this.tweens.killTweensOf([this._playerShip, this._startPrompt]);
         this._thrusters.setBoost(true);

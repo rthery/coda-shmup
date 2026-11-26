@@ -5,6 +5,7 @@ import type {UpgradeCategory, UpgradeData} from "../gameData/UpgradesData.ts";
 import Experience from "../components/Experience.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 import UiUtils, {type UiFrame} from "../utils/UiUtils.ts";
+import Sfx from "../audio/Sfx.ts";
 
 export default class LevelUpScene extends Scene {
     private static readonly CHOICE_COUNT: number = 3;
@@ -72,6 +73,7 @@ export default class LevelUpScene extends Scene {
 
     // noinspection JSUnusedGlobalSymbols
     create() {
+        Sfx.play(this, 'levelUp');
         const centerX: number = this.scale.width / 2;
 
         const dim = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.7).setOrigin(0);
@@ -236,6 +238,9 @@ export default class LevelUpScene extends Scene {
     }
 
     private select(index: number) {
+        // Not for the first selection, nor the one placed again once the cards land
+        if (this._isReady && index !== this._selectedIndex)
+            Sfx.play(this, 'cardSelect');
         this._selectedIndex = index;
 
         this._cards.forEach((card, cardIndex) => {
@@ -254,6 +259,7 @@ export default class LevelUpScene extends Scene {
             return;
         this._chosen = true;
 
+        Sfx.play(this, 'cardPick');
         this._player.applyUpgrade(this._upgrades[index]);
         this.close();
     }

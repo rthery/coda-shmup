@@ -15,6 +15,7 @@ import ShieldBubble from "../components/ShieldBubble.ts";
 import MagnetField from "../components/MagnetField.ts";
 import type {UpgradeData, UpgradeId, UpgradePreview} from "../gameData/UpgradesData.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
+import Sfx from "../audio/Sfx.ts";
 
 export default class Player extends Entity {
     // Lives the ship starts with: shield cells come on top and are lost first
@@ -133,7 +134,10 @@ export default class Player extends Entity {
         this.addComponent(new Turret(this));
         this.addComponent(new ShieldBubble(this));
         this.addComponent(new MagnetField(this));
-        this.getComponent(Health)?.on(Health.CHANGE_EVENT, () => this.updateShieldBubble());
+        this.getComponent(Health)?.on(Health.CHANGE_EVENT, (current: number, previous: number) => {
+            this.updateShieldBubble();
+            this.playHealthSound(current, previous);
+        });
         this.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
             this.getComponent(Thrusters)?.hide();
             this.getComponent(WingTrails)?.hide();
@@ -255,6 +259,18 @@ export default class Player extends Entity {
         }
     }
 
+    // A lost shield cell, a hull hit or the last hit
+    private playHealthSound(current: number, previous: number) {
+        if (current >= previous)
+            return;
+        if (previous > Player.HULL_POINTS)
+            Sfx.play(this.scene, 'shieldDown');
+        else if (current > 0)
+            Sfx.play(this.scene, 'hullHit');
+        else
+            Sfx.play(this.scene, 'playerDeath');
+    }
+
     // Health above the hull is shield: hits take it first
     private updateShieldBubble() {
         const current: number = this.getComponent(Health)?.current ?? 0;
@@ -289,9 +305,11 @@ export default class Player extends Entity {
                 break;
             case 'shieldCell':
                 this.getComponent(Health)?.increaseMax(upgrade.value);
+                Sfx.play(this.scene, 'shieldUp');
                 break;
             case 'repair':
                 this.getComponent(Health)?.heal(upgrade.value);
+                Sfx.play(this.scene, 'repair');
                 break;
             case 'pierce':
                 this._bulletData.pierce += upgrade.value;
@@ -354,7 +372,7 @@ export default class Player extends Entity {
             this._shootDirection.setToPolar(turret.rotation);
             this.getComponent(Weapon)?.shoot(this, this._shootDirection, turret.getMuzzle(this._muzzle));
             turret.playShot(this._bulletData.fx.glowTints[0]);
-            this.scene.sound.play('sfx_laser1',
+            Sfx.play(this.scene, 'laser',
                 {detune: Phaser.Math.Between(-Player.LASER_DETUNE, Player.LASER_DETUNE)});
 
             this._lastShotTime = timeSinceLaunch;
