@@ -15,8 +15,8 @@ export default class MainUIScene extends Scene {
     private static readonly XP_BAR_X: number = 200;
     private static readonly BRACKET_INSET: number = 28;
     private static readonly BRACKET_LENGTH: number = 56;
-    private static readonly DAMAGE_FLASH_COLOR: number = 0xff3030;
-    private static readonly DAMAGE_FLASH_ALPHA: number = 0.25;
+    private static readonly DAMAGE_VIGNETTE_KEY: string = 'damageVignette';
+    private static readonly DAMAGE_VIGNETTE_DURATION: number = 600;
     private static readonly LAST_LIFE_TINT: number = 0xff6060;
     private static readonly XP_FILL_DELAY: number = 120;
     private static readonly XP_FILL_DURATION: number = 300;
@@ -35,7 +35,7 @@ export default class MainUIScene extends Scene {
 
     private _lifeIcons: GameObjects.Image[];
     private _lifeRow: GameObjects.Container;
-    private _damageFlash: GameObjects.Rectangle;
+    private _damageVignette: GameObjects.Image;
     private _scoreText: GameObjects.BitmapText;
     private _runTimeText: GameObjects.Text;
     private _comboText: GameObjects.Text;
@@ -85,8 +85,8 @@ export default class MainUIScene extends Scene {
     // noinspection JSUnusedGlobalSymbols
     create() {
         this._lifeIcons = [];
-        this._damageFlash = this.add.rectangle(0, 0, this.scale.width, this.scale.height,
-            MainUIScene.DAMAGE_FLASH_COLOR).setOrigin(0).setAlpha(0);
+        this.createDamageVignetteTexture();
+        this._damageVignette = this.add.image(0, 0, MainUIScene.DAMAGE_VIGNETTE_KEY).setOrigin(0).setAlpha(0);
         this._lifeRow = this.add.container(0, 0);
 
         let scoreStr: string = "".padStart(GameConstants.MAX_SCORE_DIGITS, "0");
@@ -277,6 +277,24 @@ export default class MainUIScene extends Scene {
         }
     }
 
+    // Red at the screen edges, clear in the middle, drawn once
+    private createDamageVignetteTexture() {
+        if (this.textures.exists(MainUIScene.DAMAGE_VIGNETTE_KEY))
+            return;
+
+        const width: number = this.scale.width;
+        const height: number = this.scale.height;
+        const texture = this.textures.createCanvas(MainUIScene.DAMAGE_VIGNETTE_KEY, width, height)!;
+        const context: CanvasRenderingContext2D = texture.getContext();
+        const gradient: CanvasGradient = context.createRadialGradient(width / 2, height / 2, width * 0.45,
+            width / 2, height / 2, Math.hypot(width, height) / 2);
+        gradient.addColorStop(0, 'rgba(255, 40, 40, 0)');
+        gradient.addColorStop(1, 'rgba(255, 40, 40, 0.75)');
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, width, height);
+        texture.refresh();
+    }
+
     // Bare HUD: corner brackets frame the play area instead of panels
     private addCornerBrackets() {
         const inset: number = MainUIScene.BRACKET_INSET;
@@ -332,7 +350,20 @@ export default class MainUIScene extends Scene {
 
         this.popIcon(icon);
         this.tweens.add({targets: this._lifeRow, x: {from: 16, to: 0}, duration: 450, ease: 'Elastic.easeOut'});
-        this.tweens.add({targets: this._damageFlash, alpha: {from: MainUIScene.DAMAGE_FLASH_ALPHA, to: 0}, duration: 350});
+        // A hull alarm: the screen edges glow red, twice
+        this.tweens.killTweensOf(this._damageVignette);
+        this.tweens.add({
+            targets: this._damageVignette,
+            alpha: {from: 1, to: 0.2},
+            duration: MainUIScene.DAMAGE_VIGNETTE_DURATION / 4,
+            yoyo: true,
+            onComplete: () => this.tweens.add({
+                targets: this._damageVignette,
+                alpha: 0,
+                duration: MainUIScene.DAMAGE_VIGNETTE_DURATION / 2,
+                ease: 'Quad.easeIn'
+            })
+        });
     }
 
     private popIcon(icon: GameObjects.Image) {

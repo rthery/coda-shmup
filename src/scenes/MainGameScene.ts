@@ -12,7 +12,7 @@ import type Enemy from "../entities/Enemy.ts";
 
 export default class MainGameScene extends Scene {
     private static readonly KILL_SCORE: number = 10;
-    private static readonly HIT_STOP_DURATION: number = 40; // ms
+    private static readonly HIT_STOP_DURATION: number = 30; // ms
     private static readonly HIT_STOP_COOLDOWN: number = 400; // ms
 
     private saveManager: SaveManager;

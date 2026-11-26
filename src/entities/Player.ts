@@ -18,6 +18,7 @@ export default class Player extends Entity {
     private static readonly WING_TRAILS_SPEED_RATIO: number = 0.5;
     // The turret fires once it points this close to its target
     private static readonly TURRET_AIM_TOLERANCE: number = Phaser.Math.DegToRad(15);
+    private static readonly INVULNERABILITY_DURATION: number = 500; // ms
     // Random pitch, in cents, so rapid fire doesn't sound like a machine
     private static readonly LASER_DETUNE: number = 150;
 
@@ -61,7 +62,7 @@ export default class Player extends Entity {
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
         this.addComponent(new Health(3, this));
-        this.addComponent(new Invulnerability(250, this));
+        this.addComponent(new Invulnerability(Player.INVULNERABILITY_DURATION, this));
         this.addComponent(new Movement());
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
         this.addComponent(new Experience((this.scene.cache.json.get('difficulty') as DifficultyData).xp));
