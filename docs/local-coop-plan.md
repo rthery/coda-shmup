@@ -7,101 +7,87 @@ Two players (up to 4 with no extra work) on one screen, each on their own device
 - XP and level are shared by the team. On a level-up the game pauses and every player picks one upgrade for their own ship. The game resumes once everyone has picked.
 - Upgrades stay per ship.
 - Pause is for everyone and can be opened from any device.
-- A destroyed ship turns into a pod. The pod can move but can't shoot, it's invulnerable, and enemies ignore it. After `RESPAWN_DELAY` (10 s, shown on the pod) the ship comes back where the pod is, keeping its upgrades, with its hull and shield cells full and the usual brief invulnerability. Game over happens when every player is down at the same time.
+- A destroyed ship turns into a pod. The pod can move but can't shoot, it's invulnerable, and enemies ignore it. After `RESPAWN_DELAY` (10 s, shown on the pod) the ship comes back where the pod is, keeping its upgrades, with its hull and shield cells full and a brief invulnerability. Game over happens when every player is down at the same time.
 - Score, combo and run time are shared. A hit on any player breaks the combo.
-- One best score, saved with the number of players who made it, shown as "BEST 12345 · 2P".
+- One best score, saved with the number of players who made it, shown on game over as "BEST 012345 · 2P".
 - No touch in coop: touch only drives a solo run.
 - Difficulty scales with the number of players who joined (not the number alive).
-- Solo plays exactly as it does today.
+- Solo plays exactly as it did before.
 
 ## Design
 
 ### Input: one `PlayerInput` per player
 
-- New `PlayerInput` interface: `moveDirection` and `confirmJustPressed()`. Implementations:
-  - `AnyDeviceInput` is today's behavior, used in solo.
-  - `KeyboardInput` takes a key set: WASD for one player, arrows for another.
-  - `GamepadInput` is bound to a pad index.
-  - Touch stays inside `AnyDeviceInput`, so it only drives a solo run.
-- `GameInputManager` builds and owns these. Menu-level queries (`confirmJustPressed`, `pauseJustPressed`, `restartJustPressed`) stay global and answer for any device.
-- `Player.preUpdate` reads `this.input.moveDirection` instead of `scene.gameInputManager.moveDirection`. This is the seam the online mode plugs a `RemoteInput` into.
+- `PlayerInput` interface: `device`, `moveDirection` and `confirmJustPressed()`. `GameInputManager.getInput(device)` builds one for an `InputDevice`:
+  - `any`: every device, as before. Used in solo, and the only one touch drives.
+  - `keyboard`: a key set by physical position, WASD + Space or arrows + Enter.
+  - `gamepad`: one pad index, stick or d-pad, A or Start to confirm.
+- Menu-level queries (`confirmJustPressed`, `pauseJustPressed`, `restartJustPressed`) stay global and answer for any device.
+- `Player.preUpdate` reads its own `playerInput`. This is the seam the online mode plugs a remote input into.
 
 ### Team state
 
-- New `Team` object, owned by `MainGameScene`. It holds the players, the shared `Experience`, and the joined count.
-- `Experience` moves from `Player` to `Team`. Gems add to the team.
-- `MainUIScene` binds the XP bar to the team instead of `PLAYER_SPAWNED_EVENT`'s player.
-- A new `TEAM_SPAWNED_EVENT` carries the team. The HUD shows one row of life icons per player, colored per player.
+- `Team`, owned by `MainGameScene`, holds the players and the shared `Experience`, and finds the nearest player still in the fight.
+- `TEAM_CREATED_EVENT` carries the team. The HUD binds the XP bar to it, and adds one row of lives per spawned player, in that ship's color.
 
 ### EntityManager with N players
 
-- `_player` becomes `_players` (an arcade group). Overlaps are set against the group, and callbacks get the player that was hit.
-- `Enemy` targets the nearest player that isn't down, picked each frame (70 enemies × 2 players is cheap). `init` takes the team, not a player.
-- `XpGem` flies to the nearest player whose magnet radius it enters, and stores that player as `target`. `MagnetField` only draws tethers to its own gems.
-- Pickups:
-  - Bomb goes off from the collector.
-  - Magnet pulls every gem to the collector.
-  - Repair heals every player, and drops when any player's hull is damaged.
-- Dev cheats (F, L, digits, M, and +/- from `MainGameScene`) move into a new `CheatManager` scene plugin, registered like `EntityManager` and only active in dev builds. Upgrade cheats act on player 1. Otherwise L adds the XP twice and digits upgrade both ships.
-- Player 2 needs its own ship sprite: a recolor of `playerShip3_blue` added to `assets-src/sprites`, plus an entry in `playerShips.json`.
+- `_player` becomes `_players`, an array. Overlaps take the array, and callbacks get the player that was hit.
+- `Enemy` targets the nearest player in the fight, picked each frame. `init` takes the team.
+- `XpGem` flies to the first player whose magnet radius it enters and stores it as `target`, or to the nearest one if that player goes down. `MagnetField` only draws tethers to its own gems.
+- Pickups: the bomb goes off from the collector, the magnet pulls every gem to the collector, and repair heals every player in the fight (it drops when any of them is damaged).
+- Dev cheats (F, L, digits, M, +/-) live in the `CheatManager` scene plugin, dev builds only. Upgrade cheats act on player 1.
+- Ships cycle through `playerShips.json`: blue, then orange (`playerShip3_orange`, a hue-shifted recolor). Each ship data has a `lifeIcon`, used by the HUD and the pod.
 
 ### Camera
 
-- The camera follows an invisible target placed at the centroid of the players who aren't down. In coop the look-ahead uses their average velocity.
-- Leash: on each axis, two players can't be farther apart than the view size minus a margin. The player moving away gets clamped, the same way the arena clamp works today. Enemy spawns and the bomb already use the camera view, so they need no change.
+- The camera follows the middle of the ships still on the field, pods included. The look-ahead uses their average velocity.
+- Leash: on each axis, two ships can't be farther apart than the view size minus `LEASH_MARGIN`. The one moving away is clamped, like the arena clamp. Enemy spawns and the bomb already use the camera view.
 
 ### Down and respawn
 
-- `Health.DEATH_EVENT` on a player now leads to a downed state, not to `endGame`:
-  - The ship is hidden and a pod sprite takes its place.
-  - The body is disabled for hits (it stays in `_players`, flagged `isDown`).
-  - A respawn timer starts.
-- `MainGameScene` checks the team on each down. When all players are down, it plays the current death sequence on the last one, then `endGame`.
-- In solo, the down state goes straight to game over, as today.
+- On `Health.DEATH_EVENT`, `MainGameScene` checks the team. If a teammate is still in the fight, `Player.eject()` turns the ship into its pod and starts the respawn timer. Otherwise every pod is removed, the death sequence plays on the last ship, then `endGame`.
+- `Player.isInFight` (active and not down) gates targeting, gems, repair and firing. `active` alone gates the camera and the leash.
+- Components got a `show()` to undo `hide()` on respawn.
+- In solo there is never a teammate, so death goes straight to game over.
 
 ### Level-up
 
-- `Team` emits the level-up. `LevelUpScene` gets the list of players and runs one pick per player, in order ("PLAYER 2: PICK AN UPGRADE"). Each pick reads only that player's `PlayerInput`, and each player gets their own 3 random cards. `close()` runs after the last pick.
-- One pick at a time fits both portrait and landscape views, since a card is 960 px wide. Online would run the same per-player picks in parallel, each on its own screen.
+- `LevelUpScene` gets the players and runs one pick per player, in order ("LEVEL 3 · PLAYER 2"). Each pick reads only that player's input, with its own 3 random cards and its own hint. The scene closes after the last pick.
 
 ### Joining (`HomeScene`)
 
-- Today, confirm from any device starts the run. New flow:
-  - The first confirm claims a slot for that device (Space claims WASD, Enter claims arrows, A claims that pad) and shows "P2: PRESS TO JOIN".
-  - A confirm from another device claims the next slot.
-  - The first player confirms again to launch.
-- With a single player, they get `AnyDeviceInput`, which keeps solo unchanged.
-- The joined slots are passed to `MainGameScene` through scene data.
+- Confirm from any device still starts a solo run at once.
+- C or gamepad Y opens the 2-player lobby. Each device joins with its own confirm (Space, Enter or A). The run starts once both have joined. C or Y again goes back.
+- The joined devices go to `MainGameScene` through scene data, and back into `restart`.
 
 ### Difficulty
 
-New `coop` block in `difficulty.json`, applied for each player beyond the first:
+`coop` block in `difficulty.json`, applied for each player beyond the first:
 
 ```json
-"coop": { "maxEnemiesScale": 0.6, "spawnIntervalScale": 0.75, "enemyHealthScale": 0, "xpScale": 0.5 }
+"coop": { "maxEnemiesPerPlayer": 0.6, "spawnIntervalPerPlayer": 0.75, "enemyHealthPerPlayer": 0, "xpPerPlayer": 0.5 }
 ```
 
-`DifficultyCurve.at()` and the XP curve take the joined count. `xpScale` exists because two players kill faster and also pick twice per level.
+`DifficultyCurve` takes the player count. `xpPerPlayer` exists because two players kill faster and also pick twice per level.
+
+### Best score
+
+`PLAYER_BEST_SCORE_PLAYERS` is saved with `PLAYER_BEST_SCORE`. Saves from before have no count and read as 1.
 
 ## Steps
 
-Each step builds and plays in solo before the next one.
-
-1. `PlayerInput` and the input slots. No behavior change.
-2. `Team` with the shared `Experience`, and the HUD bound to it. No behavior change.
-3. `CheatManager`, then N players in `EntityManager`: targeting, gems, pickups. A dev flag spawns 2 players.
-4. Camera centroid and leash.
+1. `PlayerInput` and the input slots.
+2. `CheatManager`, then `Team` with the shared `Experience`.
+3. N players in `EntityManager`: targeting, gems, pickups.
+4. Camera center and leash.
 5. Down, pod, respawn, team game over.
 6. Level-up picks for each player.
-7. `HomeScene` join flow, player 2 sprite, HUD rows, best score with its player count.
+7. Home lobby, player 2 ship, HUD rows, best score with its player count.
 8. Difficulty scaling.
 
 ## Risks
 
-- `GameInputManager` only knows the scene's gamepad plugin once a scene is hooked. Pad indexes must stay stable across the Home to Game scene change, or the slots get remapped.
-- `hitStop` and the level-up both pause `MainGameScene`. The existing `updateHitStop` guard covers it, but the new sequential pick must still resume only once.
-- With the leash, two players pushing in opposite directions are both stuck at the limit. That's intended, but it needs a playtest.
-
-### Best score
-
-`SaveManager` stores `PLAYER_BEST_SCORE_PLAYERS` next to `PLAYER_BEST_SCORE`, written together. Saves from before this change have no count and read as 1. Home and game over show the count next to the best score.
+- Pad indexes must stay stable between the home screen and the run, or a joined pad drives nothing.
+- With the leash, two players pushing in opposite directions both stop at the limit. The top margin also lets a ship slide under the HUD.
+- `Invulnerability` blinks for about twice its duration (each repeat is a yoyo), so the 2000 ms respawn invulnerability lasts about 4 s.
