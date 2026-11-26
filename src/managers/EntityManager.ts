@@ -31,6 +31,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
     // Extra explosion per combo level above X1
     private static readonly EXPLOSION_PER_COMBO: number = 0.5;
     private static readonly PICKUP_POOL_SIZE: number = 8;
+    // Pickups land at least this far inside the arena walls: wrecks near or past a wall would drop them out of reach
+    private static readonly PICKUP_WALL_MARGIN: number = 120;
     private static readonly REPAIR_HULL_POINTS: number = 1;
     // The BOMB ring sweeps the screen from the player and destroys each enemy it reaches
     private static readonly BOMB_RING_DURATION: number = 450; // ms
@@ -502,10 +504,16 @@ export default class EntityManager extends Plugins.ScenePlugin {
             const pickup = this._pickups.get() as Pickup | null;
             if (!pickup)
                 return;
-            pickup.enable(x, y, data);
+            this.dropPickup(pickup, x, y, data);
             this._lastPickupDropTimes.set(data.id, runTime);
             return;
         }
+    }
+
+    private dropPickup(pickup: Pickup, x: number, y: number, data: PickupData) {
+        const margin: number = EntityManager.PICKUP_WALL_MARGIN;
+        pickup.enable(Phaser.Math.Clamp(x, margin, GameConstants.ARENA_WIDTH - margin),
+            Phaser.Math.Clamp(y, margin, GameConstants.ARENA_HEIGHT - margin), data);
     }
 
     private collectPickup(pickup: Pickup) {
