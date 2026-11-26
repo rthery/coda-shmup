@@ -107,7 +107,7 @@ export default class MainGameScene extends Scene {
         team.experience.on(Experience.LEVEL_UP_EVENT, (level: number) => {
             this.registry.set(RegistryConstants.Keys.PLAYER_LEVEL, level);
             this.scene.pause();
-            this.scene.launch(GameConstants.SceneKeys.LEVEL_UP, {player: players[0], level});
+            this.scene.launch(GameConstants.SceneKeys.LEVEL_UP, {players, level});
         }, this);
 
         this.game.events.on(GameConstants.Events.ENEMY_KILLED_EVENT, this.onEnemyKilled, this);

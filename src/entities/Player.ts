@@ -84,6 +84,10 @@ export default class Player extends Entity {
     private _respawnTimer: Phaser.Time.TimerEvent | null = null;
     private _podLabel: Phaser.GameObjects.Text | null = null;
 
+    public get playerInput(): PlayerInput {
+        return this._input;
+    }
+
     // Coop: destroyed, steering its pod until the ship respawns
     public get isDown(): boolean {
         return this._isDown;
@@ -258,6 +262,9 @@ export default class Player extends Entity {
 
     // Health above the hull is shield: hits take it first
     private updateShieldBubble() {
+        // The pod has no shield: the bubble shows again on respawn
+        if (this._isDown)
+            return;
         const current: number = this.getComponent(Health)?.current ?? 0;
         this.getComponent(ShieldBubble)?.setCells(Math.max(0, current - Player.HULL_POINTS));
     }
@@ -393,6 +400,7 @@ export default class Player extends Entity {
         this.getComponent(MagnetField)?.show();
         const health = this.getComponent(Health);
         health?.heal(health.max);
+        this.updateShieldBubble();
         this.arcadeBody.setEnable(true);
         this.getComponent(Invulnerability)?.activate(Player.RESPAWN_INVULNERABILITY_DURATION);
         Sfx.play(this.scene, 'shieldUp');

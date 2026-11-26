@@ -3,6 +3,7 @@ import GameConstants from "../GameConstants.ts";
 import Player from "../entities/Player.ts";
 import type {UpgradeCategory, UpgradeData} from "../gameData/UpgradesData.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
+import type {InputDevice} from "../managers/PlayerInput.ts";
 import UiUtils, {type UiFrame} from "../utils/UiUtils.ts";
 import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
@@ -45,10 +46,14 @@ export default class LevelUpScene extends Scene {
         ship: 'ui_icon_ship',
     };
 
-    private _player: Player;
+    private _players: readonly Player[];
     private _level: number;
+    // Coop: every player picks in turn, on their own device
+    private _pickIndex: number;
+    private _player: Player;
     private _upgrades: UpgradeData[];
     private _cards: GameObjects.Container[];
+    private _levelText: GameObjects.Text;
     private _crosshair: GameObjects.Image;
     private _hintText: GameObjects.Text;
     private _selectedIndex: number;
@@ -63,14 +68,15 @@ export default class LevelUpScene extends Scene {
     }
 
     // noinspection JSUnusedGlobalSymbols
-    init(data: { player: Player, level: number }) {
-        this._player = data.player;
+    init(data: { players: readonly Player[], level: number }) {
+        this._players = data.players;
         this._level = data.level;
+        this._pickIndex = 0;
         this._cards = [];
-        this._selectedIndex = 0;
-        this._previousMoveY = null;
-        this._chosen = false;
-        this._isReady = false;
+    }
+
+    private get isCoop(): boolean {
+        return this._players.length > 1;
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -94,30 +100,51 @@ export default class LevelUpScene extends Scene {
             blendMode: 'ADD',
             emitting: false
         }).explode(24);
-        const levelText = this.add.text(centerX, 530, `LEVEL ${this._level} REACHED`,
+        this._levelText = this.add.text(centerX, 530, '',
             {fontSize: '36px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
-        this.tweens.add({targets: levelText, alpha: {from: 0, to: 1}, y: {from: levelText.y + 20, to: levelText.y},
+        this.tweens.add({targets: this._levelText, alpha: {from: 0, to: 1}, y: {from: this._levelText.y + 20, to: this._levelText.y},
             delay: 150, duration: 250, ease: 'Quad.easeOut'});
+
+        this._crosshair = this.add.image(0, 0, "sprites", "ui_crosshair").setVisible(false);
+        this._hintText = this.add.text(centerX, UiLayout.HEIGHT - 200, '',
+            {fontSize: '32px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5).setAlpha(0);
+
+        this.game.events.on('input-type-changed', this.onInputTypeChanged, this);
+        this.events.once('shutdown', () => {
+            this.game.events.off('input-type-changed', this.onInputTypeChanged, this);
+        });
+
+        this.startPick();
+    }
+
+    // The cards of the player whose turn it is slide in
+    private startPick() {
+        this._player = this._players[this._pickIndex];
+        this._cards.forEach(card => card.destroy());
+        this._cards = [];
+        this._selectedIndex = 0;
+        this._previousMoveY = null;
+        this._chosen = false;
+        this._isReady = false;
+        this._crosshair.setVisible(false);
+        this._hintText.setAlpha(0).setText(this.getHintText());
+        this._levelText.setText(this.isCoop ? `LEVEL ${this._level} · PLAYER ${this._pickIndex + 1}`
+            : `LEVEL ${this._level} REACHED`);
 
         // Maxed upgrades aren't offered anymore
         const allUpgrades = this.cache.json.get('upgrades') as UpgradeData[];
         const availableUpgrades = allUpgrades.filter(upgrade => this._player.isUpgradeAvailable(upgrade));
         this._upgrades = Phaser.Utils.Array.Shuffle(availableUpgrades).slice(0, LevelUpScene.CHOICE_COUNT);
         if (this._upgrades.length === 0) {
-            this.close();
+            this.nextPick();
             return;
         }
 
+        const centerX: number = UiLayout.WIDTH / 2;
         this._upgrades.forEach((upgrade, index) => {
             const cardY: number = LevelUpScene.FIRST_CARD_Y + index * LevelUpScene.CARD_SPACING;
             this._cards.push(this.createCard(upgrade, index, centerX, cardY));
         });
-
-        this._crosshair = this.add.image(0, 0, "sprites", "ui_crosshair").setVisible(false);
-
-        this._hintText = this.add.text(centerX, UiLayout.HEIGHT - 200,
-            this.getHintText(this.gameInputManager.activeInputType),
-            {fontSize: '32px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5).setAlpha(0);
 
         const offscreenX: number = UiLayout.visibleArea(this).right + LevelUpScene.CARD_WIDTH / 2;
         // Off screen right away: a delayed tween only applies its start value once the delay is over
@@ -131,12 +158,16 @@ export default class LevelUpScene extends Scene {
         const entranceDuration: number = LevelUpScene.CARDS_DELAY
             + (this._cards.length - 1) * LevelUpScene.CARD_STAGGER + LevelUpScene.CARD_SLIDE_DURATION;
         this.time.delayedCall(entranceDuration, () => this.onEntranceComplete());
-        this.game.events.on('input-type-changed', this.onInputTypeChanged, this);
-        this.events.once('shutdown', () => {
-            this.game.events.off('input-type-changed', this.onInputTypeChanged, this);
-        });
 
         this.select(0);
+    }
+
+    private nextPick() {
+        this._pickIndex++;
+        if (this._pickIndex < this._players.length)
+            this.startPick();
+        else
+            this.close();
     }
 
     private createCard(upgrade: UpgradeData, index: number, x: number, y: number): GameObjects.Container {
@@ -210,23 +241,30 @@ export default class LevelUpScene extends Scene {
         this.tweens.add({targets: this._hintText, alpha: 1, duration: 250});
     }
 
-    private onInputTypeChanged(type: InputType) {
-        this._hintText.setText(this.getHintText(type));
+    private onInputTypeChanged() {
+        this._hintText.setText(this.getHintText());
     }
 
-    private getHintText(type: InputType): string {
+    // Solo follows the last device used, coop the device of the player picking
+    private getHintText(): string {
+        const device: InputDevice = this._player.playerInput.device;
+        const type: InputType = device.type === 'any' ? this.gameInputManager.activeInputType
+            : device.type === 'gamepad' ? 'gamepad' : 'keyboard';
         switch (type) {
             case 'touch': return 'TAP A CARD TO PICK';
             case 'gamepad': return 'UP / DOWN TO CHOOSE, A TO PICK';
-            default: return 'UP / DOWN TO CHOOSE, SPACE TO PICK';
         }
+        if (device.type === 'keyboard')
+            return device.keys === 'wasd' ? 'W / S TO CHOOSE, SPACE TO PICK' : 'UP / DOWN TO CHOOSE, ENTER TO PICK';
+        return 'UP / DOWN TO CHOOSE, SPACE TO PICK';
     }
 
     update() {
         if (this._chosen || !this._isReady)
             return;
 
-        const moveDirectionY: number = this.gameInputManager.moveDirection.y;
+        const input = this._player.playerInput;
+        const moveDirectionY: number = input.moveDirection.y;
         const moveY: number = Math.abs(moveDirectionY) > LevelUpScene.STICK_THRESHOLD ? Math.sign(moveDirectionY) : 0;
         if (this._previousMoveY !== null && moveY !== 0 && moveY !== this._previousMoveY) {
             this.select(Phaser.Math.Wrap(this._selectedIndex + moveY, 0, this._cards.length));
@@ -234,7 +272,8 @@ export default class LevelUpScene extends Scene {
         this._previousMoveY = moveY;
 
         // Touch picks by tapping a card, any tap would otherwise confirm the highlighted one
-        if (this.gameInputManager.activeInputType !== 'touch' && this.gameInputManager.confirmJustPressed()) {
+        const isTouch: boolean = input.device.type === 'any' && this.gameInputManager.activeInputType === 'touch';
+        if (!isTouch && input.confirmJustPressed()) {
             this.choose(this._selectedIndex);
         }
     }
@@ -263,7 +302,7 @@ export default class LevelUpScene extends Scene {
 
         Sfx.play(this, 'cardPick');
         this._player.applyUpgrade(this._upgrades[index]);
-        this.close();
+        this.nextPick();
     }
 
     private close() {
