@@ -25,7 +25,15 @@ export default class MainUIScene extends Scene {
     private static readonly BRACKET_INSET: number = 28;
     private static readonly BRACKET_LENGTH: number = 56;
     private static readonly THREAT_BANNER_Y: number = 560;
-    private static readonly THREAT_LINE_HEIGHT: number = 4;
+    // Opaque band between two strips of hazard tape, so the banner reads over the bright planet
+    private static readonly THREAT_BAND_Y: number = -24;
+    private static readonly THREAT_BAND_HEIGHT: number = 124;
+    private static readonly THREAT_BAND_COLOR: number = 0x1a1218;
+    private static readonly THREAT_BAND_ALPHA: number = 0.92;
+    private static readonly HAZARD_TAPE_KEY: string = 'hazardTape';
+    private static readonly HAZARD_TAPE_HEIGHT: number = 24;
+    private static readonly HAZARD_STRIPE_WIDTH: number = 24;
+    private static readonly HAZARD_TAPE_SPEED: number = 0.06; // px/ms
     private static readonly THREAT_COLOR: string = '#ffb02e';
     private static readonly MAX_THREAT_COLOR: number = 0xff4a3d;
     private static readonly MAX_THREAT_COLOR_STRING: string = '#ff4a3d';
@@ -64,7 +72,9 @@ export default class MainUIScene extends Scene {
     private _threatLevel: number = 0;
     private _threatBanner: GameObjects.Container;
     private _threatTitle: GameObjects.Text;
-    private _threatLines: GameObjects.Rectangle[];
+    private _threatWarning: GameObjects.Text;
+    private _threatBand: GameObjects.Rectangle;
+    private _hazardTapes: GameObjects.TileSprite[];
     private _isThreatBannerOnHold: boolean = false;
     private _comboText: GameObjects.Text;
     private _comboTextX: number;
@@ -200,7 +210,8 @@ export default class MainUIScene extends Scene {
         this.drawCornerBrackets(area.width);
         this._runTimeText.setX(area.width / 2);
         this._threatBanner.setX(area.width / 2);
-        this._threatLines.forEach(line => line.setSize(area.width - 2 * MainUIScene.MARGIN, MainUIScene.THREAT_LINE_HEIGHT));
+        this._threatBand.setSize(area.width, MainUIScene.THREAT_BAND_HEIGHT);
+        this._hazardTapes.forEach(tape => tape.setSize(area.width, MainUIScene.HAZARD_TAPE_HEIGHT));
 
         this._xpBarWidth = right - MainUIScene.XP_BAR_X;
         this._xpBarTrack.setSize(this._xpBarWidth, this._xpBarTrack.height);
@@ -354,18 +365,48 @@ export default class MainUIScene extends Scene {
     }
 
     private createThreatBanner() {
-        const warning = this.add.text(0, -56, "WARNING",
+        this.createHazardTapeTexture();
+        this._threatBand = this.add.rectangle(0, MainUIScene.THREAT_BAND_Y, 1, MainUIScene.THREAT_BAND_HEIGHT,
+            MainUIScene.THREAT_BAND_COLOR, MainUIScene.THREAT_BAND_ALPHA);
+        const tapeOffset: number = (MainUIScene.THREAT_BAND_HEIGHT + MainUIScene.HAZARD_TAPE_HEIGHT) / 2;
+        this._hazardTapes = [-tapeOffset, tapeOffset].map(offset => this.add.tileSprite(0,
+            MainUIScene.THREAT_BAND_Y + offset, 1, MainUIScene.HAZARD_TAPE_HEIGHT, MainUIScene.HAZARD_TAPE_KEY));
+        this._threatWarning = this.add.text(0, -56, "WARNING",
             {fontSize: '28px', color: MainUIScene.THREAT_COLOR, fontFamily: 'future', letterSpacing: 14}).setOrigin(0.5);
         this._threatTitle = this.add.text(0, 0, "",
-            {fontSize: '64px', color: MainUIScene.THREAT_COLOR, fontFamily: 'future'}).setOrigin(0.5)
+            {fontSize: '64px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5)
             .setShadow(0, 6, '#000', 0, false, true);
-        this._threatLines = [-100, 52].map(y => this.add.rectangle(0, y, 1, MainUIScene.THREAT_LINE_HEIGHT,
-            Phaser.Display.Color.HexStringToColor(MainUIScene.THREAT_COLOR).color));
         this._threatBanner = this.add.container(0, MainUIScene.THREAT_BANNER_Y,
-            [...this._threatLines, warning, this._threatTitle]).setAlpha(0);
+            [this._threatBand, ...this._hazardTapes, this._threatWarning, this._threatTitle]).setAlpha(0);
     }
 
-    // Lines open from the center, the text blinks like an alarm, then it all fades out
+    // White diagonal stripes on the band's color: tinted orange, or red at the maximum threat
+    private createHazardTapeTexture() {
+        if (this.textures.exists(MainUIScene.HAZARD_TAPE_KEY))
+            return;
+
+        const height: number = MainUIScene.HAZARD_TAPE_HEIGHT;
+        const stripe: number = MainUIScene.HAZARD_STRIPE_WIDTH;
+        // Two stripes and two gaps, so the 45° pattern tiles without a seam
+        const width: number = 4 * stripe;
+        const texture = this.textures.createCanvas(MainUIScene.HAZARD_TAPE_KEY, width, height)!;
+        const context: CanvasRenderingContext2D = texture.getContext();
+        context.fillStyle = Phaser.Display.Color.IntegerToColor(MainUIScene.THREAT_BAND_COLOR).rgba;
+        context.fillRect(0, 0, width, height);
+        context.fillStyle = '#fff';
+        for (let x = -height; x < width + height; x += 2 * stripe) {
+            context.beginPath();
+            context.moveTo(x, height);
+            context.lineTo(x + height, 0);
+            context.lineTo(x + height + stripe, 0);
+            context.lineTo(x + stripe, height);
+            context.closePath();
+            context.fill();
+        }
+        texture.refresh();
+    }
+
+    // The band opens from the center, the text blinks like an alarm, then it all fades out
     private showThreatBanner(level: number) {
         const isMax: boolean = level >= this._difficulty.maxThreatLevel;
         // A two-beat alarm, lower for the last level
@@ -373,13 +414,20 @@ export default class MainUIScene extends Scene {
         Sfx.play(this, 'threatAlarm', {detune: alarmDetune});
         this.time.delayedCall(MainUIScene.THREAT_ALARM_GAP, () => Sfx.play(this, 'threatAlarm', {detune: alarmDetune}));
         this._threatTitle.setText(isMax ? "MAXIMUM THREAT" : "THREAT LEVEL " + (level + 1))
-            .setColor(isMax ? MainUIScene.MAX_THREAT_COLOR_STRING : MainUIScene.THREAT_COLOR);
+            .setColor(isMax ? MainUIScene.MAX_THREAT_COLOR_STRING : '#fff');
+        this._threatWarning.setColor(isMax ? MainUIScene.MAX_THREAT_COLOR_STRING : MainUIScene.THREAT_COLOR);
+        const tapeTint: number = isMax ? MainUIScene.MAX_THREAT_COLOR
+            : Phaser.Display.Color.HexStringToColor(MainUIScene.THREAT_COLOR).color;
+        this._hazardTapes.forEach(tape => tape.setTint(tapeTint));
 
-        this.tweens.killTweensOf([this._threatBanner, ...this._threatLines]);
+        const threatTexts: GameObjects.Text[] = [this._threatWarning, this._threatTitle];
+        const bandParts = [this._threatBand, ...this._hazardTapes];
+        this.tweens.killTweensOf([this._threatBanner, ...bandParts, ...threatTexts]);
         this._threatBanner.setAlpha(1);
-        this.tweens.add({targets: this._threatLines, scaleX: {from: 0, to: 1}, duration: 300, ease: 'Quad.easeOut'});
+        threatTexts.forEach(text => text.setAlpha(1));
+        this.tweens.add({targets: bandParts, scaleX: {from: 0, to: 1}, duration: 300, ease: 'Quad.easeOut'});
         this.tweens.add({
-            targets: this._threatBanner,
+            targets: threatTexts,
             alpha: {from: 1, to: 0.25},
             duration: 150,
             yoyo: true,
@@ -403,12 +451,20 @@ export default class MainUIScene extends Scene {
         this._isThreatBannerOnHold = isOnHold;
 
         this._threatBanner.setVisible(!isOnHold);
-        this.tweens.getTweensOf([this._threatBanner, ...this._threatLines])
+        this.tweens.getTweensOf([this._threatBanner, this._threatBand, ...this._hazardTapes,
+            this._threatWarning, this._threatTitle])
             .forEach(tween => isOnHold ? tween.pause() : tween.resume());
     }
 
-    update() {
+    update(_timeSinceLaunch: number, deltaTime: number) {
         this.holdThreatBannerBehindScreens();
+
+        // The tape strips run in opposite directions while the banner shows
+        if (this._isThreatBannerOnHold || this._threatBanner.alpha <= 0)
+            return;
+        const step: number = MainUIScene.HAZARD_TAPE_SPEED * deltaTime;
+        this._hazardTapes[0].tilePositionX += step;
+        this._hazardTapes[1].tilePositionX -= step;
     }
 
     // Red at the screen edges, clear in the middle, drawn once
