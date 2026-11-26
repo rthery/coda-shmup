@@ -296,23 +296,32 @@ export default class MainGameScene extends Scene {
         return device.type === 'bot' ? new BotInput(this._team, this.entityManager) : this.gameInputManager.getInput(device);
     }
 
-    // A second player joins anytime with the confirm of a device player 1 isn't using, or B adds a bot
+    // A second player joins anytime with the confirm of a device player 1 isn't using, B adds a bot or removes it
     private updateJoining() {
-        if (this._team.players.length >= GameConstants.MAX_PLAYERS)
-            return;
-
         const inputManager = this.gameInputManager;
-        let device: InputDevice | null = null;
+        const isFull: boolean = this._team.players.length >= GameConstants.MAX_PLAYERS;
         if (inputManager.botJustPressed()) {
-            device = {type: 'bot'};
-        } else {
+            const bot: Player | undefined = this._team.players.find(player => player.playerInput.device.type === 'bot');
+            if (bot)
+                this.removeBot(bot);
+            else if (!isFull)
+                this.joinPlayer({type: 'bot'});
+        } else if (!isFull) {
             const confirming: InputDevice | null = inputManager.findConfirmingDevice();
             if (confirming && !isSameDevice(confirming, this._soloDevice))
-                device = confirming;
+                this.joinPlayer(confirming);
         }
         this._soloDevice = inputManager.lastUsedDevice;
-        if (device)
-            this.joinPlayer(device);
+    }
+
+    private removeBot(bot: Player) {
+        const index: number = this._team.players.indexOf(bot);
+        this._joinedDevices.splice(this._joinedDevices.findIndex(device => device.type === 'bot'), 1);
+        this.entityManager.removePlayer(bot);
+        this._difficulty.setPlayerCount(this._team.players.length);
+        this._team.experience.setCurve(this._difficulty.xpCurve);
+        Sfx.play(this, 'launch');
+        this.game.events.emit(GameConstants.Events.PLAYER_LEFT_EVENT, index);
     }
 
     private joinPlayer(device: InputDevice) {

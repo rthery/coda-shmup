@@ -4,8 +4,8 @@
 			"image": "gameSprites.png",
 			"format": "RGBA8888",
 			"size": {
-				"w": 1013,
-				"h": 547
+				"w": 1024,
+				"h": 855
 			},
 			"scale": 1,
 			"frames": [
@@ -73,66 +73,24 @@
 					}
 				},
 				{
-					"filename": "laserRed03",
+					"filename": "ui_device_keyboard",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 37,
-						"h": 9
+						"w": 48,
+						"h": 48
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 37,
-						"h": 9
+						"w": 48,
+						"h": 48
 					},
 					"frame": {
 						"x": 974,
 						"y": 2,
-						"w": 37,
-						"h": 9
-					}
-				},
-				{
-					"filename": "pickup_bomb",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 34,
-						"h": 33
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 34,
-						"h": 33
-					},
-					"frame": {
-						"x": 974,
-						"y": 15,
-						"w": 34,
-						"h": 33
-					}
-				},
-				{
-					"filename": "pickup_magnet",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 34,
-						"h": 33
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 34,
-						"h": 33
-					},
-					"frame": {
-						"x": 974,
-						"y": 52,
-						"w": 34,
-						"h": 33
+						"w": 48,
+						"h": 48
 					}
 				},
 				{
@@ -157,87 +115,171 @@
 					}
 				},
 				{
-					"filename": "ui_icon_ship",
+					"filename": "ui_device_switch",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 34,
+						"w": 48,
 						"h": 33
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 34,
+						"w": 48,
 						"h": 33
 					},
 					"frame": {
 						"x": 974,
-						"y": 89,
+						"y": 54,
+						"w": 48,
+						"h": 33
+					}
+				},
+				{
+					"filename": "ui_device_xbox",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 48,
+						"h": 33
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 48,
+						"h": 33
+					},
+					"frame": {
+						"x": 974,
+						"y": 91,
+						"w": 48,
+						"h": 33
+					}
+				},
+				{
+					"filename": "ui_device_arrows",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 152,
+						"h": 100
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 152,
+						"h": 100
+					},
+					"frame": {
+						"x": 778,
+						"y": 106,
+						"w": 152,
+						"h": 100
+					}
+				},
+				{
+					"filename": "pickup_bomb",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 34,
+						"h": 33
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 34,
+						"h": 33
+					},
+					"frame": {
+						"x": 934,
+						"y": 106,
 						"w": 34,
 						"h": 33
 					}
 				},
 				{
-					"filename": "shield3",
+					"filename": "ui_device_playstation",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 137,
-						"h": 144
+						"w": 48,
+						"h": 32
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 137,
-						"h": 144
+						"w": 48,
+						"h": 32
 					},
 					"frame": {
-						"x": 778,
-						"y": 106,
-						"w": 137,
-						"h": 144
+						"x": 972,
+						"y": 128,
+						"w": 48,
+						"h": 32
 					}
 				},
 				{
-					"filename": "ufoRed-shoot0",
+					"filename": "pickup_magnet",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 91,
-						"h": 91
+						"w": 34,
+						"h": 33
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 91,
-						"h": 91
+						"w": 34,
+						"h": 33
 					},
 					"frame": {
-						"x": 919,
-						"y": 126,
-						"w": 91,
-						"h": 91
+						"x": 934,
+						"y": 143,
+						"w": 34,
+						"h": 33
 					}
 				},
 				{
-					"filename": "ufoRed-shoot1",
+					"filename": "playerShip1_orange",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 91,
-						"h": 91
+						"w": 75,
+						"h": 99
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 91,
-						"h": 91
+						"w": 75,
+						"h": 99
 					},
 					"frame": {
-						"x": 919,
-						"y": 221,
-						"w": 91,
-						"h": 91
+						"x": 934,
+						"y": 180,
+						"w": 75,
+						"h": 99
+					}
+				},
+				{
+					"filename": "laserRed03",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 37,
+						"h": 9
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 37,
+						"h": 9
+					},
+					"frame": {
+						"x": 972,
+						"y": 164,
+						"w": 37,
+						"h": 9
 					}
 				},
 				{
@@ -262,213 +304,45 @@
 					}
 				},
 				{
-					"filename": "shield2",
+					"filename": "ui_device_wasd",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 119,
-						"h": 143
+						"w": 152,
+						"h": 100
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 119,
-						"h": 143
+						"w": 152,
+						"h": 100
 					},
 					"frame": {
 						"x": 390,
 						"y": 134,
-						"w": 119,
-						"h": 143
+						"w": 152,
+						"h": 100
 					}
 				},
 				{
-					"filename": "shield1",
+					"filename": "ui_device_zqsd",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 108,
-						"h": 133
+						"w": 152,
+						"h": 100
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 108,
-						"h": 133
+						"w": 152,
+						"h": 100
 					},
 					"frame": {
-						"x": 513,
+						"x": 546,
 						"y": 134,
-						"w": 108,
-						"h": 133
-					}
-				},
-				{
-					"filename": "ufoRed",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 91,
-						"h": 91
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 91,
-						"h": 91
-					},
-					"frame": {
-						"x": 625,
-						"y": 134,
-						"w": 91,
-						"h": 91
-					}
-				},
-				{
-					"filename": "laserBlue16",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 54,
-						"h": 13
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 54,
-						"h": 13
-					},
-					"frame": {
-						"x": 720,
-						"y": 134,
-						"w": 54,
-						"h": 13
-					}
-				},
-				{
-					"filename": "laserOrange16",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 54,
-						"h": 13
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 54,
-						"h": 13
-					},
-					"frame": {
-						"x": 720,
-						"y": 151,
-						"w": 54,
-						"h": 13
-					}
-				},
-				{
-					"filename": "laserBlue01",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 54,
-						"h": 9
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 54,
-						"h": 9
-					},
-					"frame": {
-						"x": 720,
-						"y": 168,
-						"w": 54,
-						"h": 9
-					}
-				},
-				{
-					"filename": "laserOrange01",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 54,
-						"h": 9
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 54,
-						"h": 9
-					},
-					"frame": {
-						"x": 720,
-						"y": 181,
-						"w": 54,
-						"h": 9
-					}
-				},
-				{
-					"filename": "ui_icon_weapon",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 34,
-						"h": 33
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 34,
-						"h": 33
-					},
-					"frame": {
-						"x": 720,
-						"y": 194,
-						"w": 34,
-						"h": 33
-					}
-				},
-				{
-					"filename": "fire13",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 34
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 34
-					},
-					"frame": {
-						"x": 758,
-						"y": 194,
-						"w": 14,
-						"h": 34
-					}
-				},
-				{
-					"filename": "playerShip1_orange",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 75,
-						"h": 99
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 75,
-						"h": 99
-					},
-					"frame": {
-						"x": 625,
-						"y": 229,
-						"w": 75,
-						"h": 99
+						"w": 152,
+						"h": 100
 					}
 				},
 				{
@@ -486,8 +360,8 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 704,
-						"y": 232,
+						"x": 702,
+						"y": 134,
 						"w": 64,
 						"h": 64
 					}
@@ -507,31 +381,136 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 704,
-						"y": 300,
+						"x": 702,
+						"y": 202,
 						"w": 64,
 						"h": 64
 					}
 				},
 				{
-					"filename": "ui_key_b",
+					"filename": "shield3",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 64,
-						"h": 64
+						"w": 137,
+						"h": 144
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 64,
-						"h": 64
+						"w": 137,
+						"h": 144
 					},
 					"frame": {
-						"x": 704,
-						"y": 368,
-						"w": 64,
-						"h": 64
+						"x": 770,
+						"y": 210,
+						"w": 137,
+						"h": 144
+					}
+				},
+				{
+					"filename": "shield1",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 108,
+						"h": 133
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 108,
+						"h": 133
+					},
+					"frame": {
+						"x": 911,
+						"y": 283,
+						"w": 108,
+						"h": 133
+					}
+				},
+				{
+					"filename": "fire13",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 34
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 34
+					},
+					"frame": {
+						"x": 911,
+						"y": 210,
+						"w": 14,
+						"h": 34
+					}
+				},
+				{
+					"filename": "fire11",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 911,
+						"y": 248,
+						"w": 14,
+						"h": 31
+					}
+				},
+				{
+					"filename": "shield2",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 119,
+						"h": 143
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 119,
+						"h": 143
+					},
+					"frame": {
+						"x": 390,
+						"y": 238,
+						"w": 119,
+						"h": 143
+					}
+				},
+				{
+					"filename": "ufoRed-shoot0",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 91,
+						"h": 91
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 91,
+						"h": 91
+					},
+					"frame": {
+						"x": 513,
+						"y": 238,
+						"w": 91,
+						"h": 91
 					}
 				},
 				{
@@ -549,73 +528,52 @@
 						"h": 98
 					},
 					"frame": {
-						"x": 513,
-						"y": 271,
+						"x": 608,
+						"y": 238,
 						"w": 75,
 						"h": 98
 					}
 				},
 				{
-					"filename": "star1",
+					"filename": "ufoRed-shoot1",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 25,
-						"h": 24
+						"w": 91,
+						"h": 91
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 25,
-						"h": 24
+						"w": 91,
+						"h": 91
 					},
 					"frame": {
-						"x": 592,
-						"y": 271,
-						"w": 25,
-						"h": 24
+						"x": 513,
+						"y": 333,
+						"w": 91,
+						"h": 91
 					}
 				},
 				{
-					"filename": "star2",
+					"filename": "ui_key_b",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 25,
-						"h": 24
+						"w": 64,
+						"h": 64
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 25,
-						"h": 24
+						"w": 64,
+						"h": 64
 					},
 					"frame": {
-						"x": 592,
-						"y": 299,
-						"w": 25,
-						"h": 24
-					}
-				},
-				{
-					"filename": "star3",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 24,
-						"h": 24
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 24,
-						"h": 24
-					},
-					"frame": {
-						"x": 592,
-						"y": 327,
-						"w": 24,
-						"h": 24
+						"x": 687,
+						"y": 270,
+						"w": 64,
+						"h": 64
 					}
 				},
 				{
@@ -633,31 +591,10 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 620,
-						"y": 332,
+						"x": 687,
+						"y": 338,
 						"w": 64,
 						"h": 64
-					}
-				},
-				{
-					"filename": "pickup_repair",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 22,
-						"h": 21
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 22,
-						"h": 21
-					},
-					"frame": {
-						"x": 592,
-						"y": 355,
-						"w": 22,
-						"h": 21
 					}
 				},
 				{
@@ -675,10 +612,115 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 772,
-						"y": 254,
+						"x": 608,
+						"y": 340,
 						"w": 64,
 						"h": 64
+					}
+				},
+				{
+					"filename": "ufoRed",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 91,
+						"h": 91
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 91,
+						"h": 91
+					},
+					"frame": {
+						"x": 755,
+						"y": 358,
+						"w": 91,
+						"h": 91
+					}
+				},
+				{
+					"filename": "laserBlue12",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 57,
+						"h": 13
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 57,
+						"h": 13
+					},
+					"frame": {
+						"x": 850,
+						"y": 358,
+						"w": 57,
+						"h": 13
+					}
+				},
+				{
+					"filename": "laserOrange12",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 57,
+						"h": 13
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 57,
+						"h": 13
+					},
+					"frame": {
+						"x": 850,
+						"y": 375,
+						"w": 57,
+						"h": 13
+					}
+				},
+				{
+					"filename": "laserBlue16",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 54,
+						"h": 13
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 54,
+						"h": 13
+					},
+					"frame": {
+						"x": 850,
+						"y": 392,
+						"w": 54,
+						"h": 13
+					}
+				},
+				{
+					"filename": "laserOrange16",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 54,
+						"h": 13
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 54,
+						"h": 13
+					},
+					"frame": {
+						"x": 850,
+						"y": 409,
+						"w": 54,
+						"h": 13
 					}
 				},
 				{
@@ -696,8 +738,8 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 840,
-						"y": 254,
+						"x": 676,
+						"y": 406,
 						"w": 64,
 						"h": 64
 					}
@@ -717,73 +759,10 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 908,
-						"y": 316,
+						"x": 608,
+						"y": 408,
 						"w": 64,
 						"h": 64
-					}
-				},
-				{
-					"filename": "playerLife1_orange",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 33,
-						"h": 26
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 33,
-						"h": 26
-					},
-					"frame": {
-						"x": 976,
-						"y": 316,
-						"w": 33,
-						"h": 26
-					}
-				},
-				{
-					"filename": "playerLife3_blue",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 32,
-						"h": 26
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 32,
-						"h": 26
-					},
-					"frame": {
-						"x": 976,
-						"y": 346,
-						"w": 32,
-						"h": 26
-					}
-				},
-				{
-					"filename": "star_gold",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 31,
-						"h": 30
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 31,
-						"h": 30
-					},
-					"frame": {
-						"x": 976,
-						"y": 376,
-						"w": 31,
-						"h": 30
 					}
 				},
 				{
@@ -801,8 +780,8 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 772,
-						"y": 322,
+						"x": 676,
+						"y": 474,
 						"w": 64,
 						"h": 64
 					}
@@ -822,8 +801,8 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 840,
-						"y": 322,
+						"x": 676,
+						"y": 542,
 						"w": 64,
 						"h": 64
 					}
@@ -844,51 +823,114 @@
 					},
 					"frame": {
 						"x": 908,
-						"y": 384,
+						"y": 420,
 						"w": 64,
 						"h": 64
 					}
 				},
 				{
-					"filename": "ui_shield_cell",
+					"filename": "laserBlue01",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 30,
-						"h": 30
+						"w": 54,
+						"h": 9
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 30,
-						"h": 30
+						"w": 54,
+						"h": 9
 					},
 					"frame": {
-						"x": 976,
-						"y": 410,
-						"w": 30,
-						"h": 30
+						"x": 850,
+						"y": 426,
+						"w": 54,
+						"h": 9
 					}
 				},
 				{
-					"filename": "fire11",
+					"filename": "laserOrange01",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 14,
-						"h": 31
+						"w": 54,
+						"h": 9
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 14,
-						"h": 31
+						"w": 54,
+						"h": 9
+					},
+					"frame": {
+						"x": 850,
+						"y": 439,
+						"w": 54,
+						"h": 9
+					}
+				},
+				{
+					"filename": "ui_icon_ship",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 34,
+						"h": 33
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 34,
+						"h": 33
 					},
 					"frame": {
 						"x": 976,
-						"y": 444,
-						"w": 14,
-						"h": 31
+						"y": 420,
+						"w": 34,
+						"h": 33
+					}
+				},
+				{
+					"filename": "ui_icon_weapon",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 34,
+						"h": 33
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 34,
+						"h": 33
+					},
+					"frame": {
+						"x": 976,
+						"y": 457,
+						"w": 34,
+						"h": 33
+					}
+				},
+				{
+					"filename": "playerLife1_orange",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 33,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 33,
+						"h": 26
+					},
+					"frame": {
+						"x": 850,
+						"y": 452,
+						"w": 33,
+						"h": 26
 					}
 				},
 				{
@@ -906,29 +948,8 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 994,
-						"y": 444,
-						"w": 14,
-						"h": 31
-					}
-				},
-				{
-					"filename": "fire16",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 31
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 31
-					},
-					"frame": {
-						"x": 994,
-						"y": 479,
+						"x": 887,
+						"y": 452,
 						"w": 14,
 						"h": 31
 					}
@@ -948,10 +969,94 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 772,
-						"y": 390,
+						"x": 744,
+						"y": 453,
 						"w": 64,
 						"h": 64
+					}
+				},
+				{
+					"filename": "playerLife3_blue",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 32,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 32,
+						"h": 26
+					},
+					"frame": {
+						"x": 812,
+						"y": 453,
+						"w": 32,
+						"h": 26
+					}
+				},
+				{
+					"filename": "star_gold",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 31,
+						"h": 30
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 31,
+						"h": 30
+					},
+					"frame": {
+						"x": 848,
+						"y": 482,
+						"w": 31,
+						"h": 30
+					}
+				},
+				{
+					"filename": "ui_shield_cell",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 30,
+						"h": 30
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 30,
+						"h": 30
+					},
+					"frame": {
+						"x": 812,
+						"y": 483,
+						"w": 30,
+						"h": 30
+					}
+				},
+				{
+					"filename": "fire16",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 883,
+						"y": 487,
+						"w": 14,
+						"h": 31
 					}
 				},
 				{
@@ -969,8 +1074,8 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 840,
-						"y": 390,
+						"x": 812,
+						"y": 517,
 						"w": 64,
 						"h": 64
 					}
@@ -990,8 +1095,29 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 908,
-						"y": 452,
+						"x": 744,
+						"y": 521,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_switch_dpad_vertical",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 901,
+						"y": 488,
 						"w": 64,
 						"h": 64
 					}
@@ -1011,8 +1137,8 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 976,
-						"y": 479,
+						"x": 880,
+						"y": 522,
 						"w": 14,
 						"h": 31
 					}
@@ -1032,31 +1158,10 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 976,
-						"y": 514,
+						"x": 880,
+						"y": 557,
 						"w": 14,
 						"h": 31
-					}
-				},
-				{
-					"filename": "ui_pad_switch_dpad_vertical",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 64,
-						"h": 64
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 64,
-						"h": 64
-					},
-					"frame": {
-						"x": 2,
-						"y": 266,
-						"w": 64,
-						"h": 64
 					}
 				},
 				{
@@ -1074,8 +1179,8 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 70,
-						"y": 266,
+						"x": 812,
+						"y": 585,
 						"w": 64,
 						"h": 64
 					}
@@ -1095,10 +1200,94 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 138,
-						"y": 266,
+						"x": 744,
+						"y": 589,
 						"w": 64,
 						"h": 64
+					}
+				},
+				{
+					"filename": "star1",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 25,
+						"h": 24
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 25,
+						"h": 24
+					},
+					"frame": {
+						"x": 969,
+						"y": 494,
+						"w": 25,
+						"h": 24
+					}
+				},
+				{
+					"filename": "star3",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 24,
+						"h": 24
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 24,
+						"h": 24
+					},
+					"frame": {
+						"x": 998,
+						"y": 494,
+						"w": 24,
+						"h": 24
+					}
+				},
+				{
+					"filename": "pickup_repair",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 22,
+						"h": 21
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 22,
+						"h": 21
+					},
+					"frame": {
+						"x": 998,
+						"y": 522,
+						"w": 22,
+						"h": 21
+					}
+				},
+				{
+					"filename": "star2",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 25,
+						"h": 24
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 25,
+						"h": 24
+					},
+					"frame": {
+						"x": 969,
+						"y": 522,
+						"w": 25,
+						"h": 24
 					}
 				},
 				{
@@ -1116,8 +1305,8 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 206,
-						"y": 266,
+						"x": 898,
+						"y": 556,
 						"w": 64,
 						"h": 64
 					}
@@ -1137,8 +1326,8 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 274,
-						"y": 266,
+						"x": 898,
+						"y": 624,
 						"w": 64,
 						"h": 64
 					}
@@ -1158,10 +1347,31 @@
 						"h": 60
 					},
 					"frame": {
-						"x": 342,
-						"y": 281,
+						"x": 812,
+						"y": 653,
 						"w": 60,
 						"h": 60
+					}
+				},
+				{
+					"filename": "ui_device_bot",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 60,
+						"h": 58
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 60,
+						"h": 58
+					},
+					"frame": {
+						"x": 876,
+						"y": 692,
+						"w": 60,
+						"h": 58
 					}
 				},
 				{
@@ -1179,8 +1389,8 @@
 						"h": 36
 					},
 					"frame": {
-						"x": 406,
-						"y": 281,
+						"x": 940,
+						"y": 717,
 						"w": 60,
 						"h": 36
 					}
@@ -1200,8 +1410,8 @@
 						"h": 36
 					},
 					"frame": {
-						"x": 406,
-						"y": 321,
+						"x": 940,
+						"y": 757,
 						"w": 60,
 						"h": 36
 					}
@@ -1221,8 +1431,8 @@
 						"h": 26
 					},
 					"frame": {
-						"x": 2,
-						"y": 334,
+						"x": 940,
+						"y": 797,
 						"w": 60,
 						"h": 26
 					}
@@ -1242,52 +1452,10 @@
 						"h": 26
 					},
 					"frame": {
-						"x": 66,
-						"y": 334,
+						"x": 2,
+						"y": 827,
 						"w": 60,
 						"h": 26
-					}
-				},
-				{
-					"filename": "laserBlue12",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 57,
-						"h": 13
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 57,
-						"h": 13
-					},
-					"frame": {
-						"x": 130,
-						"y": 334,
-						"w": 57,
-						"h": 13
-					}
-				},
-				{
-					"filename": "laserOrange12",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 57,
-						"h": 13
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 57,
-						"h": 13
-					},
-					"frame": {
-						"x": 191,
-						"y": 334,
-						"w": 57,
-						"h": 13
 					}
 				}
 			]

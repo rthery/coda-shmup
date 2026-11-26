@@ -15,6 +15,7 @@ type LifeRow = {
     container: GameObjects.Container;
     icons: GameObjects.Image[];
     hullFrame: string;
+    isBot: boolean;
 }
 
 export default class MainUIScene extends Scene {
@@ -122,6 +123,7 @@ export default class MainUIScene extends Scene {
         this.registry.events.on(RegistryConstants.Events.PLAYER_COMBO_PROGRESS_CHANGE, this.onComboProgressChanged, this);
         this.game.events.on(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
         this.game.events.on(GameConstants.Events.PLAYER_JOINED_EVENT, this.onPlayerJoined, this);
+        this.game.events.on(GameConstants.Events.PLAYER_LEFT_EVENT, this.onPlayerLeft, this);
         this.game.events.on('input-type-changed', this.updateJoinHint, this);
         this.game.events.on('gamepad-connected', this.updateJoinHint, this);
         this.game.events.on('gamepad-disconnected', this.updateJoinHint, this);
@@ -137,6 +139,7 @@ export default class MainUIScene extends Scene {
             this.registry.events.off(RegistryConstants.Events.PLAYER_COMBO_PROGRESS_CHANGE, this.onComboProgressChanged, this);
             this.game.events.off(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
             this.game.events.off(GameConstants.Events.PLAYER_JOINED_EVENT, this.onPlayerJoined, this);
+            this.game.events.off(GameConstants.Events.PLAYER_LEFT_EVENT, this.onPlayerLeft, this);
             this.game.events.off('input-type-changed', this.updateJoinHint, this);
             this.game.events.off('gamepad-connected', this.updateJoinHint, this);
             this.game.events.off('gamepad-disconnected', this.updateJoinHint, this);
@@ -376,7 +379,8 @@ export default class MainUIScene extends Scene {
         const row: LifeRow = {
             container: this.add.container(0, this._lifeRows.length * MainUIScene.LIFE_ROW_SPACING),
             icons: [],
-            hullFrame: player.lifeIcon
+            hullFrame: player.lifeIcon,
+            isBot: player.playerInput.device.type === 'bot'
         };
         this._lifeRows.push(row);
         this.updateJoinHint();
@@ -405,14 +409,29 @@ export default class MainUIScene extends Scene {
     private updateJoinHint() {
         if (!this._joinHint)
             return;
-        this._joinHintIcon = this.gameInputManager.gamepadIcon('confirm');
-        UiUtils.setButtonHint(this._joinHint, this.gameInputManager.joinHintParts());
-        this._joinHint.setVisible(this._lifeRows.length < GameConstants.MAX_PLAYERS
-            && this.gameInputManager.activeInputType !== 'touch');
+        // With the bot in, how to remove it
+        const inputManager = this.gameInputManager;
+        const hasBot: boolean = this._lifeRows.some(row => row.isBot);
+        this._joinHintIcon = inputManager.gamepadIcon('confirm');
+        UiUtils.setButtonHint(this._joinHint, hasBot
+            ? [inputManager.keyHintPart('KeyB'), 'TO REMOVE THE BOT'] : inputManager.joinHintParts());
+        this._joinHint.setVisible((hasBot || this._lifeRows.length < GameConstants.MAX_PLAYERS)
+            && inputManager.activeInputType !== 'touch');
+    }
+
+    private onPlayerLeft(index: number) {
+        const [row] = this._lifeRows.splice(index, 1);
+        row?.container.destroy();
+        this.updateJoinHint();
+        this.showJoinBanner("BOT LEFT");
     }
 
     private onPlayerJoined(playerCount: number, isBot: boolean) {
-        this._joinBanner.setText(isBot ? "BOT JOINED" : `PLAYER ${playerCount} JOINED`);
+        this.showJoinBanner(isBot ? "BOT JOINED" : `PLAYER ${playerCount} JOINED`);
+    }
+
+    private showJoinBanner(text: string) {
+        this._joinBanner.setText(text);
         this.tweens.killTweensOf(this._joinBanner);
         this.tweens.chain({
             targets: this._joinBanner,

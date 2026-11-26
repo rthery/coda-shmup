@@ -19,6 +19,10 @@ export default class Team {
         this._players.push(player);
     }
 
+    public removePlayer(player: Player) {
+        Phaser.Utils.Array.Remove(this._players, player);
+    }
+
     // The nearest player still in the fight, null when there's none
     public nearestPlayer(x: number, y: number): Player | null {
         let nearest: Player | null = null;

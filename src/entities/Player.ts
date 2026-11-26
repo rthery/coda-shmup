@@ -23,6 +23,7 @@ export default class Player extends Entity {
     private static readonly POD_SCALE: number = 1.5;
     private static readonly POD_LABEL_OFFSET: number = 70;
     private static readonly RESPAWN_INVULNERABILITY_DURATION: number = 2000; // ms
+    private static readonly LEAVE_DURATION: number = 700; // ms
     private static readonly WING_TRAILS_SPEED_RATIO: number = 0.5;
     // The turret fires once it points this close to its target
     private static readonly TURRET_AIM_TOLERANCE: number = Phaser.Math.DegToRad(15);
@@ -80,6 +81,7 @@ export default class Player extends Entity {
     private readonly _leashBounds: Phaser.Geom.Rectangle = new Phaser.Geom.Rectangle();
     private _leash: Phaser.Geom.Rectangle | null = null;
     private _isDown: boolean = false;
+    private _isLeaving: boolean = false;
     private _respawnTimer: Phaser.Time.TimerEvent | null = null;
     private _podLabel: Phaser.GameObjects.Text | null = null;
 
@@ -329,6 +331,10 @@ export default class Player extends Entity {
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
         super.preUpdate(timeSinceLaunch, deltaTime);
+        if (this._isLeaving) {
+            this.getComponent(Thrusters)?.update(true, 1, deltaTime);
+            return;
+        }
 
         this._moveDirection.copy(this._input.moveDirection);
 
@@ -420,6 +426,32 @@ export default class Player extends Entity {
         this.arcadeBody.setEnable(true);
         this.getComponent(Invulnerability)?.activate(Player.RESPAWN_INVULNERABILITY_DURATION);
         Sfx.play(this.scene, 'shieldUp');
+    }
+
+    // The bot removed during a run: out of the fight at once, it flies off below the screen, then goes
+    public leave(exitY: number) {
+        this._isLeaving = true;
+        this._respawnTimer?.remove();
+        this._respawnTimer = null;
+        this._podLabel?.setVisible(false);
+        this.arcadeBody.setEnable(false);
+        this.getComponent(Turret)?.hide();
+        this.getComponent(ShieldBubble)?.hide();
+        this.getComponent(MagnetField)?.hide();
+        this.getComponent(WingTrails)?.hide();
+        this.getComponent(Thrusters)?.setBoost(true);
+        this.scene.tweens.add({
+            targets: this,
+            y: exitY,
+            angle: 90,
+            duration: Player.LEAVE_DURATION,
+            ease: 'Quad.easeIn',
+            onComplete: () => {
+                this.getComponent(Thrusters)?.hide();
+                this._podLabel?.destroy();
+                this.destroy();
+            }
+        });
     }
 
     // The team is wiped out: the pod goes away with the run

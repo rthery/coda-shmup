@@ -43,6 +43,9 @@ export default class GameInputManager extends Plugins.BasePlugin {
             dpadVertical: 'ui_pad_playstation_dpad_vertical'},
         switch: {confirm: 'ui_pad_switch_b', start: 'ui_pad_switch_plus', dpadVertical: 'ui_pad_switch_dpad_vertical'},
     };
+    private static readonly CONTROLLER_ICONS: Record<GamepadFamily, string> = {
+        xbox: 'ui_device_xbox', playstation: 'ui_device_playstation', switch: 'ui_device_switch'
+    };
     private static readonly GAMEPAD_BUTTON_NAMES: Record<GamepadButton, string> = {
         confirm: 'A', start: 'START', dpadVertical: 'UP / DOWN'
     };
@@ -147,15 +150,40 @@ export default class GameInputManager extends Plugins.BasePlugin {
     // A button's icon in the style of the given gamepad, or the first connected one, null without one.
     // Browsers only report a gamepad once one of its buttons was pressed
     public gamepadIcon(button: GamepadButton, padIndex?: number): string | null {
+        const family: GamepadFamily | null = this.gamepadFamily(padIndex);
+        return family ? GameInputManager.GAMEPAD_ICONS[family][button] : null;
+    }
+
+    // What drives a player, for its label on the home screen
+    public deviceIcon(device: InputDevice): string {
+        // KeyW is Z on AZERTY
+        const leftKeysIcon: string = this._keyLabels?.get('KeyW') === 'z' ? 'ui_device_zqsd' : 'ui_device_wasd';
+        switch (device.type) {
+            case 'bot':
+                return 'ui_device_bot';
+            case 'gamepad':
+                return GameInputManager.CONTROLLER_ICONS[this.gamepadFamily(device.index) ?? 'xbox'];
+            case 'keyboard':
+                return device.keys === 'arrows' ? 'ui_device_arrows' : leftKeysIcon;
+            case 'any':
+                // Player 1: the whole keyboard, or its left keys once player 2 took the arrows
+                return device.excluded?.some(owned => owned.type === 'keyboard' && owned.keys === 'arrows')
+                    ? leftKeysIcon : 'ui_device_keyboard';
+        }
+    }
+
+    // The given gamepad's maker, or the first connected one's, null without one
+    private gamepadFamily(padIndex?: number): GamepadFamily | null {
         const pads = this._getConnectedGamepads();
         const pad = padIndex === undefined ? pads[0] : pads.find(pad => pad.index === padIndex);
         if (!pad)
             return null;
         const id: string = pad.id.toLowerCase();
-        const family: GamepadFamily = id.includes('054c') || id.includes('playstation') || id.includes('dualsense')
-            || id.includes('dualshock') ? 'playstation'
-            : id.includes('057e') || id.includes('nintendo') || id.includes('pro controller') ? 'switch' : 'xbox';
-        return GameInputManager.GAMEPAD_ICONS[family][button];
+        if (id.includes('054c') || id.includes('playstation') || id.includes('dualsense') || id.includes('dualshock'))
+            return 'playstation';
+        if (id.includes('057e') || id.includes('nintendo') || id.includes('pro controller'))
+            return 'switch';
+        return 'xbox';
     }
 
     // A key's icon, by physical position, labeled as on this keyboard when the browser tells

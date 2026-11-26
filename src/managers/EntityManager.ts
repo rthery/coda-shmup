@@ -169,6 +169,14 @@ export default class EntityManager extends Plugins.ScenePlugin {
         return player;
     }
 
+    // The bot leaving a run: removed from the overlaps' array and the team at once, its ship flies off
+    public removePlayer(player: Player) {
+        Phaser.Utils.Array.Remove(this._players, player);
+        this._team.removePlayer(player);
+        this._difficulty.setPlayerCount(this._players.length);
+        player.leave(this.scene!.cameras.main.worldView.bottom + player.height);
+    }
+
     public get enemies(): Physics.Arcade.Group | undefined {
         return this._enemies;
     }
