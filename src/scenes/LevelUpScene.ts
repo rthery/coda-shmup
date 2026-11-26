@@ -25,6 +25,10 @@ export default class LevelUpScene extends Scene {
     private static readonly PIP_EMPTY_COLOR: number = 0x4a5263;
     private static readonly PIP_EMPTY_ALPHA: number = 0.25;
     private static readonly NEXT_VALUE_COLOR: string = '#2f8f52';
+    // Entrance: the title drops in, then the cards slide in from the right one after another
+    private static readonly CARDS_DELAY: number = 250;
+    private static readonly CARD_STAGGER: number = 90;
+    private static readonly CARD_SLIDE_DURATION: number = 400;
     private static readonly CATEGORY_FRAMES: Record<UpgradeCategory, UiFrame> = {
         weapon: 'ui_header_blade_red',
         ship: 'ui_header_blade_green',
@@ -39,6 +43,8 @@ export default class LevelUpScene extends Scene {
     // null until the first update, so a direction held when the screen opens doesn't move the selection
     private _previousMoveY: number | null;
     private _chosen: boolean;
+    // Input waits for the entrance, so a key held from the game can't pick a card by accident
+    private _isReady: boolean;
 
     constructor() {
         super(GameConstants.SceneKeys.LEVEL_UP);
@@ -51,18 +57,33 @@ export default class LevelUpScene extends Scene {
         this._selectedIndex = 0;
         this._previousMoveY = null;
         this._chosen = false;
+        this._isReady = false;
     }
 
     // noinspection JSUnusedGlobalSymbols
     create() {
         const centerX: number = this.scale.width / 2;
 
-        this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.7).setOrigin(0);
-        this.add.text(centerX, 440, 'LEVEL UP!',
+        const dim = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.7).setOrigin(0);
+        this.tweens.add({targets: dim, alpha: {from: 0, to: 1}, duration: 150});
+        const title = this.add.text(centerX, 440, 'LEVEL UP!',
             {fontSize: '80px', color: '#ffcc00', fontFamily: 'future'}).setOrigin(0.5);
+        this.tweens.add({targets: title, alpha: {from: 0, to: 1}, scale: {from: 2, to: 1}, duration: 350, ease: 'Back.easeOut'});
+        this.add.particles(centerX, title.y, 'shapes', {
+            frame: 'star_04',
+            speed: {min: 200, max: 500},
+            angle: {min: 0, max: 360},
+            scale: {start: 0.3, end: 0},
+            lifespan: {min: 400, max: 700},
+            tint: [0xffcc00, 0xffe680, 0xffffff],
+            blendMode: 'ADD',
+            emitting: false
+        }).explode(24);
         const level: number = this._player.getComponent(Experience)?.level ?? 1;
-        this.add.text(centerX, 530, `LEVEL ${level} REACHED`,
+        const levelText = this.add.text(centerX, 530, `LEVEL ${level} REACHED`,
             {fontSize: '36px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
+        this.tweens.add({targets: levelText, alpha: {from: 0, to: 1}, y: {from: levelText.y + 20, to: levelText.y},
+            delay: 150, duration: 250, ease: 'Quad.easeOut'});
 
         // Maxed upgrades aren't offered anymore
         const allUpgrades = this.cache.json.get('upgrades') as UpgradeData[];
@@ -78,11 +99,24 @@ export default class LevelUpScene extends Scene {
             this._cards.push(this.createCard(upgrade, index, centerX, cardY));
         });
 
-        this._crosshair = this.add.image(0, 0, "sprites", "ui_crosshair");
+        this._crosshair = this.add.image(0, 0, "sprites", "ui_crosshair").setVisible(false);
 
         this._hintText = this.add.text(centerX, this.scale.height - 200,
             this.getHintText(this.gameInputManager.activeInputType),
-            {fontSize: '32px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
+            {fontSize: '32px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5).setAlpha(0);
+
+        const offscreenX: number = this.scale.width + LevelUpScene.CARD_WIDTH / 2;
+        // Off screen right away: a delayed tween only applies its start value once the delay is over
+        this._cards.forEach((card, index) => this.tweens.add({
+            targets: card.setX(offscreenX),
+            x: centerX,
+            delay: LevelUpScene.CARDS_DELAY + index * LevelUpScene.CARD_STAGGER,
+            duration: LevelUpScene.CARD_SLIDE_DURATION,
+            ease: 'Back.easeOut'
+        }));
+        const entranceDuration: number = LevelUpScene.CARDS_DELAY
+            + (this._cards.length - 1) * LevelUpScene.CARD_STAGGER + LevelUpScene.CARD_SLIDE_DURATION;
+        this.time.delayedCall(entranceDuration, () => this.onEntranceComplete());
         this.game.events.on('input-type-changed', this.onInputTypeChanged, this);
         this.events.once('shutdown', () => {
             this.game.events.off('input-type-changed', this.onInputTypeChanged, this);
@@ -145,6 +179,16 @@ export default class LevelUpScene extends Scene {
         return pips;
     }
 
+    private onEntranceComplete() {
+        this._isReady = true;
+        // Placed again now the cards have landed
+        this.select(this._selectedIndex);
+        this._crosshair.setVisible(true);
+        this.tweens.add({targets: this._crosshair, scale: {from: 2, to: 1}, angle: {from: -90, to: 0}, duration: 250,
+            ease: 'Back.easeOut'});
+        this.tweens.add({targets: this._hintText, alpha: 1, duration: 250});
+    }
+
     private onInputTypeChanged(type: InputType) {
         this._hintText.setText(this.getHintText(type));
     }
@@ -158,7 +202,7 @@ export default class LevelUpScene extends Scene {
     }
 
     update() {
-        if (this._chosen)
+        if (this._chosen || !this._isReady)
             return;
 
         const moveDirectionY: number = this.gameInputManager.moveDirection.y;
@@ -189,7 +233,7 @@ export default class LevelUpScene extends Scene {
     }
 
     private choose(index: number) {
-        if (this._chosen)
+        if (this._chosen || !this._isReady)
             return;
         this._chosen = true;
 
