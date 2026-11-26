@@ -35,14 +35,17 @@ export default class EntityManager extends Plugins.ScenePlugin {
         EFFECTS: 60
     }
 
-    // noinspection JSUnusedGlobalSymbols
-    private readonly bulletGroupConfig = {
-        classType: Bullet,
-        maxSize: 256,
-        runChildUpdate: true,
-        createCallback: (bullet: GameObjects.GameObject) => {
-            (bullet as Bullet).init();
-        }
+    // Group.setDepth only reaches the children already created: each child gets its depth when created instead
+    private bulletGroupConfig(depth: number) {
+        return {
+            classType: Bullet,
+            maxSize: 256,
+            runChildUpdate: true,
+            createCallback: (bullet: GameObjects.GameObject) => {
+                (bullet as Bullet).init();
+                (bullet as Bullet).setDepth(depth);
+            }
+        };
     }
 
     private _player: Player;
@@ -76,8 +79,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
     }
 
     public initAndSpawnPlayer(onIntroComplete: () => void): Player {
-        this._playerBullets = this.scene!.physics.add.group(this.bulletGroupConfig);
-        this._playerBullets.setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER_BULLETS);
+        this._playerBullets = this.scene!.physics.add.group(
+            this.bulletGroupConfig(EntityManager.ENTITIES_DEPTHS.PLAYER_BULLETS));
         GroupUtils.populate(64, this._playerBullets);
 
         this._player = new Player(this.scene!, 0, 0);
@@ -119,8 +122,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
     }
 
     public initEnemies(): Physics.Arcade.Group {
-        this._enemyBullets = this.scene!.physics.add.group(this.bulletGroupConfig);
-        this._enemyBullets.setDepth(EntityManager.ENTITIES_DEPTHS.ENEMY_BULLETS);
+        this._enemyBullets = this.scene!.physics.add.group(
+            this.bulletGroupConfig(EntityManager.ENTITIES_DEPTHS.ENEMY_BULLETS));
         GroupUtils.populate(256, this._enemyBullets);
 
         this._enemies = this.scene!.physics.add.group({
@@ -129,9 +132,9 @@ export default class EntityManager extends Plugins.ScenePlugin {
             defaultFrame: 'ufoRed',
             createCallback: (enemy) => {
                 (enemy as Enemy).init(this._enemyBullets, this._player);
+                (enemy as Enemy).setDepth(EntityManager.ENTITIES_DEPTHS.ENEMIES);
             }
         });
-        this._enemies.setDepth(EntityManager.ENTITIES_DEPTHS.ENEMIES);
 
         this._player.setTargets(this._enemies);
 
@@ -164,9 +167,9 @@ export default class EntityManager extends Plugins.ScenePlugin {
             runChildUpdate: true,
             createCallback: (gem) => {
                 (gem as XpGem).init(this._player, this._xpTrailFX);
+                (gem as XpGem).setDepth(EntityManager.ENTITIES_DEPTHS.XP_GEMS);
             }
         });
-        this._xpGems.setDepth(EntityManager.ENTITIES_DEPTHS.XP_GEMS);
         GroupUtils.populate(128, this._xpGems);
 
         console.log("[EntityManager] XP gems initialized");
