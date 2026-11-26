@@ -1,4 +1,6 @@
 import {Loader, Scene, Sound} from "phaser";
+import type SaveManager from "../managers/SaveManager.ts";
+import SaveConstants from "../SaveConstants.ts";
 
 type SoundData = {
     // Files are Sounds/<file>_<0..count-1>.ogg, one is picked at random each time
@@ -45,6 +47,9 @@ const SOUNDS: Record<SoundName, SoundData> = {
     uiConfirm: {file: 'ui_confirm', count: 1, volume: 0.4, minInterval: 0},
 };
 
+// The WebAudio and HTML5 sounds Phaser creates can be muted, BaseSound's type doesn't say so
+type MuteableSound = Sound.WebAudioSound | Sound.HTML5AudioSound;
+
 const MUSIC_KEY: string = 'music';
 const MUSIC_VOLUME: number = 0.35;
 
@@ -52,6 +57,33 @@ const MUSIC_VOLUME: number = 0.35;
 export default class Sfx {
     // Real time, shared by every scene: the sound manager is global too
     private static readonly _lastPlayTimes: Map<SoundName, number> = new Map();
+    // Player settings, saved: both on by default
+    private static _isMusicOn: boolean = true;
+    private static _areEffectsOn: boolean = true;
+
+    public static get isMusicOn(): boolean {
+        return Sfx._isMusicOn;
+    }
+
+    public static get areEffectsOn(): boolean {
+        return Sfx._areEffectsOn;
+    }
+
+    public static loadSettings(saveManager: SaveManager) {
+        Sfx._isMusicOn = saveManager.getData(SaveConstants.Keys.IS_MUSIC_ON) ?? true;
+        Sfx._areEffectsOn = saveManager.getData(SaveConstants.Keys.ARE_SOUND_EFFECTS_ON) ?? true;
+    }
+
+    public static setMusicOn(scene: Scene, saveManager: SaveManager, isOn: boolean) {
+        Sfx._isMusicOn = isOn;
+        saveManager.setData(SaveConstants.Keys.IS_MUSIC_ON, isOn);
+        (scene.sound.get(MUSIC_KEY) as MuteableSound | null)?.setMute(!isOn);
+    }
+
+    public static setEffectsOn(saveManager: SaveManager, isOn: boolean) {
+        Sfx._areEffectsOn = isOn;
+        saveManager.setData(SaveConstants.Keys.ARE_SOUND_EFFECTS_ON, isOn);
+    }
 
     public static preload(load: Loader.LoaderPlugin) {
         (Object.values(SOUNDS)).forEach(sound => {
@@ -63,6 +95,8 @@ export default class Sfx {
     }
 
     public static play(scene: Scene, name: SoundName, options: PlayOptions = {}) {
+        if (!Sfx._areEffectsOn)
+            return;
         const sound: SoundData = SOUNDS[name];
         const now: number = performance.now();
         if (now - (Sfx._lastPlayTimes.get(name) ?? -Infinity) < sound.minInterval)
@@ -82,6 +116,8 @@ export default class Sfx {
         Sfx.fadeMusic(scene, 1, 500);
         if (!music.isPlaying)
             music.play({loop: true, volume: MUSIC_VOLUME});
+        // Keeps playing muted, so turning it back on doesn't restart the track
+        (music as MuteableSound).setMute(!Sfx._isMusicOn);
     }
 
     // scale: 1 for the normal level, lower to step back behind a screen like game over

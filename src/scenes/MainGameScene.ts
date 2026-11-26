@@ -188,7 +188,8 @@ export default class MainGameScene extends Scene {
 
         // A level-up or game over screen may have paused the game for longer meanwhile: it resumes it itself
         const isOtherPause: boolean = this.scene.isActive(GameConstants.SceneKeys.LEVEL_UP)
-            || this.scene.isActive(GameConstants.SceneKeys.GAME_OVER);
+            || this.scene.isActive(GameConstants.SceneKeys.GAME_OVER)
+            || this.scene.isActive(GameConstants.SceneKeys.PAUSE);
         // On a long frame the pause may not be applied yet
         if (!isOtherPause && !this.scene.isPaused())
             return;
@@ -223,7 +224,20 @@ export default class MainGameScene extends Scene {
         this.scene.launch(GameConstants.SceneKeys.GAME_OVER);
     }
 
+    // From Escape, P or a gamepad's Start
+    private openPause() {
+        if (this.scene.isActive(GameConstants.SceneKeys.PAUSE) || !this.player?.active)
+            return;
+        this.scene.pause();
+        this.scene.launch(GameConstants.SceneKeys.PAUSE);
+    }
+
     update(_timeSinceLaunch: number, deltaTime: number) {
+        if (this.gameInputManager.pauseJustPressed()) {
+            this.openPause();
+            return;
+        }
+
         if (this.gameInputManager.restartJustPressed()) {
             this.scene.restart();
         }

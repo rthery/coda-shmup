@@ -7,6 +7,7 @@ import type {PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 import UiUtils from "../utils/UiUtils.ts";
 import Sfx from "../audio/Sfx.ts";
+import type SaveManager from "../managers/SaveManager.ts";
 
 export default class HomeScene extends Phaser.Scene {
     private static readonly BG_TILE_SCALE: number = 2;
@@ -20,6 +21,7 @@ export default class HomeScene extends Phaser.Scene {
     private _title: Phaser.GameObjects.Container;
     private _startPrompt: Phaser.GameObjects.Text;
     private _started: boolean = false;
+    private saveManager: SaveManager;
 
     constructor() {
         super(GameConstants.SceneKeys.HOME);
@@ -62,6 +64,9 @@ export default class HomeScene extends Phaser.Scene {
 
     create() {
         // Plays across scenes, from the first input on (browsers block sound until then)
+        // The game also loads it when a run starts: here it's for the sound settings, read before any run
+        this.saveManager.load();
+        Sfx.loadSettings(this.saveManager);
         Sfx.startMusic(this);
         console.log(this.sys.game.renderer.type === Phaser.WEBGL ? 'WebGL' : 'Canvas');
 

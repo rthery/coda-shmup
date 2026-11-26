@@ -43,6 +43,9 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
     private _confirmJustDown: boolean = false;
     private _restartJustDown: boolean = false;
+    private _pauseJustDown: boolean = false;
+    // Keyboard events arrive before the step resets the flags: they wait here for the next step
+    private _isPausePending: boolean = false;
 
     private _prevGamepadButtons = new Map<string, boolean>();
     private _activeInputType: InputType = 'keyboard';
@@ -63,6 +66,8 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
         this._confirmJustDown = false;
         this._restartJustDown = false;
+        this._pauseJustDown = this._isPausePending;
+        this._isPausePending = false;
 
         // Ignore the OS key repeat: SPACE may still be held from the previous scene
         if (this._shootKey && Input.Keyboard.JustDown(this._shootKey) && !this._shootKey.originalEvent?.repeat) {
@@ -86,9 +91,10 @@ export default class GameInputManager extends Plugins.BasePlugin {
                 this._confirmJustDown = true;
             }
 
+            // Start confirms on menus and pauses during a run, like on consoles
             if (this._isGamepadButtonJustPressed(pad, GameInputManager.START_BUTTON_INDEX)) {
                 this._confirmJustDown = true;
-                this._restartJustDown = true;
+                this._pauseJustDown = true;
             }
         }
     }
@@ -208,6 +214,9 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
     private _onAnyKeyDown(event: KeyboardEvent): void {
         this._heldKeyCodes.add(event.code);
+        // Escape by position, P by character: P moves between layouts
+        if (!event.repeat && (event.code === 'Escape' || event.key.toLowerCase() === 'p'))
+            this._isPausePending = true;
         this._setInputType('keyboard');
     }
 
@@ -330,6 +339,10 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
     public restartJustPressed(): boolean {
         return this._restartJustDown;
+    }
+
+    public pauseJustPressed(): boolean {
+        return this._pauseJustDown;
     }
 
     public get activeInputType(): InputType {
