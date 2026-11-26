@@ -15,6 +15,7 @@ export default class MainGameScene extends Scene {
     private saveManager: SaveManager;
     private entityManager: EntityManager;
     private _killStreak: number = 0;
+    private _runTime: number = 0; // ms
     private player: Player;
     private readonly cameraLookAhead: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
@@ -76,6 +77,8 @@ export default class MainGameScene extends Scene {
 
         this.registry.set(RegistryConstants.Keys.PLAYER_SCORE, 0);
         this.registry.set(RegistryConstants.Keys.PLAYER_LEVEL, 1);
+        this._runTime = 0;
+        this.registry.set(RegistryConstants.Keys.RUN_TIME, 0);
         this.setKillStreak(0);
 
         console.log("MainGameScene created");
@@ -116,6 +119,12 @@ export default class MainGameScene extends Scene {
         if (this.gameInputManager.restartJustPressed()) {
             this.scene.restart();
         }
+
+        // update() doesn't run while the scene is paused, so level-up screens don't count
+        this._runTime += deltaTime;
+        const runSeconds: number = Math.floor(this._runTime / 1000);
+        if (runSeconds !== this.registry.get(RegistryConstants.Keys.RUN_TIME))
+            this.registry.set(RegistryConstants.Keys.RUN_TIME, runSeconds);
 
         // Look ahead in the move direction: the follow offset is subtracted from the target position
         const velocity = this.player.getComponent(Movement)?.velocity;

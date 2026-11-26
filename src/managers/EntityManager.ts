@@ -9,6 +9,8 @@ import Thrusters from "../components/Thrusters.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
+import DifficultyCurve from "../utils/DifficultyCurve.ts";
+import type {DifficultyData} from "../gameData/DifficultyData.ts";
 import {BulletFxData} from "../gameData/BulletData.ts";
 
 export default class EntityManager extends Plugins.ScenePlugin {
@@ -46,6 +48,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private _xpTrailFX: GameObjects.Particles.ParticleEmitter;
     private readonly _spawnOffset: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _xpGemScatter: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private _difficulty: DifficultyCurve;
     private _explosionFireFX: GameObjects.Particles.ParticleEmitter;
     private _explosionSmokeFX: GameObjects.Particles.ParticleEmitter;
     private _laserFlashFX: GameObjects.Particles.ParticleEmitter;
@@ -126,13 +129,9 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
         this._player.setTargets(this._enemies);
 
-        // Spawn enemies indefinitely, the first one when the player intro is over
-        this.scene!.time.addEvent({
-            delay: GameConstants.START_DELAY,
-            callback: this.spawnEnemy,
-            callbackScope: this,
-            loop: true
-        });
+        // Spawn enemies indefinitely, faster over time, the first one when the player intro is over
+        this._difficulty = new DifficultyCurve(this.scene!.cache.json.get('difficulty') as DifficultyData);
+        this.scene!.time.delayedCall(GameConstants.START_DELAY, this.spawnEnemy, [], this);
 
         console.log("[EntityManager] Enemies initialized");
 
@@ -351,7 +350,10 @@ export default class EntityManager extends Plugins.ScenePlugin {
     }
 
     private spawnEnemy() {
-        if (this._enemies.countActive(true) >= 50) {
+        const difficulty = this._difficulty.at(this.scene!.registry.get(RegistryConstants.Keys.RUN_TIME) ?? 0);
+        this.scene!.time.delayedCall(difficulty.spawnInterval, this.spawnEnemy, [], this);
+
+        if (this._enemies.countActive(true) >= difficulty.maxEnemies) {
             return;
         }
 
@@ -365,7 +367,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
         const view = this.scene!.cameras.main.worldView;
         const spawnRadius = Phaser.Math.Distance.Between(view.centerX, view.centerY, view.right, view.top) + 128;
         Phaser.Math.RandomXY(this._spawnOffset, spawnRadius);
-        enemy.enable(view.centerX + this._spawnOffset.x, view.centerY + this._spawnOffset.y);
+        enemy.enable(view.centerX + this._spawnOffset.x, view.centerY + this._spawnOffset.y,
+            difficulty.enemyHealth, difficulty.enemySpeed);
 
         this.game!.events.emit(GameConstants.Events.ENEMY_SPAWNED_EVENT, enemy);
 

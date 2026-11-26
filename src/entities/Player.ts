@@ -11,6 +11,7 @@ import Experience from "../components/Experience.ts";
 import Thrusters from "../components/Thrusters.ts";
 import WingTrails from "../components/WingTrails.ts";
 import type {UpgradeData} from "../gameData/UpgradesData.ts";
+import type {DifficultyData} from "../gameData/DifficultyData.ts";
 
 export default class Player extends Entity {
     private static readonly WING_TRAILS_SPEED_RATIO: number = 0.5;
@@ -57,7 +58,7 @@ export default class Player extends Entity {
         this.addComponent(new Invulnerability(250, this));
         this.addComponent(new Movement());
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
-        this.addComponent(new Experience());
+        this.addComponent(new Experience((this.scene.cache.json.get('difficulty') as DifficultyData).xp));
         this.addComponent(new Thrusters(this));
         this.addComponent(new WingTrails(this));
         this.getComponent(Health)?.once(Health.DEATH_EVENT, () => {

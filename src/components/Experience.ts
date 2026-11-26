@@ -1,5 +1,6 @@
 import {Events} from "phaser";
 import IComponent from "./IComponent.ts";
+import type {XpCurveData} from "../gameData/DifficultyData.ts";
 
 export default class Experience extends Events.EventEmitter implements IComponent {
     public enabled: boolean = true;
@@ -7,11 +8,14 @@ export default class Experience extends Events.EventEmitter implements IComponen
     public static readonly CHANGE_EVENT: string = 'change';
     public static readonly LEVEL_UP_EVENT: string = 'levelUp';
 
-    private static readonly FIRST_LEVEL_XP: number = 5;
-    private static readonly XP_PER_LEVEL: number = 5;
-
+    private readonly _curve: XpCurveData;
     private _xp: number = 0;
     private _level: number = 1;
+
+    public constructor(curve: XpCurveData) {
+        super();
+        this._curve = curve;
+    }
 
     public get xp(): number {
         return this._xp;
@@ -22,7 +26,9 @@ export default class Experience extends Events.EventEmitter implements IComponen
     }
 
     public get xpToNextLevel(): number {
-        return Experience.FIRST_LEVEL_XP + (this._level - 1) * Experience.XP_PER_LEVEL;
+        const levelsGained: number = this._level - 1;
+        return this._curve.base + this._curve.perLevel * levelsGained
+            + this._curve.perLevelSquared * levelsGained * levelsGained;
     }
 
     public add(amount: number): void {

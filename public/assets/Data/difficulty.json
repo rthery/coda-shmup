@@ -1,0 +1,51 @@
+{
+  "xp": {
+    "base": 5,
+    "perLevel": 10,
+    "perLevelSquared": 1
+  },
+  "keyframes": [
+    {
+      "time": 0,
+      "spawnInterval": 700,
+      "maxEnemies": 20,
+      "enemyHealth": 1,
+      "enemySpeed": 0.2
+    },
+    {
+      "time": 30,
+      "spawnInterval": 400,
+      "maxEnemies": 35,
+      "enemyHealth": 1,
+      "enemySpeed": 0.22
+    },
+    {
+      "time": 60,
+      "spawnInterval": 330,
+      "maxEnemies": 45,
+      "enemyHealth": 1,
+      "enemySpeed": 0.23
+    },
+    {
+      "time": 150,
+      "spawnInterval": 260,
+      "maxEnemies": 55,
+      "enemyHealth": 2,
+      "enemySpeed": 0.27
+    },
+    {
+      "time": 300,
+      "spawnInterval": 180,
+      "maxEnemies": 70,
+      "enemyHealth": 4,
+      "enemySpeed": 0.33
+    },
+    {
+      "time": 480,
+      "spawnInterval": 100,
+      "maxEnemies": 100,
+      "enemyHealth": 8,
+      "enemySpeed": 0.42
+    }
+  ]
+}

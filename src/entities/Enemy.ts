@@ -75,13 +75,13 @@ export default class Enemy extends Entity {
         this.arcadeBody.setCircle(this.displayWidth / 2);
     }
 
-    public enable(x: number, y: number) {
+    public enable(x: number, y: number, health: number, speed: number) {
         this.enableBody(true, x, y, true, true);
         this._shootTimer?.reset(this._shootTimerConfig);
 
-        // Restore health, in case the enemy is reused from the pool, without emitting events
-        const health = this.getComponent(Health);
-        health?.heal(health!.max, false);
+        // Stats follow the difficulty curve, set again each time the enemy is reused from the pool
+        this.getComponent(Health)?.resetMax(health);
+        this.getComponent(Movement)?.setSpeed(speed);
     }
 
     public disable() {

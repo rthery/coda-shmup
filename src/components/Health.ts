@@ -48,6 +48,12 @@ export default class Health extends Events.EventEmitter implements IComponent {
         this.adjust(amount, emitEvents);
     }
 
+    // Full health at the new max, without events: for pooled entities being reused
+    public resetMax(value: number): void {
+        this._max = value;
+        this._current = value;
+    }
+
     public increaseMax(amount: number, emitEvents: boolean = true): void {
         if (amount <= 0) return;
 
