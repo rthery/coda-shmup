@@ -1,4 +1,4 @@
-import {Scene} from "phaser";
+import {Input, Scene} from "phaser";
 import {PlayerShipData, PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import type {BulletData} from "../gameData/BulletData.ts";
 import Entity from './Entity.ts';
@@ -21,6 +21,8 @@ export default class Player extends Entity {
     private static readonly INVULNERABILITY_DURATION: number = 500; // ms
     // Random pitch, in cents, so rapid fire doesn't sound like a machine
     private static readonly LASER_DETUNE: number = 150;
+    // Dev cheat, kept across restarts: F toggles the player's firing
+    private static _isFiringDisabled: boolean = false;
 
     private readonly _bulletData: BulletData = {
         scale: 1.8,
@@ -58,6 +60,21 @@ export default class Player extends Entity {
 
     constructor(scene: Scene, x: number, y: number) {
         super(scene, x, y, 'sprites');
+
+        if (import.meta.env.DEV && this.scene.input.keyboard) {
+            this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.F).on('down', () => {
+                Player._isFiringDisabled = !Player._isFiringDisabled;
+                console.log("[Cheat] Player firing " + (Player._isFiringDisabled ? "off" : "on"));
+            });
+            // L grants the XP missing to reach the next level
+            this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.L).on('down', () => {
+                const experience = this.getComponent(Experience);
+                if (!experience)
+                    return;
+                experience.add(experience.xpToNextLevel - experience.xp);
+                console.log("[Cheat] Level " + experience.level);
+            });
+        }
     }
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
@@ -186,7 +203,7 @@ export default class Player extends Entity {
 
         const isInRange: boolean = nearestTarget !== null && Phaser.Math.Distance.Between(this.x, this.y,
             nearestTarget.x, nearestTarget.y) <= (this.getComponent(Weapon)?.range ?? 0);
-        if (targetRotation !== null && isInRange && timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000
+        if (!Player._isFiringDisabled && targetRotation !== null && isInRange && timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000
             && turret?.isAimedAt(targetRotation, Player.TURRET_AIM_TOLERANCE)) {
             this._shootDirection.setToPolar(turret.rotation);
             this.getComponent(Weapon)?.shoot(this, this._shootDirection, turret.getMuzzle(this._muzzle));

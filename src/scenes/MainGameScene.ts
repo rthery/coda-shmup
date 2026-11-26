@@ -51,6 +51,17 @@ export default class MainGameScene extends Scene {
         this._planet = this.add.image(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2, 'planet').setScale(7.5);
         this._difficulty = new DifficultyCurve(this.cache.json.get('difficulty') as DifficultyData);
 
+        // Dev cheats: + (or =) and - jump the run clock to the next or previous threat level.
+        // Matched on the typed character, key codes differ between keyboard layouts (AZERTY on a Mac)
+        if (import.meta.env.DEV && this.input.keyboard) {
+            this.input.keyboard.on(Phaser.Input.Keyboard.Events.ANY_KEY_DOWN, (event: KeyboardEvent) => {
+                if (event.key === '+' || event.key === '=')
+                    this.jumpThreatLevel(1);
+                else if (event.key === '-')
+                    this.jumpThreatLevel(-1);
+            });
+        }
+
         if (!this.entityManager) {
             console.error('EntityManager plugin not found');
         }
@@ -107,6 +118,13 @@ export default class MainGameScene extends Scene {
         this.registry.inc(RegistryConstants.Keys.PLAYER_SCORE,
             MainGameScene.KILL_SCORE * this.registry.get(RegistryConstants.Keys.PLAYER_COMBO));
         this.setKillStreak(this._killStreak + 1);
+    }
+
+    private jumpThreatLevel(step: number) {
+        const level: number = Phaser.Math.Clamp(this._difficulty.threatLevelAt(this._runTime / 1000) + step,
+            0, this._difficulty.maxThreatLevel);
+        this._runTime = this._difficulty.threatLevelTime(level) * 1000;
+        console.log("[Cheat] Threat level " + (level + 1) + ", run time " + this._runTime / 1000 + " s");
     }
 
     private updateThreatTint(runSeconds: number) {

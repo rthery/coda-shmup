@@ -20,6 +20,11 @@ export default class DifficultyCurve {
         return level;
     }
 
+    // s, when the given threat level starts
+    public threatLevelTime(level: number): number {
+        return this._keyframes[Phaser.Math.Clamp(level, 0, this._keyframes.length - 1)].time;
+    }
+
     public get maxThreatLevel(): number {
         return this._keyframes.length - 1;
     }
