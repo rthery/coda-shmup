@@ -201,8 +201,13 @@ export default class EntityManager extends Plugins.ScenePlugin {
         });
 
         this.scene!.physics.add.overlap(this._player, this._xpGems, (player, gem) => {
-            (gem as XpGem).disable();
-            (player as Player).getComponent(Experience)?.add((gem as XpGem).value);
+            const xpGem = gem as XpGem;
+            xpGem.disable();
+            // Screen position, before the XP change, so the HUD can tie the two together
+            const worldView = this.scene!.cameras.main.worldView;
+            this.game!.events.emit(GameConstants.Events.XP_GEM_COLLECTED_EVENT,
+                xpGem.x - worldView.x, xpGem.y - worldView.y);
+            (player as Player).getComponent(Experience)?.add(xpGem.value);
         });
 
         console.log("[EntityManager] Group collisions initialized");

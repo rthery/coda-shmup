@@ -3,6 +3,7 @@ export default class GameConstants {
         PLAYER_SPAWNED_EVENT: "playerSpawned",
         ENEMY_SPAWNED_EVENT: "enemySpawned",
         ENEMY_KILLED_EVENT: "enemyKilled",
+        XP_GEM_COLLECTED_EVENT: "xpGemCollected",
     } as const);
 
     public static readonly SceneKeys = Object.freeze({
