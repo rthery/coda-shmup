@@ -51,5 +51,5 @@ jobs:
           BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
           CHANNEL: html5
           ITCH_GAME: ${{ github.event.repository.name }}
-          ITCH_USER: surmoi
+          ITCH_USER: thegesse
           PACKAGE: dist/

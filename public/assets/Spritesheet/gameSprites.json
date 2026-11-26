@@ -5,7 +5,7 @@
 			"format": "RGBA8888",
 			"size": {
 				"w": 174,
-				"h": 416
+				"h": 502
 			},
 			"scale": 1,
 			"frames": [
@@ -136,24 +136,45 @@
 					}
 				},
 				{
-					"filename": "playerLife1_blue",
+					"filename": "cofeemove",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 33,
-						"h": 26
+						"w": 51,
+						"h": 47
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 33,
-						"h": 26
+						"w": 51,
+						"h": 47
 					},
 					"frame": {
 						"x": 81,
 						"y": 192,
-						"w": 33,
-						"h": 26
+						"w": 51,
+						"h": 47
+					}
+				},
+				{
+					"filename": "cofeeshoot",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 51,
+						"h": 47
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 51,
+						"h": 47
+					},
+					"frame": {
+						"x": 81,
+						"y": 243,
+						"w": 51,
+						"h": 47
 					}
 				},
 				{
@@ -172,9 +193,30 @@
 					},
 					"frame": {
 						"x": 81,
-						"y": 222,
+						"y": 294,
 						"w": 25,
 						"h": 24
+					}
+				},
+				{
+					"filename": "playerLife1_blue",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 33,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 33,
+						"h": 26
+					},
+					"frame": {
+						"x": 2,
+						"y": 418,
+						"w": 33,
+						"h": 26
 					}
 				},
 				{
@@ -192,8 +234,8 @@
 						"h": 24
 					},
 					"frame": {
-						"x": 81,
-						"y": 250,
+						"x": 2,
+						"y": 448,
 						"w": 25,
 						"h": 24
 					}
@@ -213,8 +255,8 @@
 						"h": 24
 					},
 					"frame": {
-						"x": 81,
-						"y": 278,
+						"x": 2,
+						"y": 476,
 						"w": 24,
 						"h": 24
 					}

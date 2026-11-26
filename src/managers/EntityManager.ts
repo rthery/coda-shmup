@@ -14,17 +14,22 @@ export default class EntityManager extends Plugins.ScenePlugin {
     // noinspection JSUnusedGlobalSymbols
     private readonly bulletGroupConfig = {
         classType: Bullet,
-        maxSize: 256,
+        maxSize: 1024,
         runChildUpdate: true,
         createCallback: (bullet: GameObjects.GameObject) => {
             (bullet as Bullet).init();
         }
     }
 
+    private static readonly BOSS_HEALTH_PER_UNIT = 20;
+    private static readonly BOSS_UNIT_COUNT = 11;
+
     private _player: Player;
     private _playerBullets: Physics.Arcade.Group;
     private _enemies: Physics.Arcade.Group;
     private _enemyBullets: Physics.Arcade.Group;
+    private _bossHealth: number = 220;
+    private _bossPatternPhase: number = 0;
 
     constructor(scene: Scene, pluginManager: Plugins.PluginManager) {
         super(scene, pluginManager, EntityManager.PLUGIN_KEY);
@@ -44,6 +49,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
         this._player = new Player(this.scene!, this.scene!.cameras.main.centerX, this.scene!.cameras.main.height - 128);
         this._player.init(this._playerBullets);
+        this.scene!.registry.set('player', this._player);
 
         console.log("[EntityManager] Player spawned");
 
@@ -54,7 +60,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
     public initEnemies(): Physics.Arcade.Group {
         this._enemyBullets = this.scene!.physics.add.group(this.bulletGroupConfig);
-        GroupUtils.populate(256, this._enemyBullets);
+        GroupUtils.populate(1024, this._enemyBullets);
 
         this._enemies = this.scene!.physics.add.group({
             classType: Enemy,
@@ -65,13 +71,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
             }
         });
 
-        // Spawn enemies indefinitely
-        this.scene!.time.addEvent({
-            delay: 1500,
-            callback: this.spawnEnemy,
-            callbackScope: this,
-            loop: true
-        });
+        this.spawnBossFormation();
 
         console.log("[EntityManager] Enemies initialized");
 
@@ -79,49 +79,65 @@ export default class EntityManager extends Plugins.ScenePlugin {
     }
 
     public initGroupCollisions() {
-        this.scene!.physics.add.overlap(this._playerBullets, this._enemies, (bullet, enemy) => {
+        this.scene!.physics.add.overlap(this._playerBullets, this._enemies, (bullet) => {
             this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
 
             (bullet as Bullet).disable();
-            (enemy as Enemy).getComponent(Health)?.damage((bullet as Bullet).damage);
+            this._bossHealth = Math.max(0, this._bossHealth - (bullet as Bullet).damage);
+            this.scene!.registry.set('bossHealth', this._bossHealth);
+
+            if (this._bossHealth === 0) {
+                this._enemies.getChildren().forEach(child => {
+                    (child as Enemy).disable();
+                });
+            }
         });
 
         this.scene!.physics.add.overlap(this._player, this._enemyBullets, (player, bullet) => {
             (bullet as Bullet).disable();
-            (player as Player).getComponent(Health)?.damage((bullet as Bullet).damage);
+            (player as Player).getComponent(Health)?.damage(5);
 
             this.scene?.cameras.main.shake(100, 0.01);
         });
 
-        this.scene!.physics.add.overlap(this._player, this._enemies, (player, enemy) => {
-            this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
-
-            const enemyHealth = (enemy as Enemy).getComponent(Health);
-            enemyHealth?.damage(enemyHealth?.max);
-
-            const playerHealth = (player as Player).getComponent(Health);
-            playerHealth?.damage(1);
-
-            this.scene?.cameras.main.shake(100, 0.03);
+        this.scene!.physics.add.overlap(this._player, this._enemies, (player) => {
+            (player as Player).getComponent(Health)?.damage(20);
         });
 
         console.log("[EntityManager] Group collisions initialized");
     }
 
-    private spawnEnemy() {
-        if (this._enemies.countActive(true) >= 5) {
-            return;
+    private spawnBossFormation() {
+        const width = this.scene!.cameras.main.width;
+        const margin = 64;
+        const usableWidth = width - margin * 2;
+
+        for (let i = 0; i < 11; i++) {
+            const enemy = this._enemies.get() as Enemy;
+            if (!enemy)
+                continue;
+
+            const x = margin + usableWidth * (i / 10);
+            const y = 130;
+            enemy.enableBoss(i, x, y);
         }
 
-        const enemy = this._enemies.get() as Enemy;
-        if (!enemy) {
-            return;
-        }
+        this._bossHealth = EntityManager.BOSS_HEALTH_PER_UNIT * EntityManager.BOSS_UNIT_COUNT;
+        this.scene!.registry.set('bossHealth', this._bossHealth);
+        this.scene!.registry.set('bossMaxHealth', this._bossHealth);
+        this.scene!.registry.set('bossPatternPhase', this._bossPatternPhase);
 
-        enemy.enable(Phaser.Math.Between(64, this.scene!.cameras.main.width - 64), 0);
+        this.scene!.time.addEvent({
+            delay: 15000,
+            callback: () => {
+                this._bossPatternPhase = (this._bossPatternPhase + 1) % 3;
+                this.scene!.registry.set('bossPatternPhase', this._bossPatternPhase);
+            },
+            callbackScope: this,
+            loop: true
+        });
 
-        this.game!.events.emit(GameConstants.Events.ENEMY_SPAWNED_EVENT, enemy);
-
-        console.log("[EntityManager] Enemy spawned");
+        console.log("[EntityManager] Boss formation spawned");
     }
+
 }

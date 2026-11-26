@@ -19,6 +19,9 @@ export default class Player extends Entity {
     private _playerShipData: PlayerShipData;
     private _rateOfFire: number;
     private _lastShotTime: number;
+    public weapon: Weapon;
+
+    private _weaponMode: 'normal' | 'beam' = 'normal';
 
     constructor(scene: Scene, x: number, y: number) {
         super(scene, x, y, 'sprites');
@@ -33,15 +36,16 @@ export default class Player extends Entity {
     }
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
-        this.addComponent(new Health(3, this));
+        this.addComponent(new Health(50, this));
         this.addComponent(new Movement());
-        this.addComponent(new Weapon(bulletsGroup, this._bulletData));
+        this.weapon = new Weapon(bulletsGroup, this._bulletData);
+        this.addComponent(this.weapon);
 
         this.angle = -90;
 
         this.selectPlayerShip(1);
 
-        this._rateOfFire = 0.5;
+        this._rateOfFire = 0.14;
         this._lastShotTime = 0;
 
         this.getComponent(Health)?.on(Health.CHANGE_EVENT, () => {
@@ -61,7 +65,7 @@ export default class Player extends Entity {
 
         this.setTexture('sprites', this._playerShipData.texture);
         const bodyData = this._playerShipData.body;
-        this.arcadeBody.setCircle(bodyData.radius, bodyData.offsetX, bodyData.offsetY);
+        this.arcadeBody.setCircle(14, bodyData.offsetX, bodyData.offsetY);
 
         this.getComponent(Movement)?.setSpeed(this._playerShipData.movementSpeed);
     }
@@ -71,29 +75,44 @@ export default class Player extends Entity {
 
         // Press left or right arrow keys to move the player smoothly horizontally using deltaTime
         if (this._cursorKeys.left.isDown) {
-            if (this._cursorKeys.shift.isDown) {
-                this.angle -= this._playerShipData.movementSpeed * deltaTime;
-            } else {
-                this.getComponent(Movement)?.moveHorizontally(this, -deltaTime);
-            }
+            const movementMultiplier = this._cursorKeys.shift.isDown ? 0.45 : 1;
+            this.getComponent(Movement)?.moveHorizontally(this, -deltaTime * movementMultiplier);
         } else if (this._cursorKeys.right.isDown) {
-            if (this._cursorKeys.shift.isDown) {
-                this.angle += this._playerShipData.movementSpeed * deltaTime;
-            } else {
-                this.getComponent(Movement)?.moveHorizontally(this, deltaTime);
-            }
+            const movementMultiplier = this._cursorKeys.shift.isDown ? 0.45 : 1;
+            this.getComponent(Movement)?.moveHorizontally(this, deltaTime * movementMultiplier);
         }
-        // Stop player from going offscreen
-        this.x = Phaser.Math.Clamp(this.x, this.displayWidth / 2, this.scene.cameras.main.width - this.displayWidth / 2);
+
+        // Press up or down arrow keys to move the player smoothly vertically using deltaTime
+        if (this._cursorKeys.up.isDown) {
+            const movementMultiplier = this._cursorKeys.shift.isDown ? 0.45 : 1;
+            this.getComponent(Movement)?.moveVertically(this, -deltaTime * movementMultiplier);
+        } else if (this._cursorKeys.down.isDown) {
+            const movementMultiplier = this._cursorKeys.shift.isDown ? 0.45 : 1;
+            this.getComponent(Movement)?.moveVertically(this, deltaTime * movementMultiplier);
+        }
+
+        // Clamp player position to screen bounds
+        this.x = Phaser.Math.Clamp(
+            this.x,
+            this.displayWidth / 2,
+            this.scene.cameras.main.width - this.displayWidth / 2
+        );
+        this.y = Phaser.Math.Clamp(
+            this.y,
+            this.displayHeight / 2,
+            this.scene.cameras.main.height - this.displayHeight / 2
+        );
 
         // Press space to shoot
-        if (this._cursorKeys.space.isDown) {
-            if (timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000) {
-                this.getComponent(Weapon)?.shoot(this);
-                this.scene.sound.play('sfx_laser1');
+        const shotInterval = this._weaponMode === 'beam' ? 100 : this._rateOfFire * 1000;
+        if (timeSinceLaunch - this._lastShotTime > shotInterval) {
+            if (this._weaponMode === 'beam')
+                this.weapon.shootBeam(this);
+            else
+                this.weapon.shoot(this);
 
-                this._lastShotTime = timeSinceLaunch;
-            }
+            this.scene.sound.play('sfx_laser1');
+            this._lastShotTime = timeSinceLaunch;
         }
     }
 }
