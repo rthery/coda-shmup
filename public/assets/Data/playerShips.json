@@ -38,7 +38,7 @@
     "acceleration": 0.004,
     "deceleration": 0.004,
     "turnSpeed": 0.005,
-    "texture": "playerShip3_orange",
+    "texture": "playerShip1_orange",
     "body": {
       "radius": 42,
       "offsetX": -4,
@@ -46,25 +46,25 @@
     },
     "thrusters": [
       {
-        "x": -35,
+        "x": -37,
         "y": 0,
         "scale": 1.3
       }
     ],
     "turret": {
-      "x": -17,
+      "x": -6,
       "y": 0
     },
     "wingTips": [
       {
-        "x": -29,
-        "y": -46
+        "x": -14,
+        "y": -47
       },
       {
-        "x": -29,
-        "y": 46
+        "x": -14,
+        "y": 47
       }
     ],
-    "lifeIcon": "playerLife3_orange"
+    "lifeIcon": "playerLife1_orange"
   }
 }

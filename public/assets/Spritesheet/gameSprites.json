@@ -5,7 +5,7 @@
 			"format": "RGBA8888",
 			"size": {
 				"w": 1013,
-				"h": 416
+				"h": 417
 			},
 			"scale": 1,
 			"frames": [
@@ -409,23 +409,23 @@
 					}
 				},
 				{
-					"filename": "playerLife3_blue",
+					"filename": "playerLife1_orange",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 32,
+						"w": 33,
 						"h": 26
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 32,
+						"w": 33,
 						"h": 26
 					},
 					"frame": {
 						"x": 720,
 						"y": 201,
-						"w": 32,
+						"w": 33,
 						"h": 26
 					}
 				},
@@ -444,31 +444,31 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 756,
+						"x": 757,
 						"y": 202,
 						"w": 14,
 						"h": 31
 					}
 				},
 				{
-					"filename": "playerShip3_blue",
+					"filename": "playerShip1_orange",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
 						"w": 75,
-						"h": 98
+						"h": 99
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
 						"w": 75,
-						"h": 98
+						"h": 99
 					},
 					"frame": {
 						"x": 625,
 						"y": 229,
 						"w": 75,
-						"h": 98
+						"h": 99
 					}
 				},
 				{
@@ -535,7 +535,7 @@
 					}
 				},
 				{
-					"filename": "playerShip3_orange",
+					"filename": "playerShip3_blue",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -634,7 +634,7 @@
 					},
 					"frame": {
 						"x": 620,
-						"y": 331,
+						"y": 332,
 						"w": 57,
 						"h": 13
 					}
@@ -655,7 +655,7 @@
 					},
 					"frame": {
 						"x": 681,
-						"y": 331,
+						"y": 332,
 						"w": 14,
 						"h": 31
 					}
@@ -676,13 +676,13 @@
 					},
 					"frame": {
 						"x": 681,
-						"y": 366,
+						"y": 367,
 						"w": 14,
 						"h": 31
 					}
 				},
 				{
-					"filename": "playerLife3_orange",
+					"filename": "playerLife3_blue",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -697,7 +697,7 @@
 					},
 					"frame": {
 						"x": 620,
-						"y": 348,
+						"y": 349,
 						"w": 32,
 						"h": 26
 					}
@@ -739,7 +739,7 @@
 					},
 					"frame": {
 						"x": 656,
-						"y": 348,
+						"y": 349,
 						"w": 14,
 						"h": 31
 					}
@@ -760,7 +760,7 @@
 					},
 					"frame": {
 						"x": 618,
-						"y": 378,
+						"y": 379,
 						"w": 31,
 						"h": 30
 					}
@@ -781,7 +781,7 @@
 					},
 					"frame": {
 						"x": 653,
-						"y": 383,
+						"y": 384,
 						"w": 14,
 						"h": 31
 					}
