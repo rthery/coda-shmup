@@ -18,6 +18,8 @@ export default class Player extends Entity {
     private static readonly WING_TRAILS_SPEED_RATIO: number = 0.5;
     // The turret fires once it points this close to its target
     private static readonly TURRET_AIM_TOLERANCE: number = Phaser.Math.DegToRad(15);
+    // Random pitch, in cents, so rapid fire doesn't sound like a machine
+    private static readonly LASER_DETUNE: number = 150;
 
     private readonly _bulletData: BulletData = {
         scale: 1.8,
@@ -187,7 +189,9 @@ export default class Player extends Entity {
             && turret?.isAimedAt(targetRotation, Player.TURRET_AIM_TOLERANCE)) {
             this._shootDirection.setToPolar(turret.rotation);
             this.getComponent(Weapon)?.shoot(this, this._shootDirection, turret.getMuzzle(this._muzzle));
-            this.scene.sound.play('sfx_laser1');
+            turret.playShot(this._bulletData.fx.glowTints[0]);
+            this.scene.sound.play('sfx_laser1',
+                {detune: Phaser.Math.Between(-Player.LASER_DETUNE, Player.LASER_DETUNE)});
 
             this._lastShotTime = timeSinceLaunch;
         }
