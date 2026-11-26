@@ -2,7 +2,6 @@ import {GameObjects, Scene} from "phaser";
 import GameConstants from "../GameConstants.ts";
 import Player from "../entities/Player.ts";
 import type {UpgradeCategory, UpgradeData} from "../gameData/UpgradesData.ts";
-import Experience from "../components/Experience.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 import UiUtils, {type UiFrame} from "../utils/UiUtils.ts";
 import UiLayout from "../utils/UiLayout.ts";
@@ -47,6 +46,7 @@ export default class LevelUpScene extends Scene {
     };
 
     private _player: Player;
+    private _level: number;
     private _upgrades: UpgradeData[];
     private _cards: GameObjects.Container[];
     private _crosshair: GameObjects.Image;
@@ -63,8 +63,9 @@ export default class LevelUpScene extends Scene {
     }
 
     // noinspection JSUnusedGlobalSymbols
-    init(data: { player: Player }) {
+    init(data: { player: Player, level: number }) {
         this._player = data.player;
+        this._level = data.level;
         this._cards = [];
         this._selectedIndex = 0;
         this._previousMoveY = null;
@@ -93,8 +94,7 @@ export default class LevelUpScene extends Scene {
             blendMode: 'ADD',
             emitting: false
         }).explode(24);
-        const level: number = this._player.getComponent(Experience)?.level ?? 1;
-        const levelText = this.add.text(centerX, 530, `LEVEL ${level} REACHED`,
+        const levelText = this.add.text(centerX, 530, `LEVEL ${this._level} REACHED`,
             {fontSize: '36px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
         this.tweens.add({targets: levelText, alpha: {from: 0, to: 1}, y: {from: levelText.y + 20, to: levelText.y},
             delay: 150, duration: 250, ease: 'Quad.easeOut'});

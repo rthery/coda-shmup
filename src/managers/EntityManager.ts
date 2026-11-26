@@ -5,7 +5,7 @@ import Enemy from "../entities/Enemy.ts";
 import Player from "../entities/Player.ts";
 import XpGem from "../entities/XpGem.ts";
 import Pickup from "../entities/Pickup.ts";
-import Experience from "../components/Experience.ts";
+import type Team from "../Team.ts";
 import Thrusters from "../components/Thrusters.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
@@ -78,6 +78,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
         }).setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER_BULLETS - 1);
     }
 
+    private _team: Team;
     private _player: Player;
     private _playerBullets: Physics.Arcade.Group;
     private _enemies: Physics.Arcade.Group;
@@ -113,7 +114,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
         console.log("[EntityManager] Destroyed");
     }
 
-    public initAndSpawnPlayer(onIntroComplete: () => void): Player {
+    public initAndSpawnPlayer(team: Team, onIntroComplete: () => void): Player {
+        this._team = team;
         this._playerBullets = this.scene!.physics.add.group(
             this.bulletGroupConfig(EntityManager.ENTITIES_DEPTHS.PLAYER_BULLETS, this.createLaserTrailFX()));
         GroupUtils.populate(64, this._playerBullets);
@@ -121,6 +123,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this._player = new Player(this.scene!, 0, 0);
         this._player.setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER);
         this._player.init(this._playerBullets, this.scene!.gameInputManager.anyDeviceInput);
+        team.addPlayer(this._player);
         // Fly in from below the screen to the arena center
         const playerStartX: number = GameConstants.ARENA_WIDTH / 2;
         const playerEndY: number = GameConstants.ARENA_HEIGHT / 2;
@@ -282,14 +285,14 @@ export default class EntityManager extends Plugins.ScenePlugin {
             this.scene?.cameras.main.shake(100, 0.03);
         });
 
-        this.scene!.physics.add.overlap(this._player, this._xpGems, (player, gem) => {
+        this.scene!.physics.add.overlap(this._player, this._xpGems, (_player, gem) => {
             const xpGem = gem as XpGem;
             xpGem.disable();
             // Screen position, before the XP change, so the HUD can tie the two together
             const worldView = this.scene!.cameras.main.worldView;
             this.game!.events.emit(GameConstants.Events.XP_GEM_COLLECTED_EVENT,
                 xpGem.x - worldView.x, xpGem.y - worldView.y);
-            (player as Player).getComponent(Experience)?.add(xpGem.value);
+            this._team.experience.add(xpGem.value);
         });
 
         this.scene!.physics.add.overlap(this._player, this._pickups, (_player, pickup) => {

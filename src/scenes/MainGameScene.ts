@@ -7,6 +7,7 @@ import EntityManager from "../managers/EntityManager.ts";
 import CheatManager from "../managers/CheatManager.ts";
 import GameConstants from "../GameConstants.ts";
 import Experience from "../components/Experience.ts";
+import Team from "../Team.ts";
 import Movement from "../components/Movement.ts";
 import Player from "../entities/Player.ts";
 import DifficultyCurve from "../utils/DifficultyCurve.ts";
@@ -61,7 +62,8 @@ export default class MainGameScene extends Scene {
         this._background = this.add.tileSprite(0, 0, GameConstants.ARENA_WIDTH, GameConstants.ARENA_HEIGHT, 'bg')
             .setOrigin(0).setTileScale(2);
         this._planet = this.add.image(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2, 'planet').setScale(2.5);
-        this._difficulty = new DifficultyCurve(this.cache.json.get('difficulty') as DifficultyData);
+        const difficultyData = this.cache.json.get('difficulty') as DifficultyData;
+        this._difficulty = new DifficultyCurve(difficultyData);
 
         if (!this.entityManager) {
             console.error('EntityManager plugin not found');
@@ -69,11 +71,13 @@ export default class MainGameScene extends Scene {
 
         // Keep the camera still during the player intro, then follow the player
         this.cameras.main.centerOn(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2);
-        const player = this.entityManager.initAndSpawnPlayer(() => {
+        const team = new Team(difficultyData.xp);
+        this.game.events.emit(GameConstants.Events.TEAM_CREATED_EVENT, team);
+        const player = this.entityManager.initAndSpawnPlayer(team, () => {
             this.cameras.main.startFollow(player, true, 0.15, 0.15);
         });
         this.player = player;
-        this.cheatManager.init({player, jumpThreatLevel: step => this.jumpThreatLevel(step)});
+        this.cheatManager.init({team, jumpThreatLevel: step => this.jumpThreatLevel(step)});
         player.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
             // Hide the player and let its explosions play before showing the game over screen
             player.disableBody(true, true);
@@ -82,10 +86,10 @@ export default class MainGameScene extends Scene {
         }, this);
 
         // Freeze the game while the player picks an upgrade
-        player.getComponent(Experience)?.on(Experience.LEVEL_UP_EVENT, (level: number) => {
+        team.experience.on(Experience.LEVEL_UP_EVENT, (level: number) => {
             this.registry.set(RegistryConstants.Keys.PLAYER_LEVEL, level);
             this.scene.pause();
-            this.scene.launch(GameConstants.SceneKeys.LEVEL_UP, {player});
+            this.scene.launch(GameConstants.SceneKeys.LEVEL_UP, {player, level});
         }, this);
 
         // A hit breaks the combo

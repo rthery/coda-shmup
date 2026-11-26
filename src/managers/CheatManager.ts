@@ -1,10 +1,10 @@
 import {Input, Plugins, Scene} from "phaser";
 import Player from "../entities/Player.ts";
-import Experience from "../components/Experience.ts";
+import type Team from "../Team.ts";
 import type {UpgradeData} from "../gameData/UpgradesData.ts";
 
 export type CheatTargets = {
-    player: Player;
+    team: Team;
     jumpThreatLevel: (step: number) => void;
 }
 
@@ -56,13 +56,18 @@ export default class CheatManager extends Plugins.ScenePlugin {
             this._targets.jumpThreatLevel(-1);
     }
 
+    // Upgrade cheats act on player 1
+    private get player(): Player {
+        return this._targets!.team.players[0];
+    }
+
     private get upgrades(): UpgradeData[] {
         return this.scene!.cache.json.get('upgrades') as UpgradeData[];
     }
 
     // 1 to 9: a rank to the upgrade at that place in upgrades.json
     private upgrade(upgrade: UpgradeData | undefined) {
-        const player = this._targets!.player;
+        const player = this.player;
         if (!upgrade)
             return;
         if (!player.isUpgradeAvailable(upgrade)) {
@@ -74,7 +79,7 @@ export default class CheatManager extends Plugins.ScenePlugin {
     }
 
     private maxUpgrades() {
-        const player = this._targets!.player;
+        const player = this.player;
         this.upgrades.forEach(upgrade => {
             for (let i = 0; i < CheatManager.MAX_PICKS && player.isUpgradeAvailable(upgrade); i++)
                 player.applyUpgrade(upgrade);
@@ -83,9 +88,7 @@ export default class CheatManager extends Plugins.ScenePlugin {
 
     // The XP missing to reach the next level
     private levelUp() {
-        const experience = this._targets!.player.getComponent(Experience);
-        if (!experience)
-            return;
+        const experience = this._targets!.team.experience;
         experience.add(experience.xpToNextLevel - experience.xp);
         console.log("[Cheat] Level " + experience.level);
     }

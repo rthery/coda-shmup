@@ -7,14 +7,12 @@ import Movement from "../components/Movement.ts";
 import Weapon from "../components/Weapon.ts";
 import GameConstants from "../GameConstants.ts";
 import Invulnerability from "../components/Invulnerability.ts";
-import Experience from "../components/Experience.ts";
 import Thrusters from "../components/Thrusters.ts";
 import WingTrails from "../components/WingTrails.ts";
 import Turret from "../components/Turret.ts";
 import ShieldBubble from "../components/ShieldBubble.ts";
 import MagnetField from "../components/MagnetField.ts";
 import type {UpgradeData, UpgradeId, UpgradePreview} from "../gameData/UpgradesData.ts";
-import type {DifficultyData} from "../gameData/DifficultyData.ts";
 import Sfx from "../audio/Sfx.ts";
 import type PlayerInput from "../managers/PlayerInput.ts";
 
@@ -89,7 +87,6 @@ export default class Player extends Entity {
         this.addComponent(new Invulnerability(Player.INVULNERABILITY_DURATION, this));
         this.addComponent(new Movement());
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
-        this.addComponent(new Experience((this.scene.cache.json.get('difficulty') as DifficultyData).xp));
         this.addComponent(new Thrusters(this));
         this.addComponent(new WingTrails(this));
         this.addComponent(new Turret(this));

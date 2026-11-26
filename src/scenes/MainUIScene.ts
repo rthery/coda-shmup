@@ -2,6 +2,7 @@ import {GameObjects, Scenes, Scene} from "phaser";
 import Health from "../components/Health.ts";
 import Experience from "../components/Experience.ts";
 import Player from "../entities/Player.ts";
+import type Team from "../Team.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
 import UiUtils from "../utils/UiUtils.ts";
@@ -93,6 +94,7 @@ export default class MainUIScene extends Scene {
 
     // noinspection JSUnusedGlobalSymbols
     init() {
+        this.game.events.on(GameConstants.Events.TEAM_CREATED_EVENT, this.onTeamCreated, this);
         this.game.events.on(GameConstants.Events.PLAYER_SPAWNED_EVENT, this.onPlayerSpawned, this);
         this.game.events.on(GameConstants.Events.XP_GEM_COLLECTED_EVENT, this.onXpGemCollected, this);
         this.game.events.on(GameConstants.Events.LEVEL_UP_CLOSED_EVENT, this.onLevelUpClosed, this);
@@ -103,6 +105,7 @@ export default class MainUIScene extends Scene {
         this.game.events.on(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
 
         this.events.once(Scenes.Events.SHUTDOWN, () => {
+            this.game.events.off(GameConstants.Events.TEAM_CREATED_EVENT, this.onTeamCreated, this);
             this.game.events.off(GameConstants.Events.PLAYER_SPAWNED_EVENT, this.onPlayerSpawned, this);
             this.game.events.off(GameConstants.Events.XP_GEM_COLLECTED_EVENT, this.onXpGemCollected, this);
             this.game.events.off(GameConstants.Events.LEVEL_UP_CLOSED_EVENT, this.onLevelUpClosed, this);
@@ -344,13 +347,13 @@ export default class MainUIScene extends Scene {
                 this.updateLifeIcons(current, health.max, previous);
             }, this);
         }
+    }
 
-        const experience = player.getComponent(Experience);
-        if (experience) {
-            // This scene outlives a game restart: reset the bar from the new player
-            this.resetXpBar(experience.xp / experience.xpToNextLevel, experience.level);
-            experience.on(Experience.CHANGE_EVENT, this.onPlayerXpChanged, this);
-        }
+    private onTeamCreated(team: Team) {
+        const experience = team.experience;
+        // This scene outlives a game restart: reset the bar from the new team
+        this.resetXpBar(experience.xp / experience.xpToNextLevel, experience.level);
+        experience.on(Experience.CHANGE_EVENT, this.onPlayerXpChanged, this);
     }
 
     private createThreatBanner() {
