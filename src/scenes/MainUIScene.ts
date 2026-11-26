@@ -10,6 +10,7 @@ import DifficultyCurve from "../utils/DifficultyCurve.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 import Sfx from "../audio/Sfx.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
+import type Pickup from "../entities/Pickup.ts";
 
 export default class MainUIScene extends Scene {
     private static readonly MARGIN: number = 64;
@@ -23,6 +24,15 @@ export default class MainUIScene extends Scene {
     // The floating joystick: a ring where the thumb landed, and a knob following it up to the ring
     private static readonly JOYSTICK_RADIUS: number = 110;
     private static readonly JOYSTICK_KNOB_RADIUS: number = 44;
+    // Off-screen pickups: a badge on the screen edge, like the pause button, with the pickup inside and a chevron
+    // toward it. Kept below the HUD's top rows
+    private static readonly PICKUP_BADGE_TOP: number = 380;
+    private static readonly PICKUP_BADGE_MARGIN: number = 70;
+    private static readonly PICKUP_BADGE_RADIUS: number = 40;
+    private static readonly PICKUP_BADGE_ICON_SCALE: number = 1.1;
+    private static readonly PICKUP_CHEVRON_GAP: number = 10;
+    private static readonly PICKUP_CHEVRON_LENGTH: number = 14;
+    private static readonly PICKUP_CHEVRON_WIDTH: number = 22;
     private static readonly LIFE_ICON_SCALE: number = 2;
     private static readonly LIFE_ICON_SPACING: number = 12;
     // Smaller and tighter than the hull icons, so 3 hull points and 3 shield cells stay clear of the run clock
@@ -82,6 +92,9 @@ export default class MainUIScene extends Scene {
     private _joystick: GameObjects.Graphics;
     private readonly _joystickOrigin: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _joystickTip: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private _pickups: Phaser.Physics.Arcade.Group | null = null;
+    private readonly _pickupBadges: { badge: GameObjects.Container, icon: GameObjects.Image, chevron: GameObjects.Graphics }[] = [];
+    private readonly _pickupScreenPoint: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private _runTimeText: GameObjects.Text;
     private _difficulty: DifficultyCurve;
     private _threatLevel: number = 0;
@@ -127,6 +140,7 @@ export default class MainUIScene extends Scene {
         this.registry.events.on(RegistryConstants.Events.PLAYER_COMBO_PROGRESS_CHANGE, this.onComboProgressChanged, this);
         this.game.events.on(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
         this.game.events.on('input-type-changed', this.onInputTypeChanged, this);
+        this.game.events.on(GameConstants.Events.PICKUPS_CREATED_EVENT, this.onPickupsCreated, this);
 
         this.events.once(Scenes.Events.SHUTDOWN, () => {
             this.game.events.off(GameConstants.Events.PLAYER_SPAWNED_EVENT, this.onPlayerSpawned, this);
@@ -138,6 +152,7 @@ export default class MainUIScene extends Scene {
             this.registry.events.off(RegistryConstants.Events.PLAYER_COMBO_PROGRESS_CHANGE, this.onComboProgressChanged, this);
             this.game.events.off(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
             this.game.events.off('input-type-changed', this.onInputTypeChanged, this);
+            this.game.events.off(GameConstants.Events.PICKUPS_CREATED_EVENT, this.onPickupsCreated, this);
         }, this);
     }
 
@@ -262,6 +277,77 @@ export default class MainUIScene extends Scene {
             .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => this.gameInputManager.requestPause());
         this._pauseButton = this.add.container(0, MainUIScene.MARGIN + 26, [icon, hitZone]);
         this.onInputTypeChanged(this.gameInputManager.activeInputType);
+    }
+
+    private onPickupsCreated(pickups: Phaser.Physics.Arcade.Group) {
+        this._pickups = pickups;
+    }
+
+    private addPickupBadge() {
+        const radius: number = MainUIScene.PICKUP_BADGE_RADIUS;
+        const circle = this.add.graphics()
+            .fillStyle(0x000000, 0.35).fillCircle(0, 0, radius)
+            .lineStyle(3, 0xffffff, 0.4).strokeCircle(0, 0, radius);
+        const icon = this.add.image(0, 0, 'sprites', 'pickup_bomb').setScale(MainUIScene.PICKUP_BADGE_ICON_SCALE);
+        // Drawn pointing right, turned toward the pickup
+        const tipX: number = radius + MainUIScene.PICKUP_CHEVRON_GAP + MainUIScene.PICKUP_CHEVRON_LENGTH;
+        const baseX: number = radius + MainUIScene.PICKUP_CHEVRON_GAP;
+        const halfWidth: number = MainUIScene.PICKUP_CHEVRON_WIDTH / 2;
+        const chevron = this.add.graphics().fillStyle(0xffffff, 0.8)
+            .fillTriangle(tipX, 0, baseX, -halfWidth, baseX, halfWidth);
+        this._pickupBadges.push({badge: this.add.container(0, 0, [circle, icon]), icon, chevron});
+    }
+
+    // Pickups expire: a badge on the edge of the screen says where one dropped out of view
+    private updatePickupBadges() {
+        let shown: number = 0;
+        if (this._pickups && this.scene.isActive(GameConstants.SceneKeys.MAIN_GAME))
+            shown = this.placePickupBadges(this._pickups);
+        for (let i = shown; i < this._pickupBadges.length; i++) {
+            this._pickupBadges[i].badge.setVisible(false);
+            this._pickupBadges[i].chevron.setVisible(false);
+        }
+    }
+
+    // Returns how many badges it showed
+    private placePickupBadges(pickups: Phaser.Physics.Arcade.Group): number {
+        let shown: number = 0;
+        const gameCamera = this.scene.get(GameConstants.SceneKeys.MAIN_GAME).cameras.main;
+        const view = gameCamera.worldView;
+        const area = UiLayout.visibleArea(this);
+        const left: number = area.x + MainUIScene.PICKUP_BADGE_MARGIN;
+        const right: number = area.right - MainUIScene.PICKUP_BADGE_MARGIN;
+        const top: number = area.y + MainUIScene.PICKUP_BADGE_TOP;
+        const bottom: number = area.bottom - MainUIScene.PICKUP_BADGE_MARGIN;
+        const centerX: number = (left + right) / 2;
+        const centerY: number = (top + bottom) / 2;
+
+        pickups.getChildren().forEach(child => {
+            const pickup = child as Pickup;
+            if (!pickup.active || view.contains(pickup.x, pickup.y))
+                return;
+
+            // From the arena to the screen, then to this HUD's coordinates
+            this.cameras.main.getWorldPoint((pickup.x - view.x) * gameCamera.zoom, (pickup.y - view.y) * gameCamera.zoom,
+                this._pickupScreenPoint);
+            const directionX: number = this._pickupScreenPoint.x - centerX;
+            const directionY: number = this._pickupScreenPoint.y - centerY;
+            // Along that direction, up to the first edge of the badges' area
+            const reach: number = Math.min(
+                directionX !== 0 ? (right - centerX) / Math.abs(directionX) : Infinity,
+                directionY !== 0 ? (bottom - centerY) / Math.abs(directionY) : Infinity);
+            const x: number = centerX + directionX * reach;
+            const y: number = centerY + directionY * reach;
+
+            if (shown === this._pickupBadges.length)
+                this.addPickupBadge();
+            const {badge, icon, chevron} = this._pickupBadges[shown++];
+            // Blinks with the pickup as it is about to vanish
+            badge.setPosition(x, y).setAlpha(pickup.alpha).setVisible(true);
+            icon.setFrame(pickup.frame.name);
+            chevron.setPosition(x, y).setRotation(Math.atan2(directionY, directionX)).setAlpha(pickup.alpha).setVisible(true);
+        });
+        return shown;
     }
 
     private onInputTypeChanged(type: InputType) {
@@ -517,6 +603,7 @@ export default class MainUIScene extends Scene {
     update(_timeSinceLaunch: number, deltaTime: number) {
         this.holdThreatBannerBehindScreens();
         this.updateJoystick();
+        this.updatePickupBadges();
 
         // The tape strips run in opposite directions while the banner shows
         if (this._isThreatBannerOnHold || this._threatBanner.alpha <= 0)

@@ -233,6 +233,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
             }
         });
         GroupUtils.populate(EntityManager.PICKUP_POOL_SIZE, this._pickups);
+        this.game!.events.emit(GameConstants.Events.PICKUPS_CREATED_EVENT, this._pickups);
 
         return this._pickups;
     }

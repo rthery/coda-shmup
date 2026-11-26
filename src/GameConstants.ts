@@ -1,6 +1,7 @@
 export default class GameConstants {
     public static readonly Events = Object.freeze({
         PLAYER_SPAWNED_EVENT: "playerSpawned",
+        PICKUPS_CREATED_EVENT: "pickupsCreated",
         ENEMY_SPAWNED_EVENT: "enemySpawned",
         ENEMY_KILLED_EVENT: "enemyKilled",
         XP_GEM_COLLECTED_EVENT: "xpGemCollected",
