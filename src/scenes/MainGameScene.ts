@@ -4,6 +4,7 @@ import RegistryConstants from "../RegistryConstants.ts";
 import SaveManager from "../managers/SaveManager.ts";
 import SaveConstants from "../SaveConstants.ts";
 import EntityManager from "../managers/EntityManager.ts";
+import CheatManager from "../managers/CheatManager.ts";
 import GameConstants from "../GameConstants.ts";
 import Experience from "../components/Experience.ts";
 import Movement from "../components/Movement.ts";
@@ -32,6 +33,7 @@ export default class MainGameScene extends Scene {
 
     private saveManager: SaveManager;
     private entityManager: EntityManager;
+    private cheatManager: CheatManager;
     private _killStreak: number = 0;
     private _runTime: number = 0; // ms
     private _lastHitStopTime: number = -Infinity; // ms, real time
@@ -61,17 +63,6 @@ export default class MainGameScene extends Scene {
         this._planet = this.add.image(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2, 'planet').setScale(2.5);
         this._difficulty = new DifficultyCurve(this.cache.json.get('difficulty') as DifficultyData);
 
-        // Dev cheats: + (or =) and - jump the run clock to the next or previous threat level.
-        // Matched on the typed character, key codes differ between keyboard layouts (AZERTY on a Mac)
-        if (import.meta.env.DEV && this.input.keyboard) {
-            this.input.keyboard.on(Phaser.Input.Keyboard.Events.ANY_KEY_DOWN, (event: KeyboardEvent) => {
-                if (event.key === '+' || event.key === '=')
-                    this.jumpThreatLevel(1);
-                else if (event.key === '-')
-                    this.jumpThreatLevel(-1);
-            });
-        }
-
         if (!this.entityManager) {
             console.error('EntityManager plugin not found');
         }
@@ -82,6 +73,7 @@ export default class MainGameScene extends Scene {
             this.cameras.main.startFollow(player, true, 0.15, 0.15);
         });
         this.player = player;
+        this.cheatManager.init({player, jumpThreatLevel: step => this.jumpThreatLevel(step)});
         player.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
             // Hide the player and let its explosions play before showing the game over screen
             player.disableBody(true, true);
@@ -148,6 +140,7 @@ export default class MainGameScene extends Scene {
         this.setKillStreak(this._killStreak + 1);
     }
 
+    // Dev cheat: the run clock jumps to the next or previous threat level
     private jumpThreatLevel(step: number) {
         const level: number = Phaser.Math.Clamp(this._difficulty.threatLevelAt(this._runTime / 1000) + step,
             0, this._difficulty.maxThreatLevel);

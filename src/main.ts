@@ -6,6 +6,7 @@ import MainGameScene from './scenes/MainGameScene.ts';
 import MainUIScene from "./scenes/MainUIScene.ts";
 import PauseScene from "./scenes/PauseScene.ts";
 import EntityManager from "./managers/EntityManager.ts";
+import CheatManager from "./managers/CheatManager.ts";
 import GameInputManager from "./managers/GameInputManager.ts";
 import SaveManager from "./managers/SaveManager.ts";
 import GameConstants from "./GameConstants.ts";
@@ -53,7 +54,8 @@ const config: Types.Core.GameConfig = {
             {key: SaveManager.PLUGIN_KEY, plugin: SaveManager, mapping: SaveManager.MAPPING_NAME}
         ],
         scene: [
-            {key: EntityManager.PLUGIN_KEY, plugin: EntityManager, mapping: EntityManager.MAPPING_NAME}
+            {key: EntityManager.PLUGIN_KEY, plugin: EntityManager, mapping: EntityManager.MAPPING_NAME},
+            {key: CheatManager.PLUGIN_KEY, plugin: CheatManager, mapping: CheatManager.MAPPING_NAME}
         ]
     },
     // fps: { forceSetTimeOut: true, target: 120 },

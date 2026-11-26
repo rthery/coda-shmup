@@ -1,4 +1,4 @@
-import {Input, Scene} from "phaser";
+import {Scene} from "phaser";
 import {PlayerShipData, PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import type {BulletData} from "../gameData/BulletData.ts";
 import Entity from './Entity.ts';
@@ -39,10 +39,8 @@ export default class Player extends Entity {
     private static readonly LANCE_LENGTH_SCALE: number = 2.2;
     // Random pitch, in cents, so rapid fire doesn't sound like a machine
     private static readonly LASER_DETUNE: number = 150;
-    // Dev cheat, kept across restarts: F toggles the player's firing
-    private static _isFiringDisabled: boolean = false;
-    // Safety net for M, in case an upgrade never stops being available
-    private static readonly CHEAT_MAX_PICKS: number = 20;
+    // Dev cheat, kept across restarts
+    public static isFiringDisabled: boolean = false;
 
     private readonly _bulletData: BulletData = {
         scale: 1.8,
@@ -83,45 +81,6 @@ export default class Player extends Entity {
 
     constructor(scene: Scene, x: number, y: number) {
         super(scene, x, y, 'sprites');
-
-        if (import.meta.env.DEV && this.scene.input.keyboard) {
-            this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.F).on('down', () => {
-                Player._isFiringDisabled = !Player._isFiringDisabled;
-                console.log("[Cheat] Player firing " + (Player._isFiringDisabled ? "off" : "on"));
-            });
-            // L grants the XP missing to reach the next level
-            this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.L).on('down', () => {
-                const experience = this.getComponent(Experience);
-                if (!experience)
-                    return;
-                experience.add(experience.xpToNextLevel - experience.xp);
-                console.log("[Cheat] Level " + experience.level);
-            });
-            // 1 to 9 add a rank to the upgrade at that place in upgrades.json, M maxes them all.
-            // Digits by physical key, so AZERTY needs no Shift; M by character, it moves between layouts
-            this.scene.input.keyboard.on(Input.Keyboard.Events.ANY_KEY_DOWN, (event: KeyboardEvent) => {
-                const upgrades = this.scene.cache.json.get('upgrades') as UpgradeData[];
-                const digit: RegExpMatchArray | null = event.code.match(/^Digit([1-9])$/);
-                if (digit)
-                    this.cheatUpgrade(upgrades[Number(digit[1]) - 1]);
-                else if (event.key.toLowerCase() === 'm')
-                    upgrades.forEach(upgrade => {
-                        for (let i = 0; i < Player.CHEAT_MAX_PICKS && this.isUpgradeAvailable(upgrade); i++)
-                            this.applyUpgrade(upgrade);
-                    });
-            });
-        }
-    }
-
-    private cheatUpgrade(upgrade: UpgradeData | undefined) {
-        if (!upgrade)
-            return;
-        if (!this.isUpgradeAvailable(upgrade)) {
-            console.log("[Cheat] " + upgrade.title + " not available");
-            return;
-        }
-        this.applyUpgrade(upgrade);
-        console.log("[Cheat] " + upgrade.title + " rank " + this.getUpgradeRank(upgrade.id));
     }
 
     public init(bulletsGroup: Phaser.Physics.Arcade.Group, input: PlayerInput) {
@@ -370,7 +329,7 @@ export default class Player extends Entity {
         turret?.update(deltaTime);
         this.getComponent(ShieldBubble)?.update();
         this.getComponent(MagnetField)?.update(this._magnetRadius, this._xpGems, deltaTime);
-        if (!Player._isFiringDisabled && targetRotation !== null && isInRange && timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000
+        if (!Player.isFiringDisabled && targetRotation !== null && isInRange && timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000
             && turret?.isAimedAt(targetRotation, Player.TURRET_AIM_TOLERANCE)) {
             this._shootDirection.setToPolar(turret.rotation);
             this.getComponent(Weapon)?.shoot(this, this._shootDirection, turret.getMuzzle(this._muzzle));
