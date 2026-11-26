@@ -74,12 +74,12 @@ export default class XpGem extends Physics.Arcade.Sprite {
 
         // Once in a player's magnet radius, fly to that player faster and faster
         if (!this._attracted) {
-            this._target = this._team.players.find(player => player.active
+            this._target = this._team.players.find(player => player.isInFight
                 && Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < player.magnetRadius) ?? null;
             this._attracted = this._target !== null;
         }
         // Its player is gone: the nearest one takes it
-        if (this._attracted && !this._target?.active)
+        if (this._attracted && !this._target?.isInFight)
             this._target = this._team.nearestPlayer(this.x, this.y);
 
         if (this._attracted && this._target) {

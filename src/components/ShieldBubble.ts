@@ -95,6 +95,14 @@ export default class ShieldBubble implements IComponent {
         this._sheen.setVisible(false);
     }
 
+    // The bubble itself shows again with the next setCells
+    public show() {
+        if (this.enabled)
+            return;
+        this.enabled = true;
+        this.scheduleSweep();
+    }
+
     public update() {
         const scene = this._ship.scene;
         this._image.setPosition(this._ship.x, this._ship.y).setRotation(this._ship.rotation)

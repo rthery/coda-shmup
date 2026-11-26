@@ -148,7 +148,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
             });
 
             // The game over screen waits for this explosion
-            player.getComponent(Health)?.once(Health.DEATH_START_EVENT, () => {
+            player.getComponent(Health)?.on(Health.DEATH_START_EVENT, () => {
                 this.spawnExplosion(player.x, player.y, EntityManager.PLAYER_EXPLOSION_SIZE);
             });
         });
@@ -497,7 +497,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private rollPickupDrop(x: number, y: number) {
         const runTime: number = this.scene!.registry.get(RegistryConstants.Keys.RUN_TIME) ?? 0;
         for (const data of this._pickupsData) {
-            if (data.id === 'repair' && !this._players.some(player => player.active && player.isHullDamaged))
+            if (data.id === 'repair' && !this._players.some(player => player.isInFight && player.isHullDamaged))
                 continue;
             if (runTime - (this._lastPickupDropTimes.get(data.id) ?? 0) < data.cooldown
                 || Math.random() >= data.dropChance)
@@ -529,7 +529,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
                 break;
             case 'repair':
                 // Every player still in the fight
-                this._players.filter(player => player.active).forEach(player => {
+                this._players.filter(player => player.isInFight).forEach(player => {
                     player.repair(EntityManager.REPAIR_HULL_POINTS);
                     this.spawnRing(player.x, player.y, tint, EntityManager.REPAIR_RING_RADIUS,
                         EntityManager.REPAIR_RING_DURATION, EntityManager.PICKUP_RING_WIDTH);

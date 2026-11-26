@@ -19,6 +19,12 @@ import type PlayerInput from "../managers/PlayerInput.ts";
 export default class Player extends Entity {
     // Lives the ship starts with: shield cells come on top and are lost first
     public static readonly HULL_POINTS: number = 3;
+    private static readonly SHIP_ID: number = 1;
+    // Coop: the pod a destroyed ship ejects, and its respawn countdown above it
+    private static readonly POD_FRAME: string = 'playerLife3_blue';
+    private static readonly POD_SCALE: number = 1.5;
+    private static readonly POD_LABEL_OFFSET: number = 70;
+    private static readonly RESPAWN_INVULNERABILITY_DURATION: number = 2000; // ms
     private static readonly WING_TRAILS_SPEED_RATIO: number = 0.5;
     // The turret fires once it points this close to its target
     private static readonly TURRET_AIM_TOLERANCE: number = Phaser.Math.DegToRad(15);
@@ -74,6 +80,19 @@ export default class Player extends Entity {
     private _input: PlayerInput;
     private readonly _leashBounds: Phaser.Geom.Rectangle = new Phaser.Geom.Rectangle();
     private _leash: Phaser.Geom.Rectangle | null = null;
+    private _isDown: boolean = false;
+    private _respawnTimer: Phaser.Time.TimerEvent | null = null;
+    private _podLabel: Phaser.GameObjects.Text | null = null;
+
+    // Coop: destroyed, steering its pod until the ship respawns
+    public get isDown(): boolean {
+        return this._isDown;
+    }
+
+    // Can shoot, be hit, pull stars and be chased
+    public get isInFight(): boolean {
+        return this.active && !this._isDown;
+    }
 
     public get magnetRadius(): number {
         return this._magnetRadius;
@@ -98,7 +117,7 @@ export default class Player extends Entity {
             this.updateShieldBubble();
             this.playHealthSound(current, previous);
         });
-        this.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
+        this.getComponent(Health)?.on(Health.DEATH_EVENT, () => {
             this.getComponent(Thrusters)?.hide();
             this.getComponent(WingTrails)?.hide();
             this.getComponent(Turret)?.hide();
@@ -108,7 +127,7 @@ export default class Player extends Entity {
 
         this.angle = -90;
 
-        this.selectPlayerShip(1);
+        this.selectPlayerShip(Player.SHIP_ID);
 
         this._rateOfFire = 0.5;
         this._lastShotTime = 0;
@@ -121,7 +140,7 @@ export default class Player extends Entity {
 
             this.scene.time.delayedCall(50, () => {
                 // A dead player stays disabled
-                if (this.active)
+                if (this.isInFight)
                     this.arcadeBody.setEnable(true);
             });
         });
@@ -314,6 +333,11 @@ export default class Player extends Entity {
         this.x = clampedX;
         this.y = clampedY;
 
+        if (this._isDown) {
+            this.updatePodLabel();
+            return;
+        }
+
         const speedRatio: number = movement && movement.speed > 0 ? movement.velocity.length() / movement.speed : 0;
         this.getComponent(Thrusters)?.update(this._moveDirection.lengthSq() > 0, speedRatio, deltaTime);
         this.getComponent(WingTrails)?.update(speedRatio > Player.WING_TRAILS_SPEED_RATIO);
@@ -341,6 +365,50 @@ export default class Player extends Entity {
 
             this._lastShotTime = timeSinceLaunch;
         }
+    }
+
+    // Coop: a destroyed ship ejects a pod, that can't shoot nor be hit, and comes back after the delay
+    public eject(respawnDelay: number) {
+        this._isDown = true;
+        this.arcadeBody.setEnable(false);
+        this.clearTint().setTexture('sprites', Player.POD_FRAME).setScale(Player.POD_SCALE);
+        this._podLabel ??= this.scene.add.text(0, 0, '', {fontSize: '40px', color: '#fff', fontFamily: 'future',
+            stroke: '#0a1a33', strokeThickness: 6}).setOrigin(0.5).setDepth(this.depth + 1);
+        this._podLabel.setVisible(true);
+        this._respawnTimer = this.scene.time.delayedCall(respawnDelay, this.respawn, [], this);
+        this.updatePodLabel();
+    }
+
+    // Back in the fight where the pod is, repaired, upgrades kept
+    private respawn() {
+        this._isDown = false;
+        this._respawnTimer = null;
+        this._podLabel?.setVisible(false);
+        this.setScale(1);
+        this.selectPlayerShip(Player.SHIP_ID);
+        this.getComponent(Thrusters)?.show();
+        this.getComponent(WingTrails)?.show();
+        this.getComponent(Turret)?.show();
+        this.getComponent(ShieldBubble)?.show();
+        this.getComponent(MagnetField)?.show();
+        const health = this.getComponent(Health);
+        health?.heal(health.max);
+        this.arcadeBody.setEnable(true);
+        this.getComponent(Invulnerability)?.activate(Player.RESPAWN_INVULNERABILITY_DURATION);
+        Sfx.play(this.scene, 'shieldUp');
+    }
+
+    // The team is wiped out: the pod goes away with the run
+    public removePod() {
+        this._respawnTimer?.remove();
+        this._respawnTimer = null;
+        this._podLabel?.setVisible(false);
+        this.disableBody(true, true);
+    }
+
+    private updatePodLabel() {
+        const remaining: number = this._respawnTimer?.getRemaining() ?? 0;
+        this._podLabel?.setPosition(this.x, this.y - Player.POD_LABEL_OFFSET).setText(Math.ceil(remaining / 1000).toString());
     }
 
     // Coop: where the ship can go without leaving its teammates' screen, null for anywhere

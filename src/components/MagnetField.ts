@@ -40,6 +40,10 @@ export default class MagnetField implements IComponent {
         this._graphics.clear();
     }
 
+    public show() {
+        this.enabled = true;
+    }
+
     public update(radius: number, gems: Physics.Arcade.Group | null, deltaTime: number) {
         this._graphics.clear();
         if (!this.enabled || this._level <= 0)

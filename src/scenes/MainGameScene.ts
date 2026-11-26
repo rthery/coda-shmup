@@ -34,6 +34,7 @@ export default class MainGameScene extends Scene {
     private static readonly MAX_THREAT_PLANET_TINT: number = 0xffb0a0;
     // Coop: ships stay this far inside the screen's edges, so they can't lose each other
     private static readonly LEASH_MARGIN: number = 160;
+    private static readonly RESPAWN_DELAY: number = 10000; // ms
 
     private saveManager: SaveManager;
     private entityManager: EntityManager;
@@ -125,11 +126,19 @@ export default class MainGameScene extends Scene {
     }
 
     private initPlayer(player: Player) {
-        player.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
-            // Hide the player. Once no player is left, let the explosions play before showing the game over screen
-            player.disableBody(true, true);
-            if (this._team.players.some(teammate => teammate.active))
+        player.getComponent(Health)?.on(Health.DEATH_EVENT, () => {
+            // A teammate still fights: eject a pod until the ship respawns
+            if (this._team.players.some(teammate => teammate !== player && teammate.isInFight)) {
+                player.eject(MainGameScene.RESPAWN_DELAY);
                 return;
+            }
+
+            // Every ship is down: let the explosions play before showing the game over screen
+            player.disableBody(true, true);
+            this._team.players.forEach(teammate => {
+                if (teammate.isDown)
+                    teammate.removePod();
+            });
             this.playPlayerDeath(player.x, player.y);
             this.time.delayedCall(MainGameScene.DEATH_SEQUENCE_DURATION, this.endGame, [], this);
         }, this);

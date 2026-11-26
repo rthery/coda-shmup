@@ -24,7 +24,7 @@ export default class Team {
         let nearest: Player | null = null;
         let nearestDistanceSq: number = Infinity;
         for (const player of this._players) {
-            if (!player.active)
+            if (!player.isInFight)
                 continue;
             const distanceSq: number = Phaser.Math.Distance.Squared(x, y, player.x, player.y);
             if (distanceSq < nearestDistanceSq) {

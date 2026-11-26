@@ -136,6 +136,11 @@ export default class Thrusters implements IComponent {
         this.enabled = false;
     }
 
+    // The flames show again on the next update
+    public show() {
+        this.enabled = true;
+    }
+
     // speedRatio: current speed / max speed
     public update(hasInput: boolean, speedRatio: number, deltaTime: number) {
         if (!this.enabled || this._flames.length == 0)

@@ -46,6 +46,10 @@ export default class WingTrails implements IComponent {
         this.enabled = false;
     }
 
+    public show() {
+        this.enabled = true;
+    }
+
     public update(isOn: boolean) {
         if (!this.enabled)
             return;

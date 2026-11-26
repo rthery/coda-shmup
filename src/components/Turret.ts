@@ -195,6 +195,13 @@ export default class Turret implements IComponent {
         this._guide.setVisible(false);
     }
 
+    // The flash and the speed ring show with the next shots
+    public show() {
+        this._image.setVisible(true);
+        this._heatGlow.setVisible(true);
+        this._guide.setVisible(true);
+    }
+
     public update(deltaTime: number) {
         if (this._targetRotation !== null) {
             this._timeWithoutTarget = 0;
