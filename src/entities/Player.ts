@@ -208,7 +208,8 @@ export default class Player extends Entity {
                 break;
             case 'moveSpeed':
                 this._moveSpeedMultiplier *= upgrade.value;
-                this.getComponent(Thrusters)?.upgrade();
+                this.getComponent(Thrusters)?.upgrade(
+                    upgrade.maxRank ? this.getUpgradeRank(upgrade.id) / upgrade.maxRank : 1);
                 this.getComponent(Movement)?.setSpeed(this._playerShipData.movementSpeed * this._moveSpeedMultiplier);
                 break;
             case 'shieldCell':

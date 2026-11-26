@@ -42,11 +42,12 @@ export default class Thrusters implements IComponent {
         [ThrustState.CRUISING]: {length: 1, isBoost: false, duration: 200, ease: 'Sine.easeInOut'},
         [ThrustState.BRAKING]: {length: 0.2, isBoost: false, duration: 100, ease: 'Quad.easeOut'},
     };
-    // Blue at first, orange once the thrusters are upgraded
-    private static readonly FRAMES = {
-        cold: {normal: 'fire11', boost: 'fire15'},
-        warm: {normal: 'fire13', boost: 'fire16'},
-    };
+    // Grey flames, tinted by heat: blue, then yellow, then hot orange as the thrusters are upgraded
+    private static readonly FRAMES = {normal: 'fireNeutral', boost: 'fireNeutralBoost'};
+    // Through white between blue and yellow: a straight blend would pass through a dull green
+    private static readonly HEAT_COLORS: number[] = [0x5ab8ff, 0xeef6ff, 0xffd63c, 0xff6e14];
+    // The engine end stays whiter, like a hot core
+    private static readonly CORE_WHITENESS: number = 0.6;
     private static readonly SPEED_RATIO_THRESHOLD: number = 0.05;
     private static readonly TURN_RATE_THRESHOLD: number = 0.0005; // rad/ms
     private static readonly GIMBAL_ANGLE: number = Phaser.Math.DegToRad(25);
@@ -65,6 +66,7 @@ export default class Thrusters implements IComponent {
     private _boost: boolean = false;
     private _flaring: boolean = false;
     private _upgradeCount: number = 0;
+    private _heat: number = 0;
     // Tweened: grows a little with the first thrusters upgrades
     private readonly _power = {value: 1};
     private readonly _offset: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
@@ -84,8 +86,9 @@ export default class Thrusters implements IComponent {
 
         this._flames = thrusters.map(data => {
             // fire frames point down: origin on the wide base, at the engine
-            const image = this._ship.scene.add.image(0, 0, 'sprites', Thrusters.FRAMES.cold.normal)
+            const image = this._ship.scene.add.image(0, 0, 'sprites', Thrusters.FRAMES.normal)
                 .setOrigin(0.5, 0).setDepth(this._ship.depth - 1);
+            this.applyHeat(image);
             const flame: Flame = {image, data, length: 0, turnFactor: 1, gimbal: 0, flicker: 1};
 
             flame.flickerTween = this._ship.scene.tweens.add({
@@ -110,9 +113,12 @@ export default class Thrusters implements IComponent {
         this._boost = boost;
     }
 
-    // Warmer and slightly bigger flames for good, with a short full-thrust flare to show it
-    public upgrade() {
+    // Hotter and slightly bigger flames for good, with a short full-thrust flare to show it.
+    // heat: 0 to 1, from no upgrade to the max rank
+    public upgrade(heat: number) {
         this._upgradeCount++;
+        this._heat = Phaser.Math.Clamp(heat, 0, 1);
+        this._flames.forEach(flame => this.applyHeat(flame.image));
 
         this._ship.scene.tweens.add({
             targets: this._power,
@@ -180,8 +186,22 @@ export default class Thrusters implements IComponent {
     }
 
     private getFrame(isBoost: boolean): string {
-        const frames = this._upgradeCount > 0 ? Thrusters.FRAMES.warm : Thrusters.FRAMES.cold;
-        return isBoost ? frames.boost : frames.normal;
+        return isBoost ? Thrusters.FRAMES.boost : Thrusters.FRAMES.normal;
+    }
+
+    private applyHeat(image: GameObjects.Image) {
+        const colors: number[] = Thrusters.HEAT_COLORS;
+        const position: number = this._heat * (colors.length - 1);
+        const index: number = Math.min(Math.floor(position), colors.length - 2);
+        const color = Phaser.Display.Color.Interpolate.ColorWithColor(
+            Phaser.Display.Color.ValueToColor(colors[index]), Phaser.Display.Color.ValueToColor(colors[index + 1]),
+            100, Math.round((position - index) * 100));
+        const whiteness: number = Thrusters.CORE_WHITENESS;
+        const body: number = Phaser.Display.Color.GetColor(color.r, color.g, color.b);
+        const top: number = Phaser.Display.Color.GetColor(
+            color.r + (255 - color.r) * whiteness, color.g + (255 - color.g) * whiteness, color.b + (255 - color.b) * whiteness);
+        // Frames point down: the top is the engine end
+        image.setTint(top, top, body, body);
     }
 
     private setTurnDirection(turnDirection: number) {
