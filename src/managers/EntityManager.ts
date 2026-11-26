@@ -37,16 +37,31 @@ export default class EntityManager extends Plugins.ScenePlugin {
     }
 
     // Group.setDepth only reaches the children already created: each child gets its depth when created instead
-    private bulletGroupConfig(depth: number) {
+    private bulletGroupConfig(depth: number, trailFX: GameObjects.Particles.ParticleEmitter | null = null) {
         return {
             classType: Bullet,
             maxSize: 256,
             runChildUpdate: true,
             createCallback: (bullet: GameObjects.GameObject) => {
-                (bullet as Bullet).init();
+                (bullet as Bullet).init(trailFX);
                 (bullet as Bullet).setDepth(depth);
             }
         };
+    }
+
+    // FAST LASERS: cyan dots behind the player's bolts, created before the bullets that use them
+    private createLaserTrailFX(): GameObjects.Particles.ParticleEmitter {
+        return this.scene!.add.particles(0, 0, 'shapes', {
+            maxParticles: 2000,
+            frame: 'circle_05',
+            speed: 0,
+            scale: {start: 0.3, end: 0},
+            alpha: {start: 0.7, end: 0},
+            tint: 0x00ccff,
+            blendMode: 'ADD',
+            lifespan: 100,
+            emitting: false
+        }).setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER_BULLETS - 1);
     }
 
     private _player: Player;
@@ -60,6 +75,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private _difficulty: DifficultyCurve;
     private _explosionFireFX: GameObjects.Particles.ParticleEmitter;
     private _damageNumbers: GameObjects.Group;
+    private _pierceAfterimages: GameObjects.Group;
     private _explosionSmokeFX: GameObjects.Particles.ParticleEmitter;
     private _laserFlashFX: GameObjects.Particles.ParticleEmitter;
     private _laserSparksFX: GameObjects.Particles.ParticleEmitter;
@@ -81,7 +97,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
     public initAndSpawnPlayer(onIntroComplete: () => void): Player {
         this._playerBullets = this.scene!.physics.add.group(
-            this.bulletGroupConfig(EntityManager.ENTITIES_DEPTHS.PLAYER_BULLETS));
+            this.bulletGroupConfig(EntityManager.ENTITIES_DEPTHS.PLAYER_BULLETS, this.createLaserTrailFX()));
         GroupUtils.populate(64, this._playerBullets);
 
         this._player = new Player(this.scene!, 0, 0);
@@ -172,6 +188,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
             }
         });
         GroupUtils.populate(128, this._xpGems);
+        this._player.setXpGems(this._xpGems);
 
         console.log("[EntityManager] XP gems initialized");
 
@@ -190,7 +207,9 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
             const bulletVelocity = (bullet as Bullet).body!.velocity;
             (enemy as Enemy).playHit(bulletVelocity.x, bulletVelocity.y);
-            if (!(bullet as Bullet).pierce())
+            if ((bullet as Bullet).pierce())
+                this.spawnPierceAfterimages(bullet as Bullet);
+            else
                 (bullet as Bullet).disable();
 
             const damage: number = (bullet as Bullet).bulletData.damage;
@@ -236,6 +255,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
     }
 
     public initParticleEmitters() {
+        this._pierceAfterimages = this.scene!.add.group({classType: GameObjects.Image});
         this._damageNumbers = this.scene!.add.group({
             classType: GameObjects.Text,
             createCallback: (text) => {
@@ -360,6 +380,25 @@ export default class EntityManager extends Plugins.ScenePlugin {
     public spawnExplosion(x: number, y: number, size: number = 1) {
         this._explosionFireFX.explode(Math.round(8 * size), x, y);
         this._explosionSmokeFX.explode(Math.round(12 * size), x, y);
+    }
+
+    // PIERCING: fading copies of the bolt trail behind it as it goes through an enemy
+    private spawnPierceAfterimages(bullet: Bullet) {
+        const direction = bullet.body!.velocity.clone().normalize();
+        [{distance: 24, alpha: 0.5}, {distance: 48, alpha: 0.25}].forEach(afterimage => {
+            const image: GameObjects.Image = this._pierceAfterimages.get(
+                bullet.x - direction.x * afterimage.distance, bullet.y - direction.y * afterimage.distance);
+            image.setTexture('sprites', bullet.frame.name).setActive(true).setVisible(true)
+                .setOrigin(1, 0.5).setRotation(bullet.rotation).setScale(bullet.scaleX, bullet.scaleY)
+                .setAlpha(afterimage.alpha).setBlendMode(Phaser.BlendModes.ADD)
+                .setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER_BULLETS - 1);
+            this.scene!.tweens.add({
+                targets: image,
+                alpha: 0,
+                duration: 200,
+                onComplete: () => this._pierceAfterimages.killAndHide(image)
+            });
+        });
     }
 
     // HUD-like readout that rises and fades above the enemy: cyan, gold on the killing blow

@@ -12,6 +12,7 @@ import Thrusters from "../components/Thrusters.ts";
 import WingTrails from "../components/WingTrails.ts";
 import Turret from "../components/Turret.ts";
 import ShieldBubble from "../components/ShieldBubble.ts";
+import MagnetField from "../components/MagnetField.ts";
 import type {UpgradeData, UpgradeId, UpgradePreview} from "../gameData/UpgradesData.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 
@@ -30,6 +31,10 @@ export default class Player extends Entity {
         {fromRank: 3, texture: 'laserBlue12', scale: 2.1, offsetX: 52, offsetY: 1.5, impactSize: 1.8},
         {fromRank: 5, texture: 'laserBlue16', scale: 2.2, offsetX: 49, offsetY: 1.5, impactSize: 2.5},
     ];
+    // FAST LASERS: trail dot lifespan per rank
+    private static readonly TRAIL_LIFESPAN_PER_RANK: number = 40; // ms
+    // PIERCING at the max rank: the bolt stretches into a lance
+    private static readonly LANCE_LENGTH_SCALE: number = 2.2;
     // Random pitch, in cents, so rapid fire doesn't sound like a machine
     private static readonly LASER_DETUNE: number = 150;
     // Dev cheat, kept across restarts: F toggles the player's firing
@@ -63,6 +68,7 @@ export default class Player extends Entity {
     private readonly _muzzle: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _upgradeRanks: Map<UpgradeId, number> = new Map();
     private _targets: Phaser.Physics.Arcade.Group;
+    private _xpGems: Phaser.Physics.Arcade.Group | null = null;
     private _magnetRadius: number = 250;
     private _moveSpeedMultiplier: number = 1;
 
@@ -99,12 +105,14 @@ export default class Player extends Entity {
         this.addComponent(new WingTrails(this));
         this.addComponent(new Turret(this));
         this.addComponent(new ShieldBubble(this));
+        this.addComponent(new MagnetField(this));
         this.getComponent(Health)?.on(Health.CHANGE_EVENT, () => this.updateShieldBubble());
         this.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
             this.getComponent(Thrusters)?.hide();
             this.getComponent(WingTrails)?.hide();
             this.getComponent(Turret)?.hide();
             this.getComponent(ShieldBubble)?.hide();
+            this.getComponent(MagnetField)?.hide();
         });
 
         this.angle = -90;
@@ -198,6 +206,16 @@ export default class Player extends Entity {
                 break;
             case 'range':
                 this.getComponent(Turret)?.setAimGuide(rank / maxRank);
+                break;
+            case 'bulletSpeed':
+                this._bulletData.trailLifespan = rank * Player.TRAIL_LIFESPAN_PER_RANK;
+                this.getComponent(Turret)?.setSpeedRing(rank >= maxRank);
+                break;
+            case 'magnet':
+                this.getComponent(MagnetField)?.setLevel(rank / maxRank);
+                break;
+            case 'pierce':
+                this._bulletData.lengthScale = rank >= maxRank ? Player.LANCE_LENGTH_SCALE : 1;
                 break;
             case 'damage': {
                 const look = Player.HEAVY_LASER_LOOKS.filter(look => rank >= look.fromRank).pop()!;
@@ -303,6 +321,7 @@ export default class Player extends Entity {
         turret?.setGuideTarget(isInRange ? nearestTarget : null);
         turret?.update(deltaTime);
         this.getComponent(ShieldBubble)?.update();
+        this.getComponent(MagnetField)?.update(this._magnetRadius, this._xpGems, deltaTime);
         if (!Player._isFiringDisabled && targetRotation !== null && isInRange && timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000
             && turret?.isAimedAt(targetRotation, Player.TURRET_AIM_TOLERANCE)) {
             this._shootDirection.setToPolar(turret.rotation);
@@ -317,6 +336,11 @@ export default class Player extends Entity {
 
     public setTargets(targets: Phaser.Physics.Arcade.Group) {
         this._targets = targets;
+    }
+
+    // The magnet field tethers the stars it pulls
+    public setXpGems(xpGems: Phaser.Physics.Arcade.Group) {
+        this._xpGems = xpGems;
     }
 
     private findNearestTarget(): Entity | null {

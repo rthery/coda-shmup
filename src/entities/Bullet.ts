@@ -10,12 +10,17 @@ export default class Bullet extends Physics.Arcade.Sprite {
     private readonly _start: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _hitTargets: Set<GameObjects.GameObject> = new Set();
     private _pierceLeft: number = 0;
+    private _trailFX: GameObjects.Particles.ParticleEmitter | null = null;
+    private readonly _lastTrailPosition: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private static readonly TRAIL_SPACING: number = 8; // px
 
     public get bulletData(): BulletData {
         return this._data;
     }
 
-    public init() {
+    // trailFX: shared by the pool's bullets, for those whose data asks for a trail
+    public init(trailFX: GameObjects.Particles.ParticleEmitter | null = null) {
+        this._trailFX = trailFX;
         this.scene.physics.add.existing(this);
 
         this._arcadeBody = this.body as Phaser.Physics.Arcade.Body;
@@ -41,6 +46,8 @@ export default class Bullet extends Physics.Arcade.Sprite {
         this.setOrigin(1, 0.5);
         this.setTexture('sprites', data.texture);
         this.setScale(data.scale);
+        this.scaleX *= data.lengthScale ?? 1;
+        this._lastTrailPosition.set(x, y);
 
         this._arcadeBody.setVelocity(velocityX, velocityY);
         this._arcadeBody.setCircle(data.body.radius, data.body.offsetX, data.body.offsetY);
@@ -90,6 +97,26 @@ export default class Bullet extends Physics.Arcade.Sprite {
             || this.x < -this.displayWidth || this.x > GameConstants.ARENA_WIDTH + this.displayWidth
             || this.y < -this.displayHeight || this.y > GameConstants.ARENA_HEIGHT + this.displayHeight) {
             this.disable();
+            return;
         }
+
+        this.emitTrail();
+    }
+
+    // Dots along the path covered since the last frame, so fast bolts leave no gaps
+    private emitTrail() {
+        const lifespan: number = this._data.trailLifespan ?? 0;
+        if (!this._trailFX || lifespan <= 0 || !this.active)
+            return;
+
+        this._trailFX.setParticleLifespan(lifespan);
+        const distance: number = Phaser.Math.Distance.Between(this._lastTrailPosition.x, this._lastTrailPosition.y,
+            this.x, this.y);
+        for (let covered = Bullet.TRAIL_SPACING; covered <= distance; covered += Bullet.TRAIL_SPACING) {
+            const t: number = covered / distance;
+            this._trailFX.emitParticleAt(Phaser.Math.Linear(this._lastTrailPosition.x, this.x, t),
+                Phaser.Math.Linear(this._lastTrailPosition.y, this.y, t));
+        }
+        this._lastTrailPosition.set(this.x, this.y);
     }
 }

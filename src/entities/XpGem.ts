@@ -15,6 +15,11 @@ export default class XpGem extends Physics.Arcade.Sprite {
     private _trailFX: GameObjects.Particles.ParticleEmitter;
     private readonly _directionToTarget: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
+    // Flying to the player, once inside its magnet radius
+    public get isAttracted(): boolean {
+        return this._attracted;
+    }
+
     public init(target: Player, trailFX: GameObjects.Particles.ParticleEmitter) {
         this._target = target;
         this._trailFX = trailFX;

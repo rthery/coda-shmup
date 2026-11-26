@@ -17,6 +17,7 @@ export default class Turret implements IComponent {
     private static readonly TWIN_BARREL_OFFSET: number = 5;
     private static readonly HEAT_GLOW_TINT: number = 0x00ccff;
     private static readonly HEAT_GLOW_DURATION: number = 250;
+    private static readonly SPEED_RING_DURATION: number = 200;
     private static readonly GUIDE_COLOR: number = 0x8cf0ff;
     private static readonly GUIDE_DASH: number = 14;
     private static readonly GUIDE_GAP: number = 10;
@@ -43,6 +44,8 @@ export default class Turret implements IComponent {
     private readonly _flash: GameObjects.Image;
     private readonly _heatGlow: GameObjects.Image;
     private readonly _guide: GameObjects.Graphics;
+    private readonly _speedRing: GameObjects.Image;
+    private _hasSpeedRing: boolean = false;
     private readonly _pivot: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _muzzle: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _recoil = {distance: 0};
@@ -72,6 +75,8 @@ export default class Turret implements IComponent {
         this._heatGlow = ship.scene.add.image(0, 0, 'shapes', 'circle_05').setScale(0.5)
             .setTint(Turret.HEAT_GLOW_TINT).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0);
         this._guide = ship.scene.add.graphics();
+        this._speedRing = ship.scene.add.image(0, 0, 'shapes', 'circle_02').setTint(Turret.HEAT_GLOW_TINT)
+            .setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
     }
 
     // RAPID FIRE: a hotter barrel after each shot, twin barrels at the max rank
@@ -79,6 +84,11 @@ export default class Turret implements IComponent {
         this._heat = heat;
         this._image.setFrame(isTwin ? Turret.TWIN_FRAME : Turret.FRAME);
         this._barrelSide = isTwin ? 1 : 0;
+    }
+
+    // FAST LASERS at the max rank: a ring bursts from the muzzle at each shot
+    public setSpeedRing(hasSpeedRing: boolean) {
+        this._hasSpeedRing = hasSpeedRing;
     }
 
     // LONG RANGE: 0 for none, up to 1 for a full laser sight
@@ -100,6 +110,9 @@ export default class Turret implements IComponent {
         // The flash stays on the barrel that fired, the next shot uses the other one
         this._flashSide = this._barrelSide;
         this._barrelSide = -this._barrelSide;
+
+        if (this._hasSpeedRing)
+            this.playSpeedRing();
 
         if (this._heat > 0) {
             scene.tweens.killTweensOf(this._heatGlow);
@@ -145,6 +158,27 @@ export default class Turret implements IComponent {
         return this.getBarrelEnd(out, this._barrelSide);
     }
 
+    // Seen edge-on, the ring is flat along the barrel, and grows as it flies off the muzzle
+    private playSpeedRing() {
+        const scene = this._ship.scene;
+        this.getBarrelEnd(this._muzzle, this._barrelSide);
+        const rotation: number = this._image.rotation;
+        scene.tweens.killTweensOf(this._speedRing);
+        this._speedRing.setPosition(this._muzzle.x, this._muzzle.y).setRotation(rotation)
+            .setScale(0.2, 0.6).setAlpha(1).setVisible(true).setDepth(this._ship.depth + 2);
+        scene.tweens.add({
+            targets: this._speedRing,
+            x: this._muzzle.x + Math.cos(rotation) * 30,
+            y: this._muzzle.y + Math.sin(rotation) * 30,
+            scaleX: 0.3,
+            scaleY: 1,
+            alpha: 0,
+            duration: Turret.SPEED_RING_DURATION,
+            ease: 'Quad.easeOut',
+            onComplete: () => this._speedRing.setVisible(false)
+        });
+    }
+
     private getBarrelEnd(out: Phaser.Math.Vector2, side: number): Phaser.Math.Vector2 {
         const length: number = this._image.width - Turret.BASE_RADIUS;
         const sideOffset: number = side * Turret.TWIN_BARREL_OFFSET;
@@ -157,6 +191,7 @@ export default class Turret implements IComponent {
         this._image.setVisible(false);
         this._flash.setVisible(false);
         this._heatGlow.setVisible(false);
+        this._speedRing.setVisible(false);
         this._guide.setVisible(false);
     }
 
