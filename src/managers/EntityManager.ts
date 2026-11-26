@@ -46,7 +46,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
         PLAYER: 100,
         PLAYER_BULLETS: 90,
         ENEMIES: 80,
-        PICKUPS: 77,
+        PICKUPS: 78,
         XP_GEMS: 75,
         ENEMY_BULLETS: 70,
         EFFECTS: 60
