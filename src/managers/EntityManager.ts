@@ -8,11 +8,15 @@ import Experience from "../components/Experience.ts";
 import Thrusters from "../components/Thrusters.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
+import RegistryConstants from "../RegistryConstants.ts";
 import {BulletFxData} from "../gameData/BulletData.ts";
 
 export default class EntityManager extends Plugins.ScenePlugin {
     public static readonly PLUGIN_KEY: string = 'EntityManager';
     public static readonly MAPPING_NAME: string = 'entityManager';
+
+    private static readonly XP_GEM_SCATTER_MIN_RADIUS: number = 24;
+    private static readonly XP_GEM_SCATTER_MAX_RADIUS: number = 56;
 
     private static readonly ENTITIES_DEPTHS = {
         EFFECTS_TOP: 600,
@@ -41,6 +45,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private _xpGems: Physics.Arcade.Group;
     private _xpTrailFX: GameObjects.Particles.ParticleEmitter;
     private readonly _spawnOffset: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private readonly _xpGemScatter: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private _explosionFireFX: GameObjects.Particles.ParticleEmitter;
     private _explosionSmokeFX: GameObjects.Particles.ParticleEmitter;
     private _laserFlashFX: GameObjects.Particles.ParticleEmitter;
@@ -157,7 +162,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
             }
         });
         this._xpGems.setDepth(EntityManager.ENTITIES_DEPTHS.XP_GEMS);
-        GroupUtils.populate(64, this._xpGems);
+        GroupUtils.populate(128, this._xpGems);
 
         console.log("[EntityManager] XP gems initialized");
 
@@ -332,9 +337,17 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this._explosionSmokeFX.explode(12, x, y);
     }
 
-    public spawnXpGem(x: number, y: number) {
-        // No drop when the pool is full
-        (this._xpGems.get() as XpGem | null)?.enable(x, y);
+    // Several gems scatter around the kill, so they don't stack
+    public spawnXpGems(x: number, y: number, count: number) {
+        for (let i = 0; i < count; i++) {
+            if (i > 0)
+                Phaser.Math.RandomXY(this._xpGemScatter, Phaser.Math.FloatBetween(
+                    EntityManager.XP_GEM_SCATTER_MIN_RADIUS, EntityManager.XP_GEM_SCATTER_MAX_RADIUS));
+            else
+                this._xpGemScatter.reset();
+            // No drop when the pool is full
+            (this._xpGems.get() as XpGem | null)?.enable(x + this._xpGemScatter.x, y + this._xpGemScatter.y);
+        }
     }
 
     private spawnEnemy() {
@@ -358,7 +371,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
         enemy.getComponent(Health)?.once(Health.DEATH_START_EVENT, () => {
             this.spawnExplosion(enemy.x, enemy.y);
-            this.spawnXpGem(enemy.x, enemy.y);
+            // One gem per combo level: staying unhurt levels up faster
+            this.spawnXpGems(enemy.x, enemy.y, this.scene!.registry.get(RegistryConstants.Keys.PLAYER_COMBO) ?? 1);
             this.game!.events.emit(GameConstants.Events.ENEMY_KILLED_EVENT, enemy);
         });
 
