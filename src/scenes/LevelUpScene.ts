@@ -87,7 +87,7 @@ export default class LevelUpScene extends Scene {
 
         // Maxed upgrades aren't offered anymore
         const allUpgrades = this.cache.json.get('upgrades') as UpgradeData[];
-        const availableUpgrades = allUpgrades.filter(upgrade => this._player.getUpgradeRank(upgrade.id) < upgrade.maxRank);
+        const availableUpgrades = allUpgrades.filter(upgrade => this._player.isUpgradeAvailable(upgrade));
         this._upgrades = Phaser.Utils.Array.Shuffle(availableUpgrades).slice(0, LevelUpScene.CHOICE_COUNT);
         if (this._upgrades.length === 0) {
             this.close();
@@ -153,6 +153,8 @@ export default class LevelUpScene extends Scene {
 
     // One pip per rank: gold when owned, the one this pick adds blinks
     private createRankPips(upgrade: UpgradeData, right: number, y: number): GameObjects.Polygon[] {
+        if (upgrade.maxRank === null)
+            return [];
         const rank: number = this._player.getUpgradeRank(upgrade.id);
         const step: number = LevelUpScene.PIP_WIDTH + LevelUpScene.PIP_GAP;
         const firstX: number = right - LevelUpScene.PIP_WIDTH / 2 - (upgrade.maxRank - 1) * step;

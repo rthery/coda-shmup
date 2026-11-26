@@ -62,5 +62,13 @@
     "description": "Lasers go through +1 enemy",
     "value": 1,
     "maxRank": 5
+  },
+  {
+    "id": "repair",
+    "category": "ship",
+    "title": "REPAIR",
+    "description": "+1 hull point",
+    "value": 1,
+    "maxRank": null
   }
 ]

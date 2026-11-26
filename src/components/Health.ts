@@ -43,9 +43,15 @@ export default class Health extends Events.EventEmitter implements IComponent {
         });
     }
 
+    // Works while invulnerable: enabled only blocks damage
     public heal(amount: number, emitEvents: boolean = true): void {
-        if (!this.enabled || amount <= 0) return;
-        this.adjust(amount, emitEvents);
+        if (amount <= 0) return;
+
+        const prev: number = this._current;
+        this._current = Math.min(this._current + amount, this._max);
+
+        if (emitEvents && this._current !== prev)
+            this.emit(Health.CHANGE_EVENT, this._current, prev);
     }
 
     // Full health at the new max, without events: for pooled entities being reused

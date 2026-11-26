@@ -135,6 +135,18 @@ export default class Player extends Entity {
         this.getComponent(Turret)?.setTurret(this._playerShipData.turret);
     }
 
+    // Repair only when the hull is damaged, the others until their max rank
+    public isUpgradeAvailable(upgrade: UpgradeData): boolean {
+        if (upgrade.id === 'repair')
+            return this.hullPoints < Player.HULL_POINTS;
+        return upgrade.maxRank === null || this.getUpgradeRank(upgrade.id) < upgrade.maxRank;
+    }
+
+    // Lives left in the hull, once the shield cells are gone
+    public get hullPoints(): number {
+        return Math.min(this.getComponent(Health)?.current ?? 0, Player.HULL_POINTS);
+    }
+
     // Times the upgrade has been picked
     public getUpgradeRank(id: UpgradeId): number {
         return this._upgradeRanks.get(id) ?? 0;
@@ -159,6 +171,8 @@ export default class Player extends Entity {
                 const cells: number = (this.getComponent(Health)?.max ?? 0) - Player.HULL_POINTS;
                 return Player.preview("SHIELD CELLS", cells, cells + value);
             }
+            case 'repair':
+                return Player.preview("HULL", this.hullPoints, this.hullPoints + value);
             case 'pierce':
                 return Player.preview("PIERCE", this._bulletData.pierce, this._bulletData.pierce + value);
             case 'magnet':
@@ -199,6 +213,9 @@ export default class Player extends Entity {
                 break;
             case 'shieldCell':
                 this.getComponent(Health)?.increaseMax(upgrade.value);
+                break;
+            case 'repair':
+                this.getComponent(Health)?.heal(upgrade.value);
                 break;
             case 'pierce':
                 this._bulletData.pierce += upgrade.value;
