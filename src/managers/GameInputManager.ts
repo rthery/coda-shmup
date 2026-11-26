@@ -17,6 +17,11 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private static readonly TOUCH_DEADZONE = 24;
     private static readonly CONFIRM_BUTTON_INDEX = 0;
     private static readonly START_BUTTON_INDEX = 9;
+    // Physical key positions, not characters: WASD on a US keyboard, ZQSD on AZERTY
+    private static readonly MOVE_LEFT_CODE = 'KeyA';
+    private static readonly MOVE_RIGHT_CODE = 'KeyD';
+    private static readonly MOVE_UP_CODE = 'KeyW';
+    private static readonly MOVE_DOWN_CODE = 'KeyS';
 
     private _scene: Scene | null = null;
 
@@ -26,6 +31,8 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private _downKey: Input.Keyboard.Key | null = null;
     private _shootKey: Input.Keyboard.Key | null = null;
     private _restartKey: Input.Keyboard.Key | null = null;
+    // Phaser keys match key codes, which change with the layout: these are tracked by physical position
+    private readonly _heldKeyCodes = new Set<string>();
 
     // Touch: a floating joystick, the first touch sets its center
     private _touchPointerId: number = -1;
@@ -45,6 +52,8 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
         this.game.events.on(Phaser.Core.Events.STEP, this._preUpdate, this);
         this.game.events.on(Phaser.Core.Events.POST_STEP, this._postUpdate, this);
+        // Key ups are lost while the window is unfocused
+        this.game.events.on(Phaser.Core.Events.BLUR, () => this._heldKeyCodes.clear());
 
         console.log('[GameInputManager] Initialized');
     }
@@ -141,6 +150,7 @@ export default class GameInputManager extends Plugins.BasePlugin {
             this._restartKey = keyboard.addKey(Input.Keyboard.KeyCodes.R);
 
             keyboard.on(Input.Keyboard.Events.ANY_KEY_DOWN, this._onAnyKeyDown, this);
+            keyboard.on(Input.Keyboard.Events.ANY_KEY_UP, this._onAnyKeyUp, this);
         }
 
         scene.input.on(Input.Events.POINTER_DOWN, this._onPointerDown, this);
@@ -163,6 +173,7 @@ export default class GameInputManager extends Plugins.BasePlugin {
         const keyboard = this._scene.input.keyboard;
         if (keyboard) {
             keyboard.off(Input.Keyboard.Events.ANY_KEY_DOWN, this._onAnyKeyDown, this);
+            keyboard.off(Input.Keyboard.Events.ANY_KEY_UP, this._onAnyKeyUp, this);
 
             if (this._leftKey) keyboard.removeKey(this._leftKey, true);
             if (this._rightKey) keyboard.removeKey(this._rightKey, true);
@@ -191,11 +202,17 @@ export default class GameInputManager extends Plugins.BasePlugin {
         this._downKey = null;
         this._shootKey = null;
         this._restartKey = null;
+        this._heldKeyCodes.clear();
         this._clearTouch();
     }
 
-    private _onAnyKeyDown(): void {
+    private _onAnyKeyDown(event: KeyboardEvent): void {
+        this._heldKeyCodes.add(event.code);
         this._setInputType('keyboard');
+    }
+
+    private _onAnyKeyUp(event: KeyboardEvent): void {
+        this._heldKeyCodes.delete(event.code);
     }
 
     private _onPointerDown(pointer: Phaser.Input.Pointer): void {
@@ -282,10 +299,11 @@ export default class GameInputManager extends Plugins.BasePlugin {
     public get moveDirection(): Phaser.Math.Vector2 {
         this._moveDirection.set(0, 0);
 
-        if (this._leftKey?.isDown) this._moveDirection.x -= 1;
-        if (this._rightKey?.isDown) this._moveDirection.x += 1;
-        if (this._upKey?.isDown) this._moveDirection.y -= 1;
-        if (this._downKey?.isDown) this._moveDirection.y += 1;
+        const held = this._heldKeyCodes;
+        if (this._leftKey?.isDown || held.has(GameInputManager.MOVE_LEFT_CODE)) this._moveDirection.x -= 1;
+        if (this._rightKey?.isDown || held.has(GameInputManager.MOVE_RIGHT_CODE)) this._moveDirection.x += 1;
+        if (this._upKey?.isDown || held.has(GameInputManager.MOVE_UP_CODE)) this._moveDirection.y -= 1;
+        if (this._downKey?.isDown || held.has(GameInputManager.MOVE_DOWN_CODE)) this._moveDirection.y += 1;
 
         if (this._moveDirection.lengthSq() === 0) {
             this._moveDirection.copy(this._touchDirection);
