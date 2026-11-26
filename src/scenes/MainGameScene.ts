@@ -60,14 +60,8 @@ export default class MainGameScene extends Scene {
 
     // noinspection JSUnusedGlobalSymbols
     init(data: { devices?: InputDevice[] }) {
-        this._devices = data?.devices ?? MainGameScene.defaultDevices();
-    }
-
-    // Solo on every device. Dev builds: ?players=2 plays coop on WASD and the arrows
-    private static defaultDevices(): InputDevice[] {
-        if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('players') === '2')
-            return [{type: 'keyboard', keys: 'wasd'}, {type: 'keyboard', keys: 'arrows'}];
-        return [{type: 'any'}];
+        // Solo on every device, unless players joined the coop lobby
+        this._devices = data?.devices ?? [{type: 'any'}];
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -250,6 +244,7 @@ export default class MainGameScene extends Scene {
         this.registry.set(RegistryConstants.Keys.IS_NEW_BEST_SCORE, isNewBestScore);
         if (isNewBestScore) {
             this.saveManager.setData(SaveConstants.Keys.PLAYER_BEST_SCORE, currentScore);
+            this.saveManager.setData(SaveConstants.Keys.PLAYER_BEST_SCORE_PLAYERS, this._team.players.length);
             console.log("New Best Score: " + currentScore);
         }
 

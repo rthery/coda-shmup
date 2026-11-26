@@ -11,10 +11,17 @@ import DifficultyCurve from "../utils/DifficultyCurve.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 import Sfx from "../audio/Sfx.ts";
 
+type LifeRow = {
+    container: GameObjects.Container;
+    icons: GameObjects.Image[];
+    hullFrame: string;
+}
+
 export default class MainUIScene extends Scene {
     private static readonly MARGIN: number = 64;
     private static readonly LIFE_ICON_SCALE: number = 2;
     private static readonly LIFE_ICON_SPACING: number = 12;
+    private static readonly LIFE_ROW_SPACING: number = 64;
     // Smaller and tighter than the hull icons, so 3 hull points and 3 shield cells stay clear of the run clock
     private static readonly SHIELD_ICON_SCALE: number = 1.3;
     private static readonly SHIELD_ICON_SPACING: number = 6;
@@ -55,8 +62,8 @@ export default class MainUIScene extends Scene {
     private static readonly COMBO_BROKEN_COLOR: string = '#ff4040';
     private static readonly COMBO_BROKEN_FILL: number = 0xff4040;
 
-    private _lifeIcons: GameObjects.Image[];
-    private _lifeRow: GameObjects.Container;
+    // One row of lives per player, stacked down from the top left
+    private _lifeRows: LifeRow[];
     private _damageVignette: GameObjects.Image;
     private _scoreText: GameObjects.BitmapText;
     private _cornerBrackets: GameObjects.Graphics;
@@ -121,10 +128,9 @@ export default class MainUIScene extends Scene {
     create() {
         // Laid out on the portrait frame's height, across the screen's whole width: see layout()
         UiLayout.fitCamera(this, false);
-        this._lifeIcons = [];
+        this._lifeRows = [];
         this.createDamageVignetteTexture();
         this._damageVignette = this.add.image(0, 0, MainUIScene.DAMAGE_VIGNETTE_KEY).setOrigin(0).setAlpha(0);
-        this._lifeRow = this.add.container(0, 0);
 
         let scoreStr: string = "".padStart(GameConstants.MAX_SCORE_DIGITS, "0");
         if (this.registry.has(RegistryConstants.Keys.PLAYER_SCORE))
@@ -340,16 +346,26 @@ export default class MainUIScene extends Scene {
     }
 
     private onPlayerSpawned(player: Player) {
+        const row: LifeRow = {
+            container: this.add.container(0, this._lifeRows.length * MainUIScene.LIFE_ROW_SPACING),
+            icons: [],
+            hullFrame: player.lifeIcon
+        };
+        this._lifeRows.push(row);
         const health = player.getComponent(Health);
         if (health) {
-            this.updateLifeIcons(health.current, health.max, health.current);
+            this.updateLifeIcons(row, health.current, health.max, health.current);
             health.on(Health.CHANGE_EVENT, (current: number, previous: number) => {
-                this.updateLifeIcons(current, health.max, previous);
+                this.updateLifeIcons(row, current, health.max, previous);
             }, this);
         }
     }
 
     private onTeamCreated(team: Team) {
+        // This scene outlives a game restart: the new players get new rows
+        this._lifeRows.forEach(row => row.container.destroy());
+        this._lifeRows = [];
+
         const experience = team.experience;
         // This scene outlives a game restart: reset the bar from the new team
         this.resetXpBar(experience.xp / experience.xpToNextLevel, experience.level);
@@ -443,43 +459,44 @@ export default class MainUIScene extends Scene {
     }
 
     // One ship icon per hull point, then one shield badge per shield cell, lost ones dimmed
-    private updateLifeIcons(current: number, max: number, previous: number) {
-        const isFirstBuild: boolean = this._lifeIcons.length === 0;
-        while (this._lifeIcons.length < max) {
-            const isHull: boolean = this._lifeIcons.length < Player.HULL_POINTS;
+    private updateLifeIcons(row: LifeRow, current: number, max: number, previous: number) {
+        const icons: GameObjects.Image[] = row.icons;
+        const isFirstBuild: boolean = icons.length === 0;
+        while (icons.length < max) {
+            const isHull: boolean = icons.length < Player.HULL_POINTS;
             const scale: number = isHull ? MainUIScene.LIFE_ICON_SCALE : MainUIScene.SHIELD_ICON_SCALE;
-            const icon = this.add.image(0, 0, "sprites", isHull ? "playerLife3_blue" : "ui_shield_cell")
+            const icon = this.add.image(0, 0, "sprites", isHull ? row.hullFrame : "ui_shield_cell")
                 .setScale(scale).setData('baseScale', scale);
-            const previousIcon: GameObjects.Image | undefined = this._lifeIcons[this._lifeIcons.length - 1];
-            const spacing: number = isHull || this._lifeIcons.length === Player.HULL_POINTS
+            const previousIcon: GameObjects.Image | undefined = icons[icons.length - 1];
+            const spacing: number = isHull || icons.length === Player.HULL_POINTS
                 ? MainUIScene.LIFE_ICON_SPACING : MainUIScene.SHIELD_ICON_SPACING;
             const left: number = previousIcon
                 ? previousIcon.x + previousIcon.displayWidth / 2 + spacing : MainUIScene.MARGIN;
             // Centered on the hull icons' row
             icon.setPosition(left + icon.displayWidth / 2, MainUIScene.MARGIN + 25 * MainUIScene.LIFE_ICON_SCALE / 2);
-            this._lifeRow.add(icon);
-            this._lifeIcons.push(icon);
+            row.container.add(icon);
+            icons.push(icon);
         }
 
-        this._lifeIcons.forEach((icon, index) => {
+        icons.forEach((icon, index) => {
             icon.setAlpha(index < current ? 1 : MainUIScene.LOST_LIFE_ALPHA);
             if (isFirstBuild)
                 return;
             if (index >= current && index < previous)
-                this.playLifeLost(icon);
+                this.playLifeLost(row, icon);
             else if (index < current && index >= previous)
                 this.popIcon(icon);
         });
 
-        this.updateLastLifeWarning(current);
+        this.updateLastLifeWarning(row, current);
     }
 
-    private playLifeLost(icon: GameObjects.Image) {
+    private playLifeLost(row: LifeRow, icon: GameObjects.Image) {
         // A white copy breaks off and falls away
         const baseScale: number = icon.getData('baseScale');
         const shard = this.add.image(icon.x, icon.y, "sprites", icon.frame.name)
             .setScale(baseScale).setTintFill(0xffffff);
-        this._lifeRow.add(shard);
+        row.container.add(shard);
         this.tweens.add({
             targets: shard,
             y: shard.y + 80,
@@ -492,7 +509,7 @@ export default class MainUIScene extends Scene {
         });
 
         this.popIcon(icon);
-        this.tweens.add({targets: this._lifeRow, x: {from: 16, to: 0}, duration: 450, ease: 'Elastic.easeOut'});
+        this.tweens.add({targets: row.container, x: {from: 16, to: 0}, duration: 450, ease: 'Elastic.easeOut'});
         // A hull alarm: the screen edges glow red, twice
         this.tweens.killTweensOf(this._damageVignette);
         this.tweens.add({
@@ -519,8 +536,8 @@ export default class MainUIScene extends Scene {
     }
 
     // The last life beats red
-    private updateLastLifeWarning(current: number) {
-        const lastLife: GameObjects.Image = this._lifeIcons[0];
+    private updateLastLifeWarning(row: LifeRow, current: number) {
+        const lastLife: GameObjects.Image = row.icons[0];
         this.tweens.killTweensOf(lastLife);
         lastLife.setScale(MainUIScene.LIFE_ICON_SCALE);
         if (current !== 1) {

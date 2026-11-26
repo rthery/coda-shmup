@@ -19,6 +19,9 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private static readonly TOUCH_DEADZONE = 24;
     private static readonly CONFIRM_BUTTON_INDEX = 0;
     private static readonly START_BUTTON_INDEX = 9;
+    // Home: opens the coop lobby, Y on a standard gamepad
+    private static readonly COOP_BUTTON_INDEX = 3;
+    private static readonly COOP_KEY_CODE = 'KeyC';
     // Physical key positions, not characters: WASD on a US keyboard, ZQSD on AZERTY
     private static readonly MOVE_LEFT_CODE = 'KeyA';
     private static readonly MOVE_RIGHT_CODE = 'KeyD';
@@ -83,6 +86,26 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
     public getInput(device: InputDevice): PlayerInput {
         return new DeviceInput(device, this);
+    }
+
+    // Home: the device whose confirm was just pressed, for a player joining the coop lobby
+    public findConfirmingDevice(): InputDevice | null {
+        for (const keys of Object.keys(GameInputManager.KEY_SETS) as KeyboardKeySet[]) {
+            const device: InputDevice = {type: 'keyboard', keys};
+            if (this.readConfirmJustPressed(device))
+                return device;
+        }
+        for (const pad of this._getConnectedGamepads()) {
+            const device: InputDevice = {type: 'gamepad', index: pad.index};
+            if (this.readConfirmJustPressed(device))
+                return device;
+        }
+        return null;
+    }
+
+    public coopJustPressed(): boolean {
+        return this._justPressedKeyCodes.has(GameInputManager.COOP_KEY_CODE) || this._getConnectedGamepads()
+            .some(pad => this._isGamepadButtonJustPressed(pad, GameInputManager.COOP_BUTTON_INDEX));
     }
 
     public readMoveDirection(device: InputDevice, out: Phaser.Math.Vector2): Phaser.Math.Vector2 {

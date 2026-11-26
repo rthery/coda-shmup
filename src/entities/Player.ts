@@ -19,9 +19,7 @@ import type PlayerInput from "../managers/PlayerInput.ts";
 export default class Player extends Entity {
     // Lives the ship starts with: shield cells come on top and are lost first
     public static readonly HULL_POINTS: number = 3;
-    private static readonly SHIP_ID: number = 1;
-    // Coop: the pod a destroyed ship ejects, and its respawn countdown above it
-    private static readonly POD_FRAME: string = 'playerLife3_blue';
+    // Coop: the pod a destroyed ship ejects, its life icon, and its respawn countdown above it
     private static readonly POD_SCALE: number = 1.5;
     private static readonly POD_LABEL_OFFSET: number = 70;
     private static readonly RESPAWN_INVULNERABILITY_DURATION: number = 2000; // ms
@@ -67,6 +65,7 @@ export default class Player extends Entity {
     };
 
     private _playerShipData: PlayerShipData;
+    private _shipId: number;
     private _rateOfFire: number;
     private _lastShotTime: number;
     private readonly _moveDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
@@ -83,6 +82,10 @@ export default class Player extends Entity {
     private _isDown: boolean = false;
     private _respawnTimer: Phaser.Time.TimerEvent | null = null;
     private _podLabel: Phaser.GameObjects.Text | null = null;
+
+    public get lifeIcon(): string {
+        return this._playerShipData.lifeIcon;
+    }
 
     public get playerInput(): PlayerInput {
         return this._input;
@@ -106,8 +109,9 @@ export default class Player extends Entity {
         super(scene, x, y, 'sprites');
     }
 
-    public init(bulletsGroup: Phaser.Physics.Arcade.Group, input: PlayerInput) {
+    public init(bulletsGroup: Phaser.Physics.Arcade.Group, input: PlayerInput, shipId: number) {
         this._input = input;
+        this._shipId = shipId;
         this.addComponent(new Health(Player.HULL_POINTS, this));
         this.addComponent(new Invulnerability(Player.INVULNERABILITY_DURATION, this));
         this.addComponent(new Movement());
@@ -131,7 +135,7 @@ export default class Player extends Entity {
 
         this.angle = -90;
 
-        this.selectPlayerShip(Player.SHIP_ID);
+        this.selectPlayerShip(this._shipId);
 
         this._rateOfFire = 0.5;
         this._lastShotTime = 0;
@@ -378,7 +382,7 @@ export default class Player extends Entity {
     public eject(respawnDelay: number) {
         this._isDown = true;
         this.arcadeBody.setEnable(false);
-        this.clearTint().setTexture('sprites', Player.POD_FRAME).setScale(Player.POD_SCALE);
+        this.clearTint().setTexture('sprites', this.lifeIcon).setScale(Player.POD_SCALE);
         this._podLabel ??= this.scene.add.text(0, 0, '', {fontSize: '40px', color: '#fff', fontFamily: 'future',
             stroke: '#0a1a33', strokeThickness: 6}).setOrigin(0.5).setDepth(this.depth + 1);
         this._podLabel.setVisible(true);
@@ -392,7 +396,7 @@ export default class Player extends Entity {
         this._respawnTimer = null;
         this._podLabel?.setVisible(false);
         this.setScale(1);
-        this.selectPlayerShip(Player.SHIP_ID);
+        this.selectPlayerShip(this._shipId);
         this.getComponent(Thrusters)?.show();
         this.getComponent(WingTrails)?.show();
         this.getComponent(Turret)?.show();

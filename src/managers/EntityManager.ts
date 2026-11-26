@@ -7,6 +7,7 @@ import XpGem from "../entities/XpGem.ts";
 import Pickup from "../entities/Pickup.ts";
 import type Team from "../Team.ts";
 import type PlayerInput from "./PlayerInput.ts";
+import type {PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import Thrusters from "../components/Thrusters.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
@@ -125,10 +126,12 @@ export default class EntityManager extends Plugins.ScenePlugin {
         // Side by side, flying in from below the screen to the arena center
         const centerX: number = GameConstants.ARENA_WIDTH / 2;
         const playerEndY: number = GameConstants.ARENA_HEIGHT / 2;
+        // One ship color per player, in the order of playerShips.json
+        const shipCount: number = Object.keys(this.scene!.cache.json.get('playerShips') as PlayerShipsData).length;
         inputs.forEach((input, index) => {
             const player = new Player(this.scene!, 0, 0);
             player.setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER);
-            player.init(this._playerBullets, input);
+            player.init(this._playerBullets, input, index % shipCount + 1);
             team.addPlayer(player);
 
             const x: number = centerX + (index - (inputs.length - 1) / 2) * EntityManager.PLAYER_START_SPACING;

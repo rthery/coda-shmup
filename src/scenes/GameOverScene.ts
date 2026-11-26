@@ -68,9 +68,11 @@ export default class GameOverScene extends Phaser.Scene {
         this.countScore(scoreText, score, 550);
 
         const bestScore: number = Number(this.saveManager.getData(SaveConstants.Keys.PLAYER_BEST_SCORE) ?? 0);
+        // Best scores saved before coop were solo
+        const bestScorePlayers: number = Number(this.saveManager.getData(SaveConstants.Keys.PLAYER_BEST_SCORE_PLAYERS) ?? 1);
         const isNewBestScore: boolean = this.registry.get(RegistryConstants.Keys.IS_NEW_BEST_SCORE) ?? false;
         const linesDelay: number = 550 + GameOverScene.SCORE_COUNT_DURATION + 100;
-        const bestText = this.add.text(centerX, 1070, isNewBestScore ? 'NEW BEST!' : `BEST ${GameOverScene.formatScore(bestScore)}`, {
+        const bestText = this.add.text(centerX, 1070, isNewBestScore ? 'NEW BEST!' : `BEST ${GameOverScene.formatScore(bestScore)} · ${bestScorePlayers}P`, {
             fontSize: '44px', fontFamily: 'future',
             color: isNewBestScore ? GameOverScene.NEW_BEST_COLOR : UiUtils.INK_SOFT_COLOR
         }).setOrigin(0.5);

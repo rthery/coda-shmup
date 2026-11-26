@@ -5,7 +5,7 @@
 			"format": "RGBA8888",
 			"size": {
 				"w": 1013,
-				"h": 369
+				"h": 416
 			},
 			"scale": 1,
 			"frames": [
@@ -535,6 +535,90 @@
 					}
 				},
 				{
+					"filename": "playerShip3_orange",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 75,
+						"h": 98
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 75,
+						"h": 98
+					},
+					"frame": {
+						"x": 513,
+						"y": 271,
+						"w": 75,
+						"h": 98
+					}
+				},
+				{
+					"filename": "star1",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 25,
+						"h": 24
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 25,
+						"h": 24
+					},
+					"frame": {
+						"x": 592,
+						"y": 271,
+						"w": 25,
+						"h": 24
+					}
+				},
+				{
+					"filename": "star2",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 25,
+						"h": 24
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 25,
+						"h": 24
+					},
+					"frame": {
+						"x": 592,
+						"y": 299,
+						"w": 25,
+						"h": 24
+					}
+				},
+				{
+					"filename": "star3",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 24,
+						"h": 24
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 24,
+						"h": 24
+					},
+					"frame": {
+						"x": 592,
+						"y": 327,
+						"w": 24,
+						"h": 24
+					}
+				},
+				{
 					"filename": "laserBlue12",
 					"rotated": false,
 					"trimmed": false,
@@ -549,10 +633,115 @@
 						"h": 13
 					},
 					"frame": {
-						"x": 513,
-						"y": 271,
+						"x": 620,
+						"y": 331,
 						"w": 57,
 						"h": 13
+					}
+				},
+				{
+					"filename": "fire15",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 681,
+						"y": 331,
+						"w": 14,
+						"h": 31
+					}
+				},
+				{
+					"filename": "fire16",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 681,
+						"y": 366,
+						"w": 14,
+						"h": 31
+					}
+				},
+				{
+					"filename": "playerLife3_orange",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 32,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 32,
+						"h": 26
+					},
+					"frame": {
+						"x": 620,
+						"y": 348,
+						"w": 32,
+						"h": 26
+					}
+				},
+				{
+					"filename": "pickup_repair",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 22,
+						"h": 21
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 22,
+						"h": 21
+					},
+					"frame": {
+						"x": 592,
+						"y": 355,
+						"w": 22,
+						"h": 21
+					}
+				},
+				{
+					"filename": "fireNeutral",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 656,
+						"y": 348,
+						"w": 14,
+						"h": 31
 					}
 				},
 				{
@@ -570,10 +759,31 @@
 						"h": 30
 					},
 					"frame": {
-						"x": 574,
-						"y": 271,
+						"x": 618,
+						"y": 378,
 						"w": 31,
 						"h": 30
+					}
+				},
+				{
+					"filename": "fireNeutralBoost",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 653,
+						"y": 383,
+						"w": 14,
+						"h": 31
 					}
 				},
 				{
@@ -595,174 +805,6 @@
 						"y": 254,
 						"w": 30,
 						"h": 30
-					}
-				},
-				{
-					"filename": "star1",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 25,
-						"h": 24
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 25,
-						"h": 24
-					},
-					"frame": {
-						"x": 802,
-						"y": 254,
-						"w": 25,
-						"h": 24
-					}
-				},
-				{
-					"filename": "star2",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 25,
-						"h": 24
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 25,
-						"h": 24
-					},
-					"frame": {
-						"x": 831,
-						"y": 254,
-						"w": 25,
-						"h": 24
-					}
-				},
-				{
-					"filename": "star3",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 24,
-						"h": 24
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 24,
-						"h": 24
-					},
-					"frame": {
-						"x": 860,
-						"y": 254,
-						"w": 24,
-						"h": 24
-					}
-				},
-				{
-					"filename": "pickup_repair",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 22,
-						"h": 21
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 22,
-						"h": 21
-					},
-					"frame": {
-						"x": 888,
-						"y": 254,
-						"w": 22,
-						"h": 21
-					}
-				},
-				{
-					"filename": "fire15",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 31
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 31
-					},
-					"frame": {
-						"x": 888,
-						"y": 279,
-						"w": 14,
-						"h": 31
-					}
-				},
-				{
-					"filename": "fire16",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 31
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 31
-					},
-					"frame": {
-						"x": 802,
-						"y": 282,
-						"w": 14,
-						"h": 31
-					}
-				},
-				{
-					"filename": "fireNeutral",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 31
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 31
-					},
-					"frame": {
-						"x": 768,
-						"y": 288,
-						"w": 14,
-						"h": 31
-					}
-				},
-				{
-					"filename": "fireNeutralBoost",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 31
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 31
-					},
-					"frame": {
-						"x": 820,
-						"y": 282,
-						"w": 14,
-						"h": 31
 					}
 				}
 			]

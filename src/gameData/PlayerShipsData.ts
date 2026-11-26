@@ -13,6 +13,8 @@ export type PlayerShipData = {
     deceleration: number;
     turnSpeed: number;
     texture: string;
+    // HUD lives and coop pod
+    lifeIcon: string;
     body: CircleBodyData;
     thrusters: ThrusterData[];
     turret: TurretData;
