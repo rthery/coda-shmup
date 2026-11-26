@@ -26,6 +26,7 @@ Les sprites viennent du pack Kenney « Space Shooter Redux », licence CC0 (doma
 `fireNeutral` et `fireNeutralBoost` sont `fire11` et `fire15` passés en gris : le jeu les teinte selon le niveau des propulseurs.
 `ui_shield_cell` est `shield_silver`, `ui_icon_weapon` est `powerupRed_bolt` (dossier `Power-ups`).
 `ui_icon_ship` est `powerupBlue` avec l'icône `playerLife3_blue` en blanc dessus.
+`pickup_bomb` est `powerupRed_star`, `pickup_magnet` est `powerupYellow_star`, `pickup_repair` est `pill_green` (dossier `Power-ups`).
 
 Les sprites `ui_*` viennent du pack Kenney « UI Pack - Sci-Fi », licence CC0 : https://kenney.nl/assets/ui-pack-sci-fi
 Ce sont les versions `Double` du pack, renommées. Les panneaux sont découpés en 9 (`nineslice`) par `src/utils/UiUtils.ts`.

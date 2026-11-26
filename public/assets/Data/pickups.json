@@ -1,0 +1,23 @@
+[
+  {
+    "id": "bomb",
+    "texture": "pickup_bomb",
+    "glowTint": "#ff4422",
+    "dropChance": 0.006,
+    "cooldown": 60
+  },
+  {
+    "id": "magnet",
+    "texture": "pickup_magnet",
+    "glowTint": "#ffd23c",
+    "dropChance": 0.01,
+    "cooldown": 40
+  },
+  {
+    "id": "repair",
+    "texture": "pickup_repair",
+    "glowTint": "#44ff88",
+    "dropChance": 0.015,
+    "cooldown": 30
+  }
+]

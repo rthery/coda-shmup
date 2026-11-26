@@ -94,7 +94,7 @@
 					}
 				},
 				{
-					"filename": "ui_icon_ship",
+					"filename": "pickup_bomb",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -115,7 +115,7 @@
 					}
 				},
 				{
-					"filename": "ui_icon_weapon",
+					"filename": "pickup_magnet",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -157,24 +157,24 @@
 					}
 				},
 				{
-					"filename": "playerLife3_blue",
+					"filename": "ui_icon_ship",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 32,
-						"h": 26
+						"w": 34,
+						"h": 33
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 32,
-						"h": 26
+						"w": 34,
+						"h": 33
 					},
 					"frame": {
 						"x": 974,
 						"y": 89,
-						"w": 32,
-						"h": 26
+						"w": 34,
+						"h": 33
 					}
 				},
 				{
@@ -214,7 +214,7 @@
 					},
 					"frame": {
 						"x": 919,
-						"y": 119,
+						"y": 126,
 						"w": 91,
 						"h": 91
 					}
@@ -235,7 +235,7 @@
 					},
 					"frame": {
 						"x": 919,
-						"y": 214,
+						"y": 221,
 						"w": 91,
 						"h": 91
 					}
@@ -367,24 +367,24 @@
 					}
 				},
 				{
-					"filename": "star_gold",
+					"filename": "ui_icon_weapon",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 31,
-						"h": 30
+						"w": 34,
+						"h": 33
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 31,
-						"h": 30
+						"w": 34,
+						"h": 33
 					},
 					"frame": {
 						"x": 720,
 						"y": 164,
-						"w": 31,
-						"h": 30
+						"w": 34,
+						"h": 33
 					}
 				},
 				{
@@ -402,31 +402,31 @@
 						"h": 34
 					},
 					"frame": {
-						"x": 755,
+						"x": 758,
 						"y": 164,
 						"w": 14,
 						"h": 34
 					}
 				},
 				{
-					"filename": "ui_shield_cell",
+					"filename": "playerLife3_blue",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 30,
-						"h": 30
+						"w": 32,
+						"h": 26
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 30,
-						"h": 30
+						"w": 32,
+						"h": 26
 					},
 					"frame": {
 						"x": 720,
-						"y": 198,
-						"w": 30,
-						"h": 30
+						"y": 201,
+						"w": 32,
+						"h": 26
 					}
 				},
 				{
@@ -444,7 +444,7 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 754,
+						"x": 756,
 						"y": 202,
 						"w": 14,
 						"h": 31
@@ -556,6 +556,48 @@
 					}
 				},
 				{
+					"filename": "star_gold",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 31,
+						"h": 30
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 31,
+						"h": 30
+					},
+					"frame": {
+						"x": 574,
+						"y": 271,
+						"w": 31,
+						"h": 30
+					}
+				},
+				{
+					"filename": "ui_shield_cell",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 30,
+						"h": 30
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 30,
+						"h": 30
+					},
+					"frame": {
+						"x": 768,
+						"y": 254,
+						"w": 30,
+						"h": 30
+					}
+				},
+				{
 					"filename": "star1",
 					"rotated": false,
 					"trimmed": false,
@@ -570,31 +612,10 @@
 						"h": 24
 					},
 					"frame": {
-						"x": 574,
-						"y": 271,
+						"x": 802,
+						"y": 254,
 						"w": 25,
 						"h": 24
-					}
-				},
-				{
-					"filename": "fire15",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 31
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 31
-					},
-					"frame": {
-						"x": 603,
-						"y": 271,
-						"w": 14,
-						"h": 31
 					}
 				},
 				{
@@ -612,7 +633,7 @@
 						"h": 24
 					},
 					"frame": {
-						"x": 768,
+						"x": 831,
 						"y": 254,
 						"w": 25,
 						"h": 24
@@ -633,10 +654,52 @@
 						"h": 24
 					},
 					"frame": {
-						"x": 797,
+						"x": 860,
 						"y": 254,
 						"w": 24,
 						"h": 24
+					}
+				},
+				{
+					"filename": "pickup_repair",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 22,
+						"h": 21
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 22,
+						"h": 21
+					},
+					"frame": {
+						"x": 888,
+						"y": 254,
+						"w": 22,
+						"h": 21
+					}
+				},
+				{
+					"filename": "fire15",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 888,
+						"y": 279,
+						"w": 14,
+						"h": 31
 					}
 				},
 				{
@@ -654,8 +717,8 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 825,
-						"y": 254,
+						"x": 802,
+						"y": 282,
 						"w": 14,
 						"h": 31
 					}
@@ -676,7 +739,7 @@
 					},
 					"frame": {
 						"x": 768,
-						"y": 282,
+						"y": 288,
 						"w": 14,
 						"h": 31
 					}
@@ -696,7 +759,7 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 786,
+						"x": 820,
 						"y": 282,
 						"w": 14,
 						"h": 31

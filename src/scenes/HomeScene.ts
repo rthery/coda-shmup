@@ -46,6 +46,7 @@ export default class HomeScene extends Phaser.Scene {
         this.load.json('playerShips', 'Data/playerShips.json');
         this.load.json('upgrades', 'Data/upgrades.json');
         this.load.json('difficulty', 'Data/difficulty.json');
+        this.load.json('pickups', 'Data/pickups.json');
         this.load.audio('sfx_laser2', 'Sounds/sfx_laser2.ogg');
         Sfx.preload(this.load);
     }

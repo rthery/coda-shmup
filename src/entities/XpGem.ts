@@ -47,6 +47,11 @@ export default class XpGem extends Physics.Arcade.Sprite {
         this._tween.restart();
     }
 
+    // MAGNET pickup: flies to the player from anywhere in the arena
+    public attract() {
+        this._attracted = true;
+    }
+
     public disable() {
         this.disableBody(true, true);
         this._tween.pause();

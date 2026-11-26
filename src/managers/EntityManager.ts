@@ -4,6 +4,7 @@ import Bullet from "../entities/Bullet.ts";
 import Enemy from "../entities/Enemy.ts";
 import Player from "../entities/Player.ts";
 import XpGem from "../entities/XpGem.ts";
+import Pickup from "../entities/Pickup.ts";
 import Experience from "../components/Experience.ts";
 import Thrusters from "../components/Thrusters.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
@@ -12,6 +13,7 @@ import RegistryConstants from "../RegistryConstants.ts";
 import DifficultyCurve from "../utils/DifficultyCurve.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 import {BulletFxData} from "../gameData/BulletData.ts";
+import type {PickupData, PickupId} from "../gameData/PickupsData.ts";
 import Sfx from "../audio/Sfx.ts";
 
 export default class EntityManager extends Plugins.ScenePlugin {
@@ -26,12 +28,23 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private static readonly PLAYER_EXPLOSION_SIZE: number = 2;
     // Extra explosion per combo level above X1
     private static readonly EXPLOSION_PER_COMBO: number = 0.5;
+    private static readonly PICKUP_POOL_SIZE: number = 8;
+    private static readonly REPAIR_HULL_POINTS: number = 1;
+    // The BOMB ring sweeps the screen from the player and destroys each enemy it reaches
+    private static readonly BOMB_RING_DURATION: number = 450; // ms
+    private static readonly BOMB_RING_WIDTH: number = 28;
+    private static readonly MAGNET_RING_RADIUS: number = 500;
+    private static readonly MAGNET_RING_DURATION: number = 500; // ms
+    private static readonly REPAIR_RING_RADIUS: number = 140;
+    private static readonly REPAIR_RING_DURATION: number = 400; // ms
+    private static readonly PICKUP_RING_WIDTH: number = 10;
 
     private static readonly ENTITIES_DEPTHS = {
         EFFECTS_TOP: 600,
         PLAYER: 100,
         PLAYER_BULLETS: 90,
         ENEMIES: 80,
+        PICKUPS: 77,
         XP_GEMS: 75,
         ENEMY_BULLETS: 70,
         EFFECTS: 60
@@ -71,6 +84,10 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private _enemyBullets: Physics.Arcade.Group;
     private _xpGems: Physics.Arcade.Group;
     private _xpTrailFX: GameObjects.Particles.ParticleEmitter;
+    private _pickups: Physics.Arcade.Group;
+    private _pickupsData: PickupData[];
+    // Run time of each pickup's last drop, s
+    private readonly _lastPickupDropTimes: Map<PickupId, number> = new Map();
     private readonly _spawnOffset: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _xpGemScatter: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private _difficulty: DifficultyCurve;
@@ -123,6 +140,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
         // Create the enemy pools now, not at the end of the intro, to avoid a freeze
         this.initXpGems();
+        this.initPickups();
         this.initEnemies();
         this.initGroupCollisions();
         this.initParticleEmitters();
@@ -196,6 +214,25 @@ export default class EntityManager extends Plugins.ScenePlugin {
         return this._xpGems;
     }
 
+    public initPickups(): Physics.Arcade.Group {
+        this._pickupsData = this.scene!.cache.json.get('pickups') as PickupData[];
+        // Each pickup waits its cooldown from the start of the run before its first drop
+        this._lastPickupDropTimes.clear();
+
+        this._pickups = this.scene!.physics.add.group({
+            classType: Pickup,
+            maxSize: EntityManager.PICKUP_POOL_SIZE,
+            runChildUpdate: true,
+            createCallback: (pickup) => {
+                (pickup as Pickup).init();
+                (pickup as Pickup).setDepth(EntityManager.ENTITIES_DEPTHS.PICKUPS);
+            }
+        });
+        GroupUtils.populate(EntityManager.PICKUP_POOL_SIZE, this._pickups);
+
+        return this._pickups;
+    }
+
     public initGroupCollisions() {
         // Push enemies apart so they don't stack into a single blob
         this.scene!.physics.add.collider(this._enemies, this._enemies);
@@ -253,6 +290,10 @@ export default class EntityManager extends Plugins.ScenePlugin {
             this.game!.events.emit(GameConstants.Events.XP_GEM_COLLECTED_EVENT,
                 xpGem.x - worldView.x, xpGem.y - worldView.y);
             (player as Player).getComponent(Experience)?.add(xpGem.value);
+        });
+
+        this.scene!.physics.add.overlap(this._player, this._pickups, (_player, pickup) => {
+            this.collectPickup(pickup as Pickup);
         });
 
         console.log("[EntityManager] Group collisions initialized");
@@ -441,6 +482,101 @@ export default class EntityManager extends Plugins.ScenePlugin {
         }
     }
 
+    // At most one pickup per kill, each one rare and spaced out by its cooldown
+    private rollPickupDrop(x: number, y: number) {
+        const runTime: number = this.scene!.registry.get(RegistryConstants.Keys.RUN_TIME) ?? 0;
+        for (const data of this._pickupsData) {
+            if (data.id === 'repair' && !this._player.isHullDamaged)
+                continue;
+            if (runTime - (this._lastPickupDropTimes.get(data.id) ?? 0) < data.cooldown
+                || Math.random() >= data.dropChance)
+                continue;
+
+            const pickup = this._pickups.get() as Pickup | null;
+            if (!pickup)
+                return;
+            pickup.enable(x, y, data);
+            this._lastPickupDropTimes.set(data.id, runTime);
+            return;
+        }
+    }
+
+    private collectPickup(pickup: Pickup) {
+        const data: PickupData = pickup.pickupData;
+        pickup.disable();
+
+        const tint: number = Phaser.Display.Color.HexStringToColor(data.glowTint).color;
+        switch (data.id) {
+            case 'bomb':
+                this.detonateBomb(tint);
+                break;
+            case 'magnet':
+                this._xpGems.getMatching('active', true).forEach(gem => (gem as XpGem).attract());
+                this.spawnRing(this._player.x, this._player.y, tint, EntityManager.MAGNET_RING_RADIUS,
+                    EntityManager.MAGNET_RING_DURATION, EntityManager.PICKUP_RING_WIDTH);
+                Sfx.play(this.scene!, 'comboUp');
+                break;
+            case 'repair':
+                this._player.repair(EntityManager.REPAIR_HULL_POINTS);
+                this.spawnRing(this._player.x, this._player.y, tint, EntityManager.REPAIR_RING_RADIUS,
+                    EntityManager.REPAIR_RING_DURATION, EntityManager.PICKUP_RING_WIDTH);
+                break;
+        }
+    }
+
+    // Destroys every enemy on screen, as the ring reaches it
+    private detonateBomb(tint: number) {
+        const camera = this.scene!.cameras.main;
+        const view = camera.worldView;
+        const x: number = this._player.x;
+        const y: number = this._player.y;
+        const maxDistance: number = Math.max(
+            Phaser.Math.Distance.Between(x, y, view.left, view.top),
+            Phaser.Math.Distance.Between(x, y, view.right, view.top),
+            Phaser.Math.Distance.Between(x, y, view.left, view.bottom),
+            Phaser.Math.Distance.Between(x, y, view.right, view.bottom));
+
+        this.spawnRing(x, y, tint, maxDistance, EntityManager.BOMB_RING_DURATION, EntityManager.BOMB_RING_WIDTH);
+        const color = Phaser.Display.Color.IntegerToColor(tint);
+        camera.flash(150, color.red, color.green, color.blue);
+        camera.shake(300, 0.02);
+        Sfx.play(this.scene!, 'explosion', {volumeScale: 2.5, detune: -600});
+
+        this._enemies.getMatching('active', true).forEach(child => {
+            const enemy = child as Enemy;
+            if (!view.contains(enemy.x, enemy.y))
+                return;
+            // The ring eases out (radius = 1 - (1 - t)²): when does it reach this enemy
+            const distanceRatio: number = Math.min(Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y) / maxDistance, 1);
+            const delay: number = (1 - Math.sqrt(1 - distanceRatio)) * EntityManager.BOMB_RING_DURATION;
+            this.scene!.time.delayedCall(delay, () => {
+                // Not already killed meanwhile, by a laser or a collision
+                if (!enemy.active || !enemy.arcadeBody.enable)
+                    return;
+                const health = enemy.getComponent(Health);
+                health?.damage(health.max);
+            });
+        });
+    }
+
+    // A circle growing from (x, y) and fading out
+    private spawnRing(x: number, y: number, tint: number, radius: number, duration: number, lineWidth: number) {
+        const ring: GameObjects.Graphics = this.scene!.add.graphics()
+            .setDepth(EntityManager.ENTITIES_DEPTHS.EFFECTS_TOP).setBlendMode(Phaser.BlendModes.ADD);
+        const state = {progress: 0};
+        this.scene!.tweens.add({
+            targets: state,
+            progress: 1,
+            duration,
+            ease: 'Quad.easeOut',
+            onUpdate: () => {
+                ring.clear().lineStyle(lineWidth * (1 - state.progress / 2), tint, 1 - state.progress)
+                    .strokeCircle(x, y, radius * state.progress);
+            },
+            onComplete: () => ring.destroy()
+        });
+    }
+
     private spawnEnemy() {
         const difficulty = this._difficulty.at(this.scene!.registry.get(RegistryConstants.Keys.RUN_TIME) ?? 0);
         this.scene!.time.delayedCall(difficulty.spawnInterval, this.spawnEnemy, [], this);
@@ -471,6 +607,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
             Sfx.play(this.scene!, 'explosion', {volumeScale: 1 + (combo - 1) * 0.1, detune: -(combo - 1) * 60});
             // One gem per combo level: staying unhurt levels up faster
             this.spawnXpGems(enemy.x, enemy.y, combo);
+            this.rollPickupDrop(enemy.x, enemy.y);
             this.game!.events.emit(GameConstants.Events.ENEMY_KILLED_EVENT, enemy);
         });
 

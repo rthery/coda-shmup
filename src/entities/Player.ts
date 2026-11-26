@@ -104,7 +104,6 @@ export default class Player extends Entity {
                     this.cheatUpgrade(upgrades[Number(digit[1]) - 1]);
                 else if (event.key.toLowerCase() === 'm')
                     upgrades.forEach(upgrade => {
-                        // REPAIR has no max rank: it stops once the hull is full
                         for (let i = 0; i < Player.CHEAT_MAX_PICKS && this.isUpgradeAvailable(upgrade); i++)
                             this.applyUpgrade(upgrade);
                     });
@@ -182,16 +181,24 @@ export default class Player extends Entity {
         this.getComponent(Turret)?.setTurret(this._playerShipData.turret);
     }
 
-    // Repair only when the hull is damaged, the others until their max rank
+    // Offered until their max rank
     public isUpgradeAvailable(upgrade: UpgradeData): boolean {
-        if (upgrade.id === 'repair')
-            return this.hullPoints < Player.HULL_POINTS;
         return upgrade.maxRank === null || this.getUpgradeRank(upgrade.id) < upgrade.maxRank;
     }
 
     // Lives left in the hull, once the shield cells are gone
     public get hullPoints(): number {
         return Math.min(this.getComponent(Health)?.current ?? 0, Player.HULL_POINTS);
+    }
+
+    public get isHullDamaged(): boolean {
+        return this.hullPoints < Player.HULL_POINTS;
+    }
+
+    // REPAIR pickup
+    public repair(hullPoints: number) {
+        this.getComponent(Health)?.heal(hullPoints);
+        Sfx.play(this.scene, 'repair');
     }
 
     // Times the upgrade has been picked
@@ -218,8 +225,6 @@ export default class Player extends Entity {
                 const cells: number = (this.getComponent(Health)?.max ?? 0) - Player.HULL_POINTS;
                 return Player.preview("SHIELD CELLS", cells, cells + value);
             }
-            case 'repair':
-                return Player.preview("HULL", this.hullPoints, this.hullPoints + value);
             case 'pierce':
                 return Player.preview("PIERCE", this._bulletData.pierce, this._bulletData.pierce + value);
             case 'magnet':
@@ -306,10 +311,6 @@ export default class Player extends Entity {
             case 'shieldCell':
                 this.getComponent(Health)?.increaseMax(upgrade.value);
                 Sfx.play(this.scene, 'shieldUp');
-                break;
-            case 'repair':
-                this.getComponent(Health)?.heal(upgrade.value);
-                Sfx.play(this.scene, 'repair');
                 break;
             case 'pierce':
                 this._bulletData.pierce += upgrade.value;
