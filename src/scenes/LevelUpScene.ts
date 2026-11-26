@@ -24,12 +24,15 @@ export default class LevelUpScene extends Scene {
     private static readonly CARD_SHADOW_ALPHA: number = 0.45;
     private static readonly CARD_SHADOW_RADIUS: number = 18;
     private static readonly CARD_ALPHA: number = 0.8;
-    // Rank pips on the right of the header: slanted like the combo pips
+    // Rank pips: slanted like the combo pips
     private static readonly PIP_WIDTH: number = 26;
     private static readonly PIP_HEIGHT: number = 20;
     private static readonly PIP_SKEW: number = 7;
     private static readonly PIP_GAP: number = 8;
-    private static readonly PIPS_RIGHT_MARGIN: number = 150;
+    // The rank block, top right of the body: "RANK 2/5" level with the title, the pips under it, clear of the stat line
+    private static readonly RANK_LABEL_OFFSET_Y: number = -44;
+    private static readonly RANK_PIPS_OFFSET_Y: number = -2;
+    private static readonly RANK_LABEL_GAP: number = 10;
     private static readonly PIP_OWNED_COLOR: number = 0xf5c542;
     private static readonly PIP_EMPTY_COLOR: number = 0x4a5263;
     private static readonly PIP_EMPTY_ALPHA: number = 0.25;
@@ -163,17 +166,29 @@ export default class LevelUpScene extends Scene {
         const nextText = this.add.text(currentText.x + currentText.width, currentText.y, preview.next,
             {fontSize: '36px', color: LevelUpScene.NEXT_VALUE_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
 
-        const pips = this.createRankPips(upgrade, halfWidth - LevelUpScene.PIPS_RIGHT_MARGIN, top + UiUtils.HEADER_HEIGHT / 2);
+        const rankBlock = this.createRankBlock(upgrade, halfWidth - LevelUpScene.CARD_PADDING, bodyCenterY);
         // Where the card rests: it shows below the card once lifted
         const shadow = this.add.graphics().setVisible(false)
             .fillStyle(0x000000, LevelUpScene.CARD_SHADOW_ALPHA)
             .fillRoundedRect(-halfWidth, top + LevelUpScene.CARD_LIFT, LevelUpScene.CARD_WIDTH, LevelUpScene.CARD_HEIGHT,
                 LevelUpScene.CARD_SHADOW_RADIUS);
-        return this.add.container(x, y, [shadow, panel, categoryText, icon, titleText, currentText, nextText, ...pips])
+        return this.add.container(x, y, [shadow, panel, categoryText, icon, titleText, currentText, nextText, ...rankBlock])
             .setData('restY', y).setData('shadow', shadow);
     }
 
     // One pip per rank: gold when owned, the one this pick adds blinks
+    // The rank this pick reaches, over one pip per rank. Unranked upgrades have none
+    private createRankBlock(upgrade: UpgradeData, right: number, bodyCenterY: number): GameObjects.GameObject[] {
+        if (upgrade.maxRank === null)
+            return [];
+        const labelY: number = bodyCenterY + LevelUpScene.RANK_LABEL_OFFSET_Y;
+        const value = this.add.text(right, labelY, `${this._player.getUpgradeRank(upgrade.id) + 1}/${upgrade.maxRank}`,
+            {fontSize: '40px', color: UiUtils.INK_COLOR, fontFamily: 'future'}).setOrigin(1, 0.5);
+        const label = this.add.text(value.x - value.width - LevelUpScene.RANK_LABEL_GAP, labelY, 'RANK',
+            {fontSize: '28px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future'}).setOrigin(1, 0.5);
+        return [label, value, ...this.createRankPips(upgrade, right, bodyCenterY + LevelUpScene.RANK_PIPS_OFFSET_Y)];
+    }
+
     private createRankPips(upgrade: UpgradeData, right: number, y: number): GameObjects.Polygon[] {
         if (upgrade.maxRank === null)
             return [];
