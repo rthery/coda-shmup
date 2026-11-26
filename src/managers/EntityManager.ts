@@ -33,6 +33,9 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private static readonly PICKUP_POOL_SIZE: number = 8;
     // Pickups land at least this far inside the arena walls: wrecks near or past a wall would drop them out of reach
     private static readonly PICKUP_WALL_MARGIN: number = 120;
+    // Dev cheat: B drops a random pickup this far from the ship, on screen or off it
+    private static readonly CHEAT_PICKUP_MIN_DISTANCE: number = 300;
+    private static readonly CHEAT_PICKUP_MAX_DISTANCE: number = 1400;
     private static readonly REPAIR_HULL_POINTS: number = 1;
     // The BOMB ring sweeps the screen from the player and destroys each enemy it reaches
     private static readonly BOMB_RING_DURATION: number = 450; // ms
@@ -490,6 +493,17 @@ export default class EntityManager extends Plugins.ScenePlugin {
     public static toggleSpawning() {
         EntityManager._isSpawningDisabled = !EntityManager._isSpawningDisabled;
         console.log("[Cheat] Enemy spawning " + (EntityManager._isSpawningDisabled ? "off" : "on"));
+    }
+
+    public cheatSpawnPickup() {
+        const pickup = this._pickups?.get() as Pickup | null;
+        if (!pickup)
+            return;
+        const data: PickupData = Phaser.Utils.Array.GetRandom(this._pickupsData);
+        Phaser.Math.RandomXY(this._spawnOffset, Phaser.Math.FloatBetween(
+            EntityManager.CHEAT_PICKUP_MIN_DISTANCE, EntityManager.CHEAT_PICKUP_MAX_DISTANCE));
+        this.dropPickup(pickup, this._player.x + this._spawnOffset.x, this._player.y + this._spawnOffset.y, data);
+        console.log("[Cheat] Pickup " + data.id + " dropped");
     }
 
     // At most one pickup per kill, each one rare and spaced out by its cooldown
