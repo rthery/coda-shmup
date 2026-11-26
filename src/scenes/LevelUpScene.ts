@@ -148,5 +148,6 @@ export default class LevelUpScene extends Scene {
 
         this.scene.stop();
         this.scene.resume(GameConstants.SceneKeys.MAIN_GAME);
+        this.game.events.emit(GameConstants.Events.LEVEL_UP_CLOSED_EVENT);
     }
 }

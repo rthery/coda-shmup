@@ -21,6 +21,7 @@ export default class MainUIScene extends Scene {
     private static readonly XP_FILL_DELAY: number = 120;
     private static readonly XP_FILL_DURATION: number = 300;
     private static readonly XP_STAR_FLIGHT_DURATION: number = 450;
+    private static readonly LEVEL_UP_FILL_DURATION: number = 200;
 
     private _lifeIcons: GameObjects.Image[];
     private _lifeRow: GameObjects.Container;
@@ -31,6 +32,8 @@ export default class MainUIScene extends Scene {
     private _xpBarGhost: GameObjects.NineSlice;
     private readonly _xpBarDisplay: { ratio: number } = {ratio: 0};
     private _displayedLevel: number;
+    // While the level-up screen is open the bar stays full, the leftover XP shows once it closes
+    private _heldXpRatio: number | null = null;
     private _xpStars: GameObjects.Group;
     // The star just spawned, waiting for the XP change its gem caused
     private _pendingXpStar: GameObjects.Image | null = null;
@@ -45,12 +48,14 @@ export default class MainUIScene extends Scene {
     init() {
         this.game.events.on(GameConstants.Events.PLAYER_SPAWNED_EVENT, this.onPlayerSpawned, this);
         this.game.events.on(GameConstants.Events.XP_GEM_COLLECTED_EVENT, this.onXpGemCollected, this);
+        this.game.events.on(GameConstants.Events.LEVEL_UP_CLOSED_EVENT, this.onLevelUpClosed, this);
         this.registry.events.on(RegistryConstants.Events.PLAYER_SCORE_CHANGE, this.onPlayerScoreChanged, this);
         this.registry.events.on(RegistryConstants.Events.PLAYER_COMBO_CHANGE, this.onPlayerComboChanged, this);
 
         this.events.once(Scenes.Events.SHUTDOWN, () => {
             this.game.events.off(GameConstants.Events.PLAYER_SPAWNED_EVENT, this.onPlayerSpawned, this);
             this.game.events.off(GameConstants.Events.XP_GEM_COLLECTED_EVENT, this.onXpGemCollected, this);
+            this.game.events.off(GameConstants.Events.LEVEL_UP_CLOSED_EVENT, this.onLevelUpClosed, this);
             this.registry.events.off(RegistryConstants.Events.PLAYER_SCORE_CHANGE, this.onPlayerScoreChanged, this);
             this.registry.events.off(RegistryConstants.Events.PLAYER_COMBO_CHANGE, this.onPlayerComboChanged, this);
         }, this);
@@ -223,6 +228,7 @@ export default class MainUIScene extends Scene {
         this.tweens.killTweensOf(this._xpBarDisplay);
         this._xpStars.getMatching('active', true).forEach((star: GameObjects.Image) => this.releaseXpStar(star));
         this._pendingXpStar = null;
+        this._heldXpRatio = null;
         this._displayedLevel = level;
         this._levelText.setText("LV " + level);
         this.setXpBarRatio(ratio);
@@ -267,6 +273,10 @@ export default class MainUIScene extends Scene {
 
     private onPlayerXpChanged(xp: number, xpToNextLevel: number, level: number) {
         const ratio: number = xp / xpToNextLevel;
+        // The level-up screen opens right away: the bar can't wait for the star
+        if (level > this._displayedLevel)
+            this.playLevelUp(ratio, level);
+
         if (this._pendingXpStar) {
             this._pendingXpStar.setData('ratio', ratio).setData('level', level);
             this._pendingXpStar = null;
@@ -277,30 +287,30 @@ export default class MainUIScene extends Scene {
     }
 
     private applyXp(ratio: number, level: number) {
-        this.tweens.killTweensOf(this._xpBarDisplay);
+        // Stars collected before the level up are already counted in the full bar
+        if (level < this._displayedLevel)
+            return;
 
-        if (level > this._displayedLevel) {
-            this.playLevelUp(ratio, level);
+        if (this._heldXpRatio !== null) {
+            this._heldXpRatio = ratio;
             return;
         }
 
+        this.tweens.killTweensOf(this._xpBarDisplay);
         UiUtils.setBarFill(this._xpBarGhost, this._xpBarWidth, ratio);
         this.tweenXpBarTo(ratio, MainUIScene.XP_FILL_DELAY);
     }
 
-    // The bar tops up, flashes, then refills from empty
+    // The bar tops up and flashes behind the level-up screen, and stays full until it closes
     private playLevelUp(ratio: number, level: number) {
+        this.tweens.killTweensOf(this._xpBarDisplay);
         this._displayedLevel = level;
+        this._heldXpRatio = ratio;
         UiUtils.setBarFill(this._xpBarGhost, this._xpBarWidth, 1);
         this.tweenXpBarTo(1, 0, () => {
             this._xpBarFill.setTintFill(0xffffff);
-            this.time.delayedCall(120, () => {
-                this._xpBarFill.clearTint();
-                this.setXpBarRatio(0);
-                UiUtils.setBarFill(this._xpBarGhost, this._xpBarWidth, ratio);
-                this.tweenXpBarTo(ratio, MainUIScene.XP_FILL_DELAY);
-            });
-        });
+            this.time.delayedCall(120, () => this._xpBarFill.clearTint());
+        }, MainUIScene.LEVEL_UP_FILL_DURATION);
 
         this._levelText.setText("LV " + level).setColor(UiUtils.YELLOW_COLOR);
         this.tweens.add({
@@ -312,12 +322,25 @@ export default class MainUIScene extends Scene {
         });
     }
 
-    private tweenXpBarTo(ratio: number, delay: number, onComplete?: () => void) {
+    // The bar refills from empty with the XP left over after the level up
+    private onLevelUpClosed() {
+        if (this._heldXpRatio === null)
+            return;
+
+        const ratio: number = this._heldXpRatio;
+        this._heldXpRatio = null;
+        this.setXpBarRatio(0);
+        UiUtils.setBarFill(this._xpBarGhost, this._xpBarWidth, ratio);
+        this.tweenXpBarTo(ratio, MainUIScene.XP_FILL_DELAY);
+    }
+
+    private tweenXpBarTo(ratio: number, delay: number, onComplete?: () => void,
+                         duration: number = MainUIScene.XP_FILL_DURATION) {
         this.tweens.add({
             targets: this._xpBarDisplay,
             ratio: ratio,
             delay: delay,
-            duration: MainUIScene.XP_FILL_DURATION,
+            duration: duration,
             ease: 'Quad.easeOut',
             onUpdate: () => UiUtils.setBarFill(this._xpBarFill, this._xpBarWidth, this._xpBarDisplay.ratio),
             onComplete: onComplete
