@@ -2,6 +2,7 @@ export default class GameConstants {
     public static readonly Events = Object.freeze({
         TEAM_CREATED_EVENT: "teamCreated",
         PLAYER_SPAWNED_EVENT: "playerSpawned",
+        PLAYER_JOINED_EVENT: "playerJoined",
         ENEMY_SPAWNED_EVENT: "enemySpawned",
         ENEMY_KILLED_EVENT: "enemyKilled",
         XP_GEM_COLLECTED_EVENT: "xpGemCollected",
@@ -19,6 +20,8 @@ export default class GameConstants {
     } as const);
 
     public static readonly START_DELAY: number = 500; // ms
+    // One per ship in playerShips.json
+    public static readonly MAX_PLAYERS: number = 2;
     public static readonly MAX_SCORE_DIGITS: number = 6;
     public static readonly COMBO_KILLS_PER_STEP: number = 10;
     public static readonly MAX_COMBO: number = 5;

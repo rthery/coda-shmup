@@ -9,7 +9,6 @@ import UiUtils from "../utils/UiUtils.ts";
 import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 import type SaveManager from "../managers/SaveManager.ts";
-import {isSameDevice, type InputDevice} from "../managers/PlayerInput.ts";
 
 export default class HomeScene extends Phaser.Scene {
     private static readonly BG_TILE_SCALE: number = 2;
@@ -19,7 +18,6 @@ export default class HomeScene extends Phaser.Scene {
     private static readonly LOADING_BAR_HEIGHT: number = 24;
     private static readonly LOADING_BAR_OFFSET_Y: number = 200;
     private static readonly BG_SCROLL_SPEED: number = 0.1; // texture px/ms
-    private static readonly COOP_PLAYERS: number = 2;
 
     private _bg: Phaser.GameObjects.TileSprite;
     private _playerShip: Phaser.GameObjects.Image;
@@ -31,9 +29,6 @@ export default class HomeScene extends Phaser.Scene {
     private _frame: Phaser.GameObjects.Container;
     private _startPrompt: Phaser.GameObjects.Text;
     private _started: boolean = false;
-    // Coop lobby: each player joins with the confirm of their own device, the run starts once all have
-    private _isLobbyOpen: boolean = false;
-    private _joinedDevices: InputDevice[] = [];
     private saveManager: SaveManager;
 
     constructor() {
@@ -100,8 +95,6 @@ export default class HomeScene extends Phaser.Scene {
         console.log(this.sys.game.renderer.type === Phaser.WEBGL ? 'WebGL' : 'Canvas');
 
         this._started = false;
-        this._isLobbyOpen = false;
-        this._joinedDevices = [];
 
         this._bg = this.add.tileSprite(0, 0, 1, 1, 'bg').setOrigin(0).setTileScale(HomeScene.BG_TILE_SCALE);
 
@@ -136,7 +129,7 @@ export default class HomeScene extends Phaser.Scene {
         ]);
 
         this._startPrompt = UiUtils.addHint(this, centerX, UiLayout.HEIGHT - 220,
-            this._getPromptText(this.gameInputManager.activeInputType)).setAlign('center');
+            this._getPromptText(this.gameInputManager.activeInputType));
         this._frame = this.add.container(0, 0, [this._title, this._startPrompt]);
         UiLayout.onResize(this, () => this.layout());
 
@@ -159,49 +152,20 @@ export default class HomeScene extends Phaser.Scene {
     }
 
     private _onInputTypeChanged(type: InputType): void {
-        if (!this._started && !this._isLobbyOpen) {
+        if (!this._started) {
             this._startPrompt.setText(this._getPromptText(type));
         }
     }
 
-    // No coop on touch
     private _getPromptText(type: InputType): string {
         switch (type) {
             case 'touch': return 'TAP TO START';
-            case 'gamepad': return 'PRESS A OR START\nY: 2 PLAYERS';
-            default: return 'PRESS SPACE TO START\nC: 2 PLAYERS';
+            case 'gamepad': return 'PRESS A OR START';
+            default: return 'PRESS SPACE TO START';
         }
     }
 
-    private _getLobbyText(): string {
-        const lines: string[] = this._joinedDevices.map((_, index) => `PLAYER ${index + 1} READY`);
-        lines.push(`PLAYER ${this._joinedDevices.length + 1}: PRESS SPACE, ENTER OR A`, 'C OR Y: BACK');
-        return lines.join('\n');
-    }
-
-    private _toggleLobby(): void {
-        this._isLobbyOpen = !this._isLobbyOpen;
-        this._joinedDevices = [];
-        Sfx.play(this, 'cardSelect');
-        this._startPrompt.setText(this._isLobbyOpen ? this._getLobbyText()
-            : this._getPromptText(this.gameInputManager.activeInputType));
-    }
-
-    private _updateLobby(): void {
-        const device: InputDevice | null = this.gameInputManager.findConfirmingDevice();
-        if (!device || this._joinedDevices.some(joined => isSameDevice(joined, device)))
-            return;
-
-        this._joinedDevices.push(device);
-        if (this._joinedDevices.length >= HomeScene.COOP_PLAYERS) {
-            this._startGame(this._joinedDevices);
-            return;
-        }
-        Sfx.play(this, 'cardPick');
-        this._startPrompt.setText(this._getLobbyText());
-    }
-
-    private _startGame(devices: InputDevice[]): void {
+    private _startGame(): void {
         this._started = true;
         Sfx.play(this, 'start');
         Sfx.play(this, 'launch');
@@ -219,7 +183,7 @@ export default class HomeScene extends Phaser.Scene {
             ease: 'Quad.easeIn',
             onComplete: () => {
                 this.scene.launch(GameConstants.SceneKeys.MAIN_UI);
-                this.scene.start(GameConstants.SceneKeys.MAIN_GAME, {devices});
+                this.scene.start(GameConstants.SceneKeys.MAIN_GAME);
             }
         });
     }
@@ -232,13 +196,8 @@ export default class HomeScene extends Phaser.Scene {
         this._wingTrails.update(true);
         this._turret.update(deltaTime);
 
-        if (this._started)
-            return;
-        if (this.gameInputManager.coopJustPressed())
-            this._toggleLobby();
-        else if (this._isLobbyOpen)
-            this._updateLobby();
-        else if (this.gameInputManager.confirmJustPressed())
-            this._startGame([{type: 'any'}]);
+        if (!this._started && this.gameInputManager.confirmJustPressed()) {
+            this._startGame();
+        }
     }
 }

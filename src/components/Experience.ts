@@ -8,12 +8,17 @@ export default class Experience extends Events.EventEmitter implements IComponen
     public static readonly CHANGE_EVENT: string = 'change';
     public static readonly LEVEL_UP_EVENT: string = 'levelUp';
 
-    private readonly _curve: XpCurveData;
+    private _curve: XpCurveData;
     private _xp: number = 0;
     private _level: number = 1;
 
     public constructor(curve: XpCurveData) {
         super();
+        this._curve = curve;
+    }
+
+    // Coop: a player joining raises the XP each level takes
+    public setCurve(curve: XpCurveData) {
         this._curve = curve;
     }
 

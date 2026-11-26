@@ -4,7 +4,7 @@ export default class DifficultyCurve {
     private readonly _keyframes: DifficultyKeyframeData[];
     private readonly _xp: XpCurveData;
     private readonly _coop: CoopScalingData;
-    private readonly _extraPlayers: number;
+    private _extraPlayers: number;
     private readonly _current: DifficultyKeyframeData = {
         time: 0, spawnInterval: 0, maxEnemies: 0, enemyHealth: 0, enemySpeed: 0
     };
@@ -13,6 +13,10 @@ export default class DifficultyCurve {
         this._keyframes = data.keyframes;
         this._xp = data.xp;
         this._coop = data.coop;
+        this._extraPlayers = playerCount - 1;
+    }
+
+    public setPlayerCount(playerCount: number) {
         this._extraPlayers = playerCount - 1;
     }
 

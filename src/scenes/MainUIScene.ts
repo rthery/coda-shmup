@@ -33,6 +33,9 @@ export default class MainUIScene extends Scene {
     private static readonly BRACKET_INSET: number = 28;
     private static readonly BRACKET_LENGTH: number = 56;
     private static readonly THREAT_BANNER_Y: number = 560;
+    private static readonly JOIN_BANNER_Y: number = 760;
+    private static readonly JOIN_BANNER_COLOR: string = '#ff9a3c';
+    private static readonly JOIN_BANNER_DURATION: number = 1200; // ms
     private static readonly THREAT_LINE_HEIGHT: number = 4;
     private static readonly THREAT_COLOR: string = '#ffb02e';
     private static readonly MAX_THREAT_COLOR: number = 0xff4a3d;
@@ -94,6 +97,9 @@ export default class MainUIScene extends Scene {
     private _pendingXpStar: GameObjects.Image | null = null;
     private _xpBarWidth: number;
     private _levelText: GameObjects.Text;
+    // Coop: how a second player joins, while there's room, and who just did
+    private _joinHint: GameObjects.Text;
+    private _joinBanner: GameObjects.Text;
 
     constructor() {
         super(GameConstants.SceneKeys.MAIN_UI);
@@ -110,6 +116,8 @@ export default class MainUIScene extends Scene {
         this.registry.events.on(RegistryConstants.Events.PLAYER_COMBO_CHANGE, this.onPlayerComboChanged, this);
         this.registry.events.on(RegistryConstants.Events.PLAYER_COMBO_PROGRESS_CHANGE, this.onComboProgressChanged, this);
         this.game.events.on(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
+        this.game.events.on(GameConstants.Events.PLAYER_JOINED_EVENT, this.onPlayerJoined, this);
+        this.game.events.on('input-type-changed', this.updateJoinHint, this);
 
         this.events.once(Scenes.Events.SHUTDOWN, () => {
             this.game.events.off(GameConstants.Events.TEAM_CREATED_EVENT, this.onTeamCreated, this);
@@ -121,6 +129,8 @@ export default class MainUIScene extends Scene {
             this.registry.events.off(RegistryConstants.Events.PLAYER_COMBO_CHANGE, this.onPlayerComboChanged, this);
             this.registry.events.off(RegistryConstants.Events.PLAYER_COMBO_PROGRESS_CHANGE, this.onComboProgressChanged, this);
             this.game.events.off(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
+            this.game.events.off(GameConstants.Events.PLAYER_JOINED_EVENT, this.onPlayerJoined, this);
+            this.game.events.off('input-type-changed', this.updateJoinHint, this);
         }, this);
     }
 
@@ -192,6 +202,13 @@ export default class MainUIScene extends Scene {
             this._comboPips.push(pip);
         }
 
+        this._joinHint = this.add.text(0, 0, "PLAYER 2: PRESS SPACE, ENTER OR A TO JOIN · B: BOT",
+            {fontSize: '28px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5, 1).setAlpha(0.5);
+        this._joinBanner = this.add.text(0, MainUIScene.JOIN_BANNER_Y, "",
+            {fontSize: '56px', color: MainUIScene.JOIN_BANNER_COLOR, fontFamily: 'future'}).setOrigin(0.5)
+            .setShadow(0, 6, '#000', 0, false, true).setAlpha(0);
+        this.updateJoinHint();
+
         this.scene.bringToTop();
         UiLayout.onResize(this, () => this.layout());
 
@@ -210,6 +227,8 @@ export default class MainUIScene extends Scene {
         this._runTimeText.setX(area.width / 2);
         this._threatBanner.setX(area.width / 2);
         this._threatLines.forEach(line => line.setSize(area.width - 2 * MainUIScene.MARGIN, MainUIScene.THREAT_LINE_HEIGHT));
+        this._joinHint.setPosition(area.width / 2, area.height - MainUIScene.MARGIN);
+        this._joinBanner.setX(area.width / 2);
 
         this._xpBarWidth = right - MainUIScene.XP_BAR_X;
         this._xpBarTrack.setSize(this._xpBarWidth, this._xpBarTrack.height);
@@ -352,6 +371,7 @@ export default class MainUIScene extends Scene {
             hullFrame: player.lifeIcon
         };
         this._lifeRows.push(row);
+        this.updateJoinHint();
         const health = player.getComponent(Health);
         if (health) {
             this.updateLifeIcons(row, health.current, health.max, health.current);
@@ -365,11 +385,30 @@ export default class MainUIScene extends Scene {
         // This scene outlives a game restart: the new players get new rows
         this._lifeRows.forEach(row => row.container.destroy());
         this._lifeRows = [];
+        this.updateJoinHint();
 
         const experience = team.experience;
         // This scene outlives a game restart: reset the bar from the new team
         this.resetXpBar(experience.xp / experience.xpToNextLevel, experience.level);
         experience.on(Experience.CHANGE_EVENT, this.onPlayerXpChanged, this);
+    }
+
+    // Not on touch: coop takes keyboards and gamepads
+    private updateJoinHint() {
+        this._joinHint?.setVisible(this._lifeRows.length < GameConstants.MAX_PLAYERS
+            && this.gameInputManager.activeInputType !== 'touch');
+    }
+
+    private onPlayerJoined(playerCount: number, isBot: boolean) {
+        this._joinBanner.setText(isBot ? "BOT JOINED" : `PLAYER ${playerCount} JOINED`);
+        this.tweens.killTweensOf(this._joinBanner);
+        this.tweens.chain({
+            targets: this._joinBanner,
+            tweens: [
+                {alpha: {from: 0, to: 1}, scale: {from: 1.4, to: 1}, duration: 250, ease: 'Back.easeOut'},
+                {alpha: 0, delay: MainUIScene.JOIN_BANNER_DURATION, duration: 400}
+            ]
+        });
     }
 
     private createThreatBanner() {

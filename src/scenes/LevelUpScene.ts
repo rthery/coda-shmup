@@ -36,6 +36,8 @@ export default class LevelUpScene extends Scene {
     private static readonly CARDS_DELAY: number = 250;
     private static readonly CARD_STAGGER: number = 90;
     private static readonly CARD_SLIDE_DURATION: number = 400;
+    // A bot's pick, once its cards have landed: long enough to see it
+    private static readonly BOT_PICK_DELAY: number = 700; // ms
     private static readonly CATEGORY_FRAMES: Record<UpgradeCategory, UiFrame> = {
         weapon: 'ui_header_blade_red',
         // Blue like the ship
@@ -128,8 +130,8 @@ export default class LevelUpScene extends Scene {
         this._isReady = false;
         this._crosshair.setVisible(false);
         this._hintText.setAlpha(0).setText(this.getHintText());
-        this._levelText.setText(this.isCoop ? `LEVEL ${this._level} · PLAYER ${this._pickIndex + 1}`
-            : `LEVEL ${this._level} REACHED`);
+        const picker: string = this.isBotPicking ? 'BOT' : `PLAYER ${this._pickIndex + 1}`;
+        this._levelText.setText(this.isCoop ? `LEVEL ${this._level} · ${picker}` : `LEVEL ${this._level} REACHED`);
 
         // Maxed upgrades aren't offered anymore
         const allUpgrades = this.cache.json.get('upgrades') as UpgradeData[];
@@ -178,8 +180,15 @@ export default class LevelUpScene extends Scene {
         const panel = UiUtils.addPanel(this, 0, 0, LevelUpScene.CARD_WIDTH, LevelUpScene.CARD_HEIGHT,
             LevelUpScene.CATEGORY_FRAMES[upgrade.category])
             .setInteractive({useHandCursor: true})
-            .on(Phaser.Input.Events.GAMEOBJECT_POINTER_OVER, () => this.select(index))
-            .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => this.choose(index));
+            // The bot's cards aren't for the mouse
+            .on(Phaser.Input.Events.GAMEOBJECT_POINTER_OVER, () => {
+                if (!this.isBotPicking)
+                    this.select(index);
+            })
+            .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => {
+                if (!this.isBotPicking)
+                    this.choose(index);
+            });
         const categoryText = this.add.text(-halfWidth + 40, top + UiUtils.HEADER_HEIGHT / 2,
             upgrade.category.toUpperCase(), {fontSize: '32px', color: '#fff', fontFamily: 'future'})
             .setOrigin(0, 0.5);
@@ -239,6 +248,20 @@ export default class LevelUpScene extends Scene {
         this.tweens.add({targets: this._crosshair, scale: {from: 2, to: 1}, angle: {from: -90, to: 0}, duration: 250,
             ease: 'Back.easeOut'});
         this.tweens.add({targets: this._hintText, alpha: 1, duration: 250});
+
+        if (this.isBotPicking) {
+            const pickIndex: number = this._pickIndex;
+            const cardIndex: number = Phaser.Math.Between(0, this._cards.length - 1);
+            this.time.delayedCall(LevelUpScene.BOT_PICK_DELAY / 2, () => this.select(cardIndex));
+            this.time.delayedCall(LevelUpScene.BOT_PICK_DELAY, () => {
+                if (this._pickIndex === pickIndex)
+                    this.choose(cardIndex);
+            });
+        }
+    }
+
+    private get isBotPicking(): boolean {
+        return this._player.playerInput.device.type === 'bot';
     }
 
     private onInputTypeChanged() {
@@ -248,6 +271,8 @@ export default class LevelUpScene extends Scene {
     // Solo follows the last device used, coop the device of the player picking
     private getHintText(): string {
         const device: InputDevice = this._player.playerInput.device;
+        if (device.type === 'bot')
+            return 'THE BOT PICKS';
         const type: InputType = device.type === 'any' ? this.gameInputManager.activeInputType
             : device.type === 'gamepad' ? 'gamepad' : 'keyboard';
         switch (type) {
