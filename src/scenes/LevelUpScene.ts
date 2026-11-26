@@ -108,7 +108,7 @@ export default class LevelUpScene extends Scene {
             delay: 150, duration: 250, ease: 'Quad.easeOut'});
 
         this._crosshair = this.add.image(0, 0, "sprites", "ui_crosshair").setVisible(false);
-        this._hintText = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 200, [], 32).setAlpha(0);
+        this._hintText = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 200, []).setAlpha(0);
 
         this.game.events.on('input-type-changed', this.onInputTypeChanged, this);
         this.events.once('shutdown', () => {

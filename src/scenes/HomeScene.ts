@@ -134,7 +134,9 @@ export default class HomeScene extends Phaser.Scene {
 
         this._startPrompt = UiUtils.addPulsingButtonHint(this, centerX, UiLayout.HEIGHT - 220,
             this._getPromptText(this.gameInputManager.activeInputType));
-        this._joinPrompt = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 150, []).setAlpha(0.5);
+        // Long: smaller, to fit a portrait screen
+        this._joinPrompt = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 140, [], UiUtils.SMALL_HINT_FONT_SIZE)
+            .setAlpha(0.5);
         this._updateJoinPrompt();
         this._frame = this.add.container(0, 0, [this._title, this._startPrompt, this._joinPrompt]);
         UiLayout.onResize(this, () => this.layout());

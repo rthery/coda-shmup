@@ -70,7 +70,7 @@ export default class PauseScene extends Scene {
         this._rows.forEach((row, index) => this.createRow(row, index));
 
         this._hintText = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 200,
-            this.getHintText(this.gameInputManager.activeInputType), 32);
+            this.getHintText(this.gameInputManager.activeInputType));
         this.game.events.on('input-type-changed', this.onInputTypeChanged, this);
         this.events.once('shutdown', () => {
             this.game.events.off('input-type-changed', this.onInputTypeChanged, this);

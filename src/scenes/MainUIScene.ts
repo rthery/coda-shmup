@@ -34,7 +34,8 @@ export default class MainUIScene extends Scene {
     private static readonly BRACKET_LENGTH: number = 56;
     private static readonly THREAT_BANNER_Y: number = 560;
     private static readonly JOIN_BANNER_Y: number = 760;
-    private static readonly JOIN_HINT_FONT_SIZE: number = 28;
+    private static readonly JOIN_HINT_FONT_SIZE: number = 32;
+    private static readonly JOIN_HINT_CHECK_INTERVAL: number = 500; // ms
     private static readonly JOIN_BANNER_COLOR: string = '#ff9a3c';
     private static readonly JOIN_BANNER_DURATION: number = 1200; // ms
     private static readonly THREAT_LINE_HEIGHT: number = 4;
@@ -101,6 +102,9 @@ export default class MainUIScene extends Scene {
     // Coop: how a second player joins, while there's room, and who just did
     private _joinHint: GameObjects.Container;
     private _joinBanner: GameObjects.Text;
+    // The gamepad icon the join hint shows: a pad shows up in each new scene a moment after it starts
+    private _joinHintIcon: string | null = null;
+    private _joinHintCheckTime: number = 0; // ms
 
     constructor() {
         super(GameConstants.SceneKeys.MAIN_UI);
@@ -401,6 +405,7 @@ export default class MainUIScene extends Scene {
     private updateJoinHint() {
         if (!this._joinHint)
             return;
+        this._joinHintIcon = this.gameInputManager.gamepadIcon('confirm');
         UiUtils.setButtonHint(this._joinHint, this.gameInputManager.joinHintParts());
         this._joinHint.setVisible(this._lifeRows.length < GameConstants.MAX_PLAYERS
             && this.gameInputManager.activeInputType !== 'touch');
@@ -472,8 +477,18 @@ export default class MainUIScene extends Scene {
             .forEach(tween => isOnHold ? tween.pause() : tween.resume());
     }
 
-    update() {
+    update(_timeSinceLaunch: number, deltaTime: number) {
         this.holdThreatBannerBehindScreens();
+        this.checkJoinHintIcon(deltaTime);
+    }
+
+    private checkJoinHintIcon(deltaTime: number) {
+        this._joinHintCheckTime += deltaTime;
+        if (this._joinHintCheckTime < MainUIScene.JOIN_HINT_CHECK_INTERVAL || !this._joinHint.visible)
+            return;
+        this._joinHintCheckTime = 0;
+        if (this.gameInputManager.gamepadIcon('confirm') !== this._joinHintIcon)
+            this.updateJoinHint();
     }
 
     // Red at the screen edges, clear in the middle, drawn once

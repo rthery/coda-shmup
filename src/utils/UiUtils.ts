@@ -24,8 +24,10 @@ export default class UiUtils {
 
     private static readonly BAR_CAP_WIDTH: number = 24;
     private static readonly HINT_ALPHA: number = 0.7;
-    // Kenney Input Prompts icons are 64 px: a bit taller than the text they sit in
-    private static readonly HINT_ICON_HEIGHT_RATIO: number = 1.4;
+    // Kenney Input Prompts icons are 64 px with 8 px of margin: their key caps stand taller than the text
+    private static readonly HINT_ICON_HEIGHT_RATIO: number = 1.9;
+    public static readonly HINT_FONT_SIZE: number = 44;
+    public static readonly SMALL_HINT_FONT_SIZE: number = 36;
     private static readonly HINT_PART_GAP: number = 10;
 
     public static addPanel(scene: Scene, x: number, y: number, width: number, height: number,
@@ -58,7 +60,7 @@ export default class UiUtils {
 
     // A hint line mixing text and button icons, centered on x. setButtonHint changes its parts
     public static addButtonHint(scene: Scene, x: number, y: number, parts: HintPart[],
-                                fontSize: number = 36): GameObjects.Container {
+                                fontSize: number = UiUtils.HINT_FONT_SIZE): GameObjects.Container {
         const hint: GameObjects.Container = scene.add.container(x, y).setData('fontSize', fontSize);
         UiUtils.setButtonHint(hint, parts);
         return hint;
