@@ -19,6 +19,11 @@ export default class UiUtils {
     public static readonly INK_SOFT_COLOR: string = '#8a92a3';
     public static readonly YELLOW_COLOR: string = '#f5c542';
 
+    // Clear of the header's rivet
+    private static readonly HEADER_TITLE_X: number = 56;
+    private static readonly HEADER_TITLE_SIZE: string = '36px';
+    // Longer titles shrink to keep the same gap before the band's slant as after the rivet
+    private static readonly HEADER_TITLE_MAX_WIDTH: number = 200;
     private static readonly BAR_CAP_WIDTH: number = 24;
     private static readonly HINT_ALPHA: number = 0.7;
 
@@ -28,6 +33,14 @@ export default class UiUtils {
         const scale: number = UiUtils.PANEL_SCALE;
         return scene.add.nineslice(x, y, "sprites", frame, width / scale, height / scale,
             slices.left, slices.right, slices.top, slices.bottom).setScale(scale);
+    }
+
+    // The title in a panel's coloured header band, from the panel's left and top edges
+    public static addHeaderTitle(scene: Scene, panelLeft: number, panelTop: number, text: string): GameObjects.Text {
+        const title: GameObjects.Text = scene.add.text(panelLeft + UiUtils.HEADER_TITLE_X,
+            panelTop + UiUtils.HEADER_HEIGHT / 2, text,
+            {fontSize: UiUtils.HEADER_TITLE_SIZE, color: '#fff', fontFamily: 'future'}).setOrigin(0, 0.5);
+        return title.setScale(Math.min(1, UiUtils.HEADER_TITLE_MAX_WIDTH / title.width));
     }
 
     // Three-slice horizontal bar, the frame's height is kept

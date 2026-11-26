@@ -149,9 +149,7 @@ export default class LevelUpScene extends Scene {
             .setInteractive({useHandCursor: true})
             .on(Phaser.Input.Events.GAMEOBJECT_POINTER_OVER, () => this.select(index))
             .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => this.choose(index));
-        const categoryText = this.add.text(-halfWidth + 40, top + UiUtils.HEADER_HEIGHT / 2,
-            upgrade.category.toUpperCase(), {fontSize: '32px', color: '#fff', fontFamily: 'future'})
-            .setOrigin(0, 0.5);
+        const categoryText = UiUtils.addHeaderTitle(this, -halfWidth, top, upgrade.category.toUpperCase());
         // The category icon on the left of the body, the texts beside it
         const icon = this.add.image(0, bodyCenterY, 'sprites', LevelUpScene.CATEGORY_ICONS[upgrade.category])
             .setScale(LevelUpScene.ICON_SCALE);

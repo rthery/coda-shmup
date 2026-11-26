@@ -54,8 +54,7 @@ export default class PauseScene extends Scene {
         const width: number = PauseScene.PANEL_WIDTH;
         const panelTop: number = PauseScene.PANEL_CENTER_Y - PauseScene.PANEL_HEIGHT / 2;
         UiUtils.addPanel(this, centerX, PauseScene.PANEL_CENTER_Y, width, PauseScene.PANEL_HEIGHT, 'ui_header_blade_green');
-        this.add.text(centerX - width / 2 + 40, panelTop + UiUtils.HEADER_HEIGHT / 2, 'PAUSED',
-            {fontSize: '32px', color: '#fff', fontFamily: 'future'}).setOrigin(0, 0.5);
+        UiUtils.addHeaderTitle(this, centerX - width / 2, panelTop, 'PAUSED');
 
         this._highlight = this.add.graphics();
         const bodyTop: number = panelTop + UiUtils.HEADER_HEIGHT;
