@@ -37,6 +37,7 @@ export default class MainUIScene extends Scene {
     private _lifeRow: GameObjects.Container;
     private _damageFlash: GameObjects.Rectangle;
     private _scoreText: GameObjects.BitmapText;
+    private _runTimeText: GameObjects.Text;
     private _comboText: GameObjects.Text;
     private _comboTextX: number;
     private _comboPips: GameObjects.Polygon[];
@@ -64,6 +65,7 @@ export default class MainUIScene extends Scene {
         this.game.events.on(GameConstants.Events.XP_GEM_COLLECTED_EVENT, this.onXpGemCollected, this);
         this.game.events.on(GameConstants.Events.LEVEL_UP_CLOSED_EVENT, this.onLevelUpClosed, this);
         this.registry.events.on(RegistryConstants.Events.PLAYER_SCORE_CHANGE, this.onPlayerScoreChanged, this);
+        this.registry.events.on(RegistryConstants.Events.RUN_TIME_CHANGE, this.onRunTimeChanged, this);
         this.registry.events.on(RegistryConstants.Events.PLAYER_COMBO_CHANGE, this.onPlayerComboChanged, this);
         this.registry.events.on(RegistryConstants.Events.PLAYER_COMBO_PROGRESS_CHANGE, this.onComboProgressChanged, this);
         this.game.events.on(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
@@ -73,6 +75,7 @@ export default class MainUIScene extends Scene {
             this.game.events.off(GameConstants.Events.XP_GEM_COLLECTED_EVENT, this.onXpGemCollected, this);
             this.game.events.off(GameConstants.Events.LEVEL_UP_CLOSED_EVENT, this.onLevelUpClosed, this);
             this.registry.events.off(RegistryConstants.Events.PLAYER_SCORE_CHANGE, this.onPlayerScoreChanged, this);
+            this.registry.events.off(RegistryConstants.Events.RUN_TIME_CHANGE, this.onRunTimeChanged, this);
             this.registry.events.off(RegistryConstants.Events.PLAYER_COMBO_CHANGE, this.onPlayerComboChanged, this);
             this.registry.events.off(RegistryConstants.Events.PLAYER_COMBO_PROGRESS_CHANGE, this.onComboProgressChanged, this);
             this.game.events.off(GameConstants.Events.COMBO_BROKEN_EVENT, this.onComboBroken, this);
@@ -94,6 +97,11 @@ export default class MainUIScene extends Scene {
             "future-bmp", scoreStr, 128).setOrigin(1, 0);
 
         this.addCornerBrackets();
+
+        // The clock that drives the difficulty
+        this._runTimeText = this.add.text(this.scale.width / 2, MainUIScene.MARGIN + 26, "",
+            {fontSize: '44px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5).setAlpha(0.8);
+        this.onRunTimeChanged(null, 0);
 
         const xpBarY: number = MainUIScene.XP_BAR_Y;
         this._xpBarWidth = this.scale.width - MainUIScene.MARGIN - MainUIScene.XP_BAR_X;
@@ -143,6 +151,10 @@ export default class MainUIScene extends Scene {
         this.scene.bringToTop();
 
         console.log("MainUIScene created");
+    }
+
+    private onRunTimeChanged(_: any, seconds: number) {
+        this._runTimeText.setText(UiUtils.formatTime(seconds));
     }
 
     private onPlayerScoreChanged(_: any, value: number) {

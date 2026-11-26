@@ -45,6 +45,9 @@ export default class GameOverScene extends Phaser.Scene {
         const level: number = this.registry.get(RegistryConstants.Keys.PLAYER_LEVEL) ?? 1;
         this.add.text(centerX, 1120, `LEVEL ${level}`,
             {fontSize: '44px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future'}).setOrigin(0.5);
+        const runTime: number = this.registry.get(RegistryConstants.Keys.RUN_TIME) ?? 0;
+        this.add.text(centerX, 1200, `TIME ${UiUtils.formatTime(runTime)}`,
+            {fontSize: '44px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future'}).setOrigin(0.5);
 
         this._promptText = UiUtils.addHint(this, centerX, this.scale.height - 220,
             this._getPromptText(this.gameInputManager.activeInputType));

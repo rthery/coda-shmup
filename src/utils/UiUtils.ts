@@ -43,6 +43,12 @@ export default class UiUtils {
         fill.setSize(Math.max(minWidth, maxWidth * clampedRatio), fill.height);
     }
 
+    // MM:SS
+    public static formatTime(seconds: number): string {
+        const minutes: number = Math.floor(seconds / 60);
+        return minutes.toString().padStart(2, "0") + ":" + (seconds % 60).toString().padStart(2, "0");
+    }
+
     // Dim pulsing line, for input hints that shouldn't draw the eye
     public static addHint(scene: Scene, x: number, y: number, text: string): GameObjects.Text {
         const hint: GameObjects.Text = scene.add.text(x, y, text, {fontSize: '36px', color: '#fff', fontFamily: 'future'})
