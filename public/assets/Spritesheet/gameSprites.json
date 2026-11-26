@@ -5,7 +5,7 @@
 			"format": "RGBA8888",
 			"size": {
 				"w": 1024,
-				"h": 330
+				"h": 291
 			},
 			"scale": 1,
 			"frames": [
@@ -388,48 +388,6 @@
 					}
 				},
 				{
-					"filename": "playerShip2_blue",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 75,
-						"h": 112
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 75,
-						"h": 112
-					},
-					"frame": {
-						"x": 97,
-						"y": 134,
-						"w": 75,
-						"h": 112
-					}
-				},
-				{
-					"filename": "playerShip1_blue",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 75,
-						"h": 99
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 75,
-						"h": 99
-					},
-					"frame": {
-						"x": 2,
-						"y": 229,
-						"w": 75,
-						"h": 99
-					}
-				},
-				{
 					"filename": "playerShip3_blue",
 					"rotated": false,
 					"trimmed": false,
@@ -444,7 +402,7 @@
 						"h": 98
 					},
 					"frame": {
-						"x": 176,
+						"x": 97,
 						"y": 134,
 						"w": 75,
 						"h": 98
@@ -465,8 +423,8 @@
 						"h": 60
 					},
 					"frame": {
-						"x": 255,
-						"y": 134,
+						"x": 2,
+						"y": 229,
 						"w": 60,
 						"h": 60
 					}

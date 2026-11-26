@@ -64,11 +64,11 @@ export default class HomeScene extends Phaser.Scene {
         this._bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'bg')
             .setOrigin(0).setTileScale(HomeScene.BG_TILE_SCALE);
 
+        const playerShipData = (this.cache.json.get('playerShips') as PlayerShipsData)[1];
         const playerShipOffsetX: number = 96;
         this._playerShip = this.add.image(this.scale.width / 2 - playerShipOffsetX, this.scale.height / 2, 'sprites',
-            'playerShip1_blue').setAngle(-90).setDepth(10);
+            playerShipData.texture).setAngle(-90).setDepth(10);
 
-        const playerShipData = (this.cache.json.get('playerShips') as PlayerShipsData)[1];
         this._thrusters = new Thrusters(this._playerShip);
         this._thrusters.setThrusters(playerShipData.thrusters);
         // The streaks drift down with the background, in px/s

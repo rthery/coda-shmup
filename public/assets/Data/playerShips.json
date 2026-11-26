@@ -4,64 +4,6 @@
     "acceleration": 0.004,
     "deceleration": 0.004,
     "turnSpeed": 0.005,
-    "texture": "playerShip1_blue",
-    "body": {
-      "radius": 42,
-      "offsetX": -4,
-      "offsetY": 16
-    },
-    "thrusters": [
-      {
-        "x": -35,
-        "y": 0,
-        "scale": 1.3
-      }
-    ],
-    "wingTips": [
-      {
-        "x": -24,
-        "y": -46
-      },
-      {
-        "x": -24,
-        "y": 46
-      }
-    ]
-  },
-  "2": {
-    "movementSpeed": 0.9,
-    "acceleration": 0.006,
-    "deceleration": 0.006,
-    "turnSpeed": 0.005,
-    "texture": "playerShip2_blue",
-    "body": {
-      "radius": 42,
-      "offsetX": -4,
-      "offsetY": 16
-    },
-    "thrusters": [
-      {
-        "x": -35,
-        "y": 0,
-        "scale": 1.3
-      }
-    ],
-    "wingTips": [
-      {
-        "x": -12,
-        "y": -52
-      },
-      {
-        "x": -12,
-        "y": 52
-      }
-    ]
-  },
-  "3": {
-    "movementSpeed": 1.2,
-    "acceleration": 0.008,
-    "deceleration": 0.008,
-    "turnSpeed": 0.005,
     "texture": "playerShip3_blue",
     "body": {
       "radius": 42,
@@ -70,14 +12,9 @@
     },
     "thrusters": [
       {
-        "x": -24,
-        "y": -32,
-        "scale": 1.0
-      },
-      {
-        "x": -24,
-        "y": 32,
-        "scale": 1.0
+        "x": -35,
+        "y": 0,
+        "scale": 1.3
       }
     ],
     "wingTips": [
