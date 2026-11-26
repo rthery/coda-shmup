@@ -36,6 +36,7 @@ Ce sont les versions `Double` du pack, renommées. Les panneaux sont découpés 
 Les sons sont dans `public/assets/Sounds/`, chargés et joués par `src/audio/Sfx.ts` : un nom par événement du jeu, avec ses variantes `<nom>_0.ogg`, `<nom>_1.ogg`…
 Ils viennent des packs Kenney « Sci-fi Sounds », « Impact Sounds » et « Interface Sounds » (licence CC0), et des sons bonus de « Space Shooter Remastered » (`shield_up`, `shield_down`, `game_over`, `sfx_laser2`).
 `launch_0` est `thrusterFire_000` coupé à 1,2 s avec un fondu.
+`bomb_0` est `sfx_zap` (bonus de « Space Shooter Remastered »), `magnet_0` est `forceField_000` (« Sci-fi Sounds »).
 
 La musique `music_space_battle.ogg` est « Space Battle » de MintoDog, licence CC0 : https://opengameart.org/content/space-battle
 

@@ -521,7 +521,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
                 this._xpGems.getMatching('active', true).forEach(gem => (gem as XpGem).attract());
                 this.spawnRing(this._player.x, this._player.y, tint, EntityManager.MAGNET_RING_RADIUS,
                     EntityManager.MAGNET_RING_DURATION, EntityManager.PICKUP_RING_WIDTH);
-                Sfx.play(this.scene!, 'comboUp');
+                Sfx.play(this.scene!, 'magnet');
                 break;
             case 'repair':
                 this._player.repair(EntityManager.REPAIR_HULL_POINTS);
@@ -547,6 +547,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
         const color = Phaser.Display.Color.IntegerToColor(tint);
         camera.flash(150, color.red, color.green, color.blue);
         camera.shake(300, 0.02);
+        // The shockwave's zap over a deep boom
+        Sfx.play(this.scene!, 'bomb');
         Sfx.play(this.scene!, 'explosion', {volumeScale: 2.5, detune: -600});
 
         this._enemies.getMatching('active', true).forEach(child => {
