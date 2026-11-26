@@ -2,6 +2,7 @@ import {Input, Plugins, Scene} from 'phaser';
 import GameConstants from "../GameConstants.ts";
 import type PlayerInput from "./PlayerInput.ts";
 import {isSameDevice, type InputDevice, type KeyboardKeySet} from "./PlayerInput.ts";
+import type {HintPart} from "../utils/UiUtils.ts";
 
 declare module 'phaser' {
     interface Scene {
@@ -10,6 +11,8 @@ declare module 'phaser' {
 }
 
 export type InputType = 'keyboard' | 'touch' | 'gamepad';
+export type GamepadButton = 'confirm' | 'start' | 'dpadVertical';
+type GamepadFamily = 'xbox' | 'playstation' | 'switch';
 
 export default class GameInputManager extends Plugins.BasePlugin {
     public static readonly PLUGIN_KEY: string = 'GameInputManager';
@@ -32,6 +35,16 @@ export default class GameInputManager extends Plugins.BasePlugin {
     }> = {
         wasd: {left: 'KeyA', right: 'KeyD', up: 'KeyW', down: 'KeyS', confirm: ['Space']},
         arrows: {left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown', confirm: ['Enter', 'NumpadEnter']},
+    };
+    // Kenney Input Prompts. The bottom face button confirms: B on Nintendo pads
+    private static readonly GAMEPAD_ICONS: Record<GamepadFamily, Record<GamepadButton, string>> = {
+        xbox: {confirm: 'ui_pad_xbox_a', start: 'ui_pad_xbox_menu', dpadVertical: 'ui_pad_xbox_dpad_vertical'},
+        playstation: {confirm: 'ui_pad_playstation_cross', start: 'ui_pad_playstation_options',
+            dpadVertical: 'ui_pad_playstation_dpad_vertical'},
+        switch: {confirm: 'ui_pad_switch_b', start: 'ui_pad_switch_plus', dpadVertical: 'ui_pad_switch_dpad_vertical'},
+    };
+    private static readonly GAMEPAD_BUTTON_NAMES: Record<GamepadButton, string> = {
+        confirm: 'A', start: 'START', dpadVertical: 'UP / DOWN'
     };
     private static readonly KEY_SET_NAMES: readonly KeyboardKeySet[] = ['wasd', 'arrows'];
     private static readonly KEYBOARD_DEVICES: Record<KeyboardKeySet, InputDevice> = {
@@ -120,19 +133,24 @@ export default class GameInputManager extends Plugins.BasePlugin {
         return this.readConfirmJustPressed(GameInputManager.KEYBOARD_DEVICES.wasd) || this._touchJustDown;
     }
 
-    // The confirm button's icon for the first connected gamepad, null without one.
+    // A button's icon in the style of the given gamepad, or the first connected one, null without one.
     // Browsers only report a gamepad once one of its buttons was pressed
-    public get gamepadConfirmIcon(): string | null {
-        const pad = this._getConnectedGamepads()[0];
+    public gamepadIcon(button: GamepadButton, padIndex?: number): string | null {
+        const pads = this._getConnectedGamepads();
+        const pad = padIndex === undefined ? pads[0] : pads.find(pad => pad.index === padIndex);
         if (!pad)
             return null;
         const id: string = pad.id.toLowerCase();
-        if (id.includes('054c') || id.includes('playstation') || id.includes('dualsense') || id.includes('dualshock'))
-            return 'ui_pad_playstation_cross';
-        // The bottom button is B on Nintendo pads
-        if (id.includes('057e') || id.includes('nintendo') || id.includes('pro controller'))
-            return 'ui_pad_switch_b';
-        return 'ui_pad_xbox_a';
+        const family: GamepadFamily = id.includes('054c') || id.includes('playstation') || id.includes('dualsense')
+            || id.includes('dualshock') ? 'playstation'
+            : id.includes('057e') || id.includes('nintendo') || id.includes('pro controller') ? 'switch' : 'xbox';
+        return GameInputManager.GAMEPAD_ICONS[family][button];
+    }
+
+    // The icon, or the button's name when no gamepad reports one
+    public gamepadHintPart(button: GamepadButton, padIndex?: number): HintPart {
+        const icon: string | null = this.gamepadIcon(button, padIndex);
+        return icon ? {icon} : GameInputManager.GAMEPAD_BUTTON_NAMES[button];
     }
 
     public botJustPressed(): boolean {

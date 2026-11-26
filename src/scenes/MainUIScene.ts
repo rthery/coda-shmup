@@ -401,7 +401,7 @@ export default class MainUIScene extends Scene {
     private updateJoinHint() {
         if (!this._joinHint)
             return;
-        UiUtils.setButtonHint(this._joinHint, UiUtils.joinHintParts(this.gameInputManager.gamepadConfirmIcon));
+        UiUtils.setButtonHint(this._joinHint, UiUtils.joinHintParts(this.gameInputManager.gamepadIcon('confirm')));
         this._joinHint.setVisible(this._lifeRows.length < GameConstants.MAX_PLAYERS
             && this.gameInputManager.activeInputType !== 'touch');
     }

@@ -3,7 +3,7 @@ import RegistryConstants from "../RegistryConstants.ts";
 import SaveConstants from "../SaveConstants.ts";
 import type SaveManager from "../managers/SaveManager.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
-import UiUtils from "../utils/UiUtils.ts";
+import UiUtils, {type HintPart} from "../utils/UiUtils.ts";
 import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 
@@ -19,7 +19,7 @@ export default class GameOverScene extends Phaser.Scene {
     // Gold readable on the light panel
     private static readonly NEW_BEST_COLOR: string = '#c78f00';
 
-    private _promptText: Phaser.GameObjects.Text;
+    private _promptText: Phaser.GameObjects.Container;
     private _started: boolean = false;
     private _revealed: boolean = false;
     // Final state of everything the reveal animates, applied at once when the player skips it
@@ -90,7 +90,7 @@ export default class GameOverScene extends Phaser.Scene {
             {fontSize: '44px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future'}).setOrigin(0.5),
             linesDelay + 2 * GameOverScene.LINE_STAGGER);
 
-        this._promptText = UiUtils.addHint(this, centerX, UiLayout.HEIGHT - 220,
+        this._promptText = UiUtils.addPulsingButtonHint(this, centerX, UiLayout.HEIGHT - 220,
             this._getPromptText(this.gameInputManager.activeInputType)).setVisible(false);
         this.time.delayedCall(linesDelay + 3 * GameOverScene.LINE_STAGGER + 300, () => this.finishReveal());
 
@@ -178,15 +178,17 @@ export default class GameOverScene extends Phaser.Scene {
 
     private _onInputTypeChanged(type: InputType): void {
         if (!this._started) {
-            this._promptText.setText(this._getPromptText(type));
+            UiUtils.setButtonHint(this._promptText, this._getPromptText(type));
         }
     }
 
-    private _getPromptText(type: InputType): string {
+    private _getPromptText(type: InputType): HintPart[] {
+        const inputManager = this.gameInputManager;
         switch (type) {
-            case 'touch': return 'TAP TO PLAY AGAIN';
-            case 'gamepad': return 'A OR START TO PLAY AGAIN';
-            default: return 'SPACE TO PLAY AGAIN';
+            case 'touch': return ['TAP TO PLAY AGAIN'];
+            case 'gamepad': return [inputManager.gamepadHintPart('confirm'), 'OR', inputManager.gamepadHintPart('start'),
+                'TO PLAY AGAIN'];
+            default: return ['SPACE TO PLAY AGAIN'];
         }
     }
 

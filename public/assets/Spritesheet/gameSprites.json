@@ -4,8 +4,8 @@
 			"image": "gameSprites.png",
 			"format": "RGBA8888",
 			"size": {
-				"w": 1017,
-				"h": 434
+				"w": 1024,
+				"h": 513
 			},
 			"scale": 1,
 			"frames": [
@@ -493,7 +493,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_b",
+					"filename": "ui_pad_playstation_dpad_vertical",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -514,7 +514,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_xbox_a",
+					"filename": "ui_pad_playstation_options",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -619,24 +619,24 @@
 					}
 				},
 				{
-					"filename": "ui_crosshair",
+					"filename": "ui_pad_switch_b",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 60,
-						"h": 60
+						"w": 64,
+						"h": 64
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 60,
-						"h": 60
+						"w": 64,
+						"h": 64
 					},
 					"frame": {
 						"x": 620,
 						"y": 332,
-						"w": 60,
-						"h": 60
+						"w": 64,
+						"h": 64
 					}
 				},
 				{
@@ -661,6 +661,216 @@
 					}
 				},
 				{
+					"filename": "ui_pad_switch_dpad_vertical",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 772,
+						"y": 254,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_switch_plus",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 840,
+						"y": 254,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_xbox_a",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 908,
+						"y": 316,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "playerLife1_orange",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 33,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 33,
+						"h": 26
+					},
+					"frame": {
+						"x": 976,
+						"y": 316,
+						"w": 33,
+						"h": 26
+					}
+				},
+				{
+					"filename": "playerLife3_blue",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 32,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 32,
+						"h": 26
+					},
+					"frame": {
+						"x": 976,
+						"y": 346,
+						"w": 32,
+						"h": 26
+					}
+				},
+				{
+					"filename": "star_gold",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 31,
+						"h": 30
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 31,
+						"h": 30
+					},
+					"frame": {
+						"x": 976,
+						"y": 376,
+						"w": 31,
+						"h": 30
+					}
+				},
+				{
+					"filename": "ui_pad_xbox_dpad_vertical",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 772,
+						"y": 322,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_xbox_menu",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 840,
+						"y": 322,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_crosshair",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 60,
+						"h": 60
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 60,
+						"h": 60
+					},
+					"frame": {
+						"x": 908,
+						"y": 384,
+						"w": 60,
+						"h": 60
+					}
+				},
+				{
+					"filename": "ui_shield_cell",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 30,
+						"h": 30
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 30,
+						"h": 30
+					},
+					"frame": {
+						"x": 972,
+						"y": 410,
+						"w": 30,
+						"h": 30
+					}
+				},
+				{
 					"filename": "fire11",
 					"rotated": false,
 					"trimmed": false,
@@ -675,8 +885,8 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 684,
-						"y": 332,
+						"x": 1006,
+						"y": 410,
 						"w": 14,
 						"h": 31
 					}
@@ -696,8 +906,71 @@
 						"h": 31
 					},
 					"frame": {
-						"x": 684,
-						"y": 367,
+						"x": 972,
+						"y": 444,
+						"w": 14,
+						"h": 31
+					}
+				},
+				{
+					"filename": "fire16",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 990,
+						"y": 445,
+						"w": 14,
+						"h": 31
+					}
+				},
+				{
+					"filename": "fireNeutral",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 1008,
+						"y": 445,
+						"w": 14,
+						"h": 31
+					}
+				},
+				{
+					"filename": "fireNeutralBoost",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 14,
+						"h": 31
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 14,
+						"h": 31
+					},
+					"frame": {
+						"x": 1008,
+						"y": 480,
 						"w": 14,
 						"h": 31
 					}
@@ -718,7 +991,7 @@
 					},
 					"frame": {
 						"x": 772,
-						"y": 254,
+						"y": 390,
 						"w": 60,
 						"h": 36
 					}
@@ -739,51 +1012,9 @@
 					},
 					"frame": {
 						"x": 836,
-						"y": 254,
+						"y": 390,
 						"w": 60,
 						"h": 36
-					}
-				},
-				{
-					"filename": "fire16",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 31
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 31
-					},
-					"frame": {
-						"x": 900,
-						"y": 254,
-						"w": 14,
-						"h": 31
-					}
-				},
-				{
-					"filename": "fireNeutral",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 31
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 31
-					},
-					"frame": {
-						"x": 900,
-						"y": 289,
-						"w": 14,
-						"h": 31
 					}
 				},
 				{
@@ -801,30 +1032,9 @@
 						"h": 26
 					},
 					"frame": {
-						"x": 918,
-						"y": 316,
+						"x": 772,
+						"y": 430,
 						"w": 60,
-						"h": 26
-					}
-				},
-				{
-					"filename": "playerLife1_orange",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 33,
-						"h": 26
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 33,
-						"h": 26
-					},
-					"frame": {
-						"x": 982,
-						"y": 316,
-						"w": 33,
 						"h": 26
 					}
 				},
@@ -843,8 +1053,8 @@
 						"h": 26
 					},
 					"frame": {
-						"x": 772,
-						"y": 294,
+						"x": 836,
+						"y": 430,
 						"w": 60,
 						"h": 26
 					}
@@ -864,8 +1074,8 @@
 						"h": 13
 					},
 					"frame": {
-						"x": 836,
-						"y": 294,
+						"x": 900,
+						"y": 448,
 						"w": 57,
 						"h": 13
 					}
@@ -885,94 +1095,10 @@
 						"h": 13
 					},
 					"frame": {
-						"x": 836,
-						"y": 311,
+						"x": 900,
+						"y": 465,
 						"w": 57,
 						"h": 13
-					}
-				},
-				{
-					"filename": "fireNeutralBoost",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 14,
-						"h": 31
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 14,
-						"h": 31
-					},
-					"frame": {
-						"x": 897,
-						"y": 324,
-						"w": 14,
-						"h": 31
-					}
-				},
-				{
-					"filename": "playerLife3_blue",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 32,
-						"h": 26
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 32,
-						"h": 26
-					},
-					"frame": {
-						"x": 772,
-						"y": 324,
-						"w": 32,
-						"h": 26
-					}
-				},
-				{
-					"filename": "star_gold",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 31,
-						"h": 30
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 31,
-						"h": 30
-					},
-					"frame": {
-						"x": 808,
-						"y": 328,
-						"w": 31,
-						"h": 30
-					}
-				},
-				{
-					"filename": "ui_shield_cell",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 30,
-						"h": 30
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 30,
-						"h": 30
-					},
-					"frame": {
-						"x": 772,
-						"y": 354,
-						"w": 30,
-						"h": 30
 					}
 				}
 			]

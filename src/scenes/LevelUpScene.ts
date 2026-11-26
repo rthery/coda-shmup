@@ -4,7 +4,7 @@ import Player from "../entities/Player.ts";
 import type {UpgradeCategory, UpgradeData} from "../gameData/UpgradesData.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 import type {InputDevice} from "../managers/PlayerInput.ts";
-import UiUtils, {type UiFrame} from "../utils/UiUtils.ts";
+import UiUtils, {type HintPart, type UiFrame} from "../utils/UiUtils.ts";
 import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 
@@ -57,7 +57,7 @@ export default class LevelUpScene extends Scene {
     private _cards: GameObjects.Container[];
     private _levelText: GameObjects.Text;
     private _crosshair: GameObjects.Image;
-    private _hintText: GameObjects.Text;
+    private _hintText: GameObjects.Container;
     private _selectedIndex: number;
     // null until the first update, so a direction held when the screen opens doesn't move the selection
     private _previousMoveY: number | null;
@@ -108,8 +108,7 @@ export default class LevelUpScene extends Scene {
             delay: 150, duration: 250, ease: 'Quad.easeOut'});
 
         this._crosshair = this.add.image(0, 0, "sprites", "ui_crosshair").setVisible(false);
-        this._hintText = this.add.text(centerX, UiLayout.HEIGHT - 200, '',
-            {fontSize: '32px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5).setAlpha(0);
+        this._hintText = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 200, [], 32).setAlpha(0);
 
         this.game.events.on('input-type-changed', this.onInputTypeChanged, this);
         this.events.once('shutdown', () => {
@@ -129,7 +128,7 @@ export default class LevelUpScene extends Scene {
         this._chosen = false;
         this._isReady = false;
         this._crosshair.setVisible(false);
-        this._hintText.setAlpha(0).setText(this.getHintText());
+        UiUtils.setButtonHint(this._hintText.setAlpha(0), this.getHintText());
         const picker: string = this.isBotPicking ? 'BOT' : `PLAYER ${this._pickIndex + 1}`;
         this._levelText.setText(this.isCoop ? `LEVEL ${this._level}, ${picker} PICKS` : `LEVEL ${this._level} REACHED`);
 
@@ -265,23 +264,29 @@ export default class LevelUpScene extends Scene {
     }
 
     private onInputTypeChanged() {
-        this._hintText.setText(this.getHintText());
+        UiUtils.setButtonHint(this._hintText, this.getHintText());
     }
 
     // Solo follows the last device used, coop the device of the player picking
-    private getHintText(): string {
+    private getHintText(): HintPart[] {
         const device: InputDevice = this._player.playerInput.device;
         if (device.type === 'bot')
-            return 'THE BOT PICKS';
+            return ['THE BOT PICKS'];
         const type: InputType = device.type === 'any' ? this.gameInputManager.activeInputType
             : device.type === 'gamepad' ? 'gamepad' : 'keyboard';
         switch (type) {
-            case 'touch': return 'TAP A CARD TO PICK';
-            case 'gamepad': return 'UP / DOWN TO CHOOSE, A TO PICK';
+            case 'touch': return ['TAP A CARD TO PICK'];
+            case 'gamepad': {
+                // Coop: the icons of the picking player's own pad
+                const padIndex: number | undefined = device.type === 'gamepad' ? device.index : undefined;
+                const inputManager = this.gameInputManager;
+                return [inputManager.gamepadHintPart('dpadVertical', padIndex), 'TO CHOOSE,',
+                    inputManager.gamepadHintPart('confirm', padIndex), 'TO PICK'];
+            }
         }
         if (device.type === 'keyboard')
-            return device.keys === 'wasd' ? 'W / S TO CHOOSE, SPACE TO PICK' : 'UP / DOWN TO CHOOSE, ENTER TO PICK';
-        return 'UP / DOWN TO CHOOSE, SPACE TO PICK';
+            return [device.keys === 'wasd' ? 'W / S TO CHOOSE, SPACE TO PICK' : 'UP / DOWN TO CHOOSE, ENTER TO PICK'];
+        return ['UP / DOWN TO CHOOSE, SPACE TO PICK'];
     }
 
     update() {

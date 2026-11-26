@@ -2,7 +2,7 @@ import {GameObjects, Scene} from "phaser";
 import GameConstants from "../GameConstants.ts";
 import type SaveManager from "../managers/SaveManager.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
-import UiUtils from "../utils/UiUtils.ts";
+import UiUtils, {type HintPart} from "../utils/UiUtils.ts";
 import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 
@@ -29,7 +29,7 @@ export default class PauseScene extends Scene {
 
     private _rows: PauseRow[];
     private _highlight: GameObjects.Graphics;
-    private _hintText: GameObjects.Text;
+    private _hintText: GameObjects.Container;
     private _selectedIndex: number;
     // null until the first update, so a direction held when the screen opens doesn't move the selection
     private _previousMoveY: number | null;
@@ -69,8 +69,8 @@ export default class PauseScene extends Scene {
         ];
         this._rows.forEach((row, index) => this.createRow(row, index));
 
-        this._hintText = this.add.text(centerX, UiLayout.HEIGHT - 200, this.getHintText(this.gameInputManager.activeInputType),
-            {fontSize: '32px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
+        this._hintText = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 200,
+            this.getHintText(this.gameInputManager.activeInputType), 32);
         this.game.events.on('input-type-changed', this.onInputTypeChanged, this);
         this.events.once('shutdown', () => {
             this.game.events.off('input-type-changed', this.onInputTypeChanged, this);
@@ -143,14 +143,16 @@ export default class PauseScene extends Scene {
     }
 
     private onInputTypeChanged(type: InputType) {
-        this._hintText.setText(this.getHintText(type));
+        UiUtils.setButtonHint(this._hintText, this.getHintText(type));
     }
 
-    private getHintText(type: InputType): string {
+    private getHintText(type: InputType): HintPart[] {
+        const inputManager = this.gameInputManager;
         switch (type) {
-            case 'touch': return 'TAP AN OPTION';
-            case 'gamepad': return 'A TO SELECT, START TO RESUME';
-            default: return 'SPACE TO SELECT, ESC TO RESUME';
+            case 'touch': return ['TAP AN OPTION'];
+            case 'gamepad': return [inputManager.gamepadHintPart('confirm'), 'TO SELECT,',
+                inputManager.gamepadHintPart('start'), 'TO RESUME'];
+            default: return ['SPACE TO SELECT, ESC TO RESUME'];
         }
     }
 

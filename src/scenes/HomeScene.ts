@@ -175,7 +175,7 @@ export default class HomeScene extends Phaser.Scene {
     // Until player 2 joins. No coop on touch
     private _updateJoinPrompt(): void {
         const inputManager = this.gameInputManager;
-        UiUtils.setButtonHint(this._joinPrompt, UiUtils.joinHintParts(inputManager.gamepadConfirmIcon));
+        UiUtils.setButtonHint(this._joinPrompt, UiUtils.joinHintParts(inputManager.gamepadIcon('confirm')));
         this._joinPrompt.setVisible(!this._joinedDevice && inputManager.activeInputType !== 'touch');
     }
 

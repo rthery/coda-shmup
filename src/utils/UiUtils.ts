@@ -86,6 +86,20 @@ export default class UiUtils {
         return hint;
     }
 
+    // Like addHint, with button icons
+    public static addPulsingButtonHint(scene: Scene, x: number, y: number, parts: HintPart[]): GameObjects.Container {
+        const hint: GameObjects.Container = UiUtils.addButtonHint(scene, x, y, parts).setAlpha(UiUtils.HINT_ALPHA);
+        scene.tweens.add({
+            targets: hint,
+            alpha: UiUtils.HINT_ALPHA / 3,
+            duration: 900,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+        return hint;
+    }
+
     public static setButtonHint(hint: GameObjects.Container, parts: HintPart[]) {
         const scene: Scene = hint.scene;
         const fontSize: number = hint.getData('fontSize');
