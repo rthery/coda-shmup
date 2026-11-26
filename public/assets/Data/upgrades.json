@@ -7,6 +7,13 @@
     "value": 0.85
   },
   {
+    "id": "damage",
+    "category": "weapon",
+    "title": "HEAVY LASERS",
+    "description": "+1 laser damage",
+    "value": 1
+  },
+  {
     "id": "range",
     "category": "weapon",
     "title": "LONG RANGE",

@@ -1,4 +1,4 @@
-export type UpgradeId = 'fireRate' | 'range' | 'bulletSpeed' | 'moveSpeed' | 'maxHealth' | 'magnet' | 'pierce';
+export type UpgradeId = 'fireRate' | 'damage' | 'range' | 'bulletSpeed' | 'moveSpeed' | 'maxHealth' | 'magnet' | 'pierce';
 
 export type UpgradeCategory = 'weapon' | 'ship';
 

@@ -106,6 +106,9 @@ export default class Player extends Entity {
             case 'fireRate':
                 this._rateOfFire *= upgrade.value;
                 break;
+            case 'damage':
+                this._bulletData.damage += upgrade.value;
+                break;
             case 'range':
                 this._bulletData.range += upgrade.value;
                 break;
