@@ -1,6 +1,6 @@
 import {GameObjects, Scene} from "phaser";
 
-export type UiFrame = 'ui_header_blade_red' | 'ui_header_blade_green';
+export type UiFrame = 'ui_header_blade_red' | 'ui_header_blade_green' | 'ui_header_blade_blue';
 
 type Slices = { left: number; right: number; top: number; bottom: number };
 
@@ -8,6 +8,7 @@ type Slices = { left: number; right: number; top: number; bottom: number };
 const SLICES: Record<UiFrame, Slices> = {
     ui_header_blade_red: {left: 230, right: 30, top: 72, bottom: 30},
     ui_header_blade_green: {left: 230, right: 30, top: 72, bottom: 30},
+    ui_header_blade_blue: {left: 230, right: 30, top: 72, bottom: 30},
 };
 
 export default class UiUtils {
