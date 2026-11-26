@@ -6,10 +6,15 @@ import UiUtils from "../utils/UiUtils.ts";
 import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 
+type ButtonColors = { fill: number, shade: number };
+
 type PauseRow = {
     label: string;
-    // Toggles show ON or OFF on the right, actions are centered
+    // Toggles show ON or OFF on the right, actions are solid buttons
     isOn?: () => boolean;
+    button?: ButtonColors;
+    // A button's face, redrawn lifted or flat
+    buttonFace?: GameObjects.Graphics;
     activate: () => void;
     y: number;
     texts: GameObjects.Text[];
@@ -23,9 +28,18 @@ export default class PauseScene extends Scene {
     private static readonly PANEL_CENTER_Y: number = 960;
     private static readonly ROW_HEIGHT: number = 92;
     private static readonly ROW_PADDING: number = 64;
-    private static readonly HIGHLIGHT_COLOR: number = 0x4a9be0;
-    private static readonly HIGHLIGHT_ALPHA: number = 0.2;
+    // A selected toggle row: a lighter strip with an ink bar on its left
+    private static readonly ROW_HIGHLIGHT_ALPHA: number = 0.5;
+    private static readonly ROW_BAR_WIDTH: number = 8;
     private static readonly ON_COLOR: string = '#2f8f52';
+    private static readonly BUTTON_HEIGHT: number = 84;
+    private static readonly BUTTON_RADIUS: number = 12;
+    // The selected button rises by this much and shows its darker edge underneath, the others sit flat and dimmer
+    private static readonly BUTTON_LIFT: number = 8;
+    private static readonly SELECTED_BUTTON_LIGHTEN: number = 6; // %
+    private static readonly IDLE_BUTTON_DARKEN: number = 8; // %
+    private static readonly RESUME_COLORS: ButtonColors = {fill: 0x1fbf75, shade: 0x15955a};
+    private static readonly QUIT_COLORS: ButtonColors = {fill: 0xe5534b, shade: 0xb23a33};
 
     private _rows: PauseRow[];
     private _highlight: GameObjects.Graphics;
@@ -63,8 +77,8 @@ export default class PauseScene extends Scene {
                 activate: () => Sfx.setMusicOn(this, this.saveManager, !Sfx.isMusicOn), y: bodyTop + 90, texts: []},
             {label: 'SOUND EFFECTS', isOn: () => Sfx.areEffectsOn,
                 activate: () => Sfx.setEffectsOn(this.saveManager, !Sfx.areEffectsOn), y: bodyTop + 190, texts: []},
-            {label: 'RESUME', activate: () => this.resume(), y: bodyTop + 330, texts: []},
-            {label: 'QUIT RUN', activate: () => this.quit(), y: bodyTop + 430, texts: []},
+            {label: 'RESUME', button: PauseScene.RESUME_COLORS, activate: () => this.resume(), y: bodyTop + 330, texts: []},
+            {label: 'QUIT RUN', button: PauseScene.QUIT_COLORS, activate: () => this.quit(), y: bodyTop + 430, texts: []},
         ];
         this._rows.forEach((row, index) => this.createRow(row, index));
 
@@ -86,16 +100,42 @@ export default class PauseScene extends Scene {
         if (row.isOn) {
             row.texts.push(this.add.text(left, row.y, row.label, style).setOrigin(0, 0.5));
             row.texts.push(this.add.text(right, row.y, '', style).setOrigin(1, 0.5));
-        } else {
-            row.texts.push(this.add.text(centerX, row.y, row.label, {...style, fontSize: '44px'}).setOrigin(0.5));
+        } else if (row.button) {
+            row.buttonFace = this.add.graphics();
+            row.texts.push(this.add.text(centerX, row.y, row.label, {...style, color: '#fff'}).setOrigin(0.5));
         }
 
         // The whole row is the touch target
-        this.add.zone(centerX, row.y, PauseScene.PANEL_WIDTH - 2 * PauseScene.ROW_PADDING + 40, PauseScene.ROW_HEIGHT)
+        this.add.zone(centerX, row.y, PauseScene.rowWidth(), PauseScene.ROW_HEIGHT)
             .setInteractive({useHandCursor: true})
             .on(Phaser.Input.Events.GAMEOBJECT_POINTER_OVER, () => this.select(index))
             .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => this.activate(index));
         this.refreshRow(row);
+    }
+
+    // A solid rounded button across the row: lifted over its darker edge when selected, flat otherwise
+    private drawButton(row: PauseRow, isSelected: boolean) {
+        if (!row.button || !row.buttonFace)
+            return;
+        const width: number = PauseScene.rowWidth();
+        const left: number = UiLayout.WIDTH / 2 - width / 2;
+        const top: number = row.y - PauseScene.BUTTON_HEIGHT / 2;
+        const lift: number = isSelected ? PauseScene.BUTTON_LIFT : 0;
+        const face = Phaser.Display.Color.ValueToColor(row.button.fill);
+        const faceColor: number = isSelected ? face.lighten(PauseScene.SELECTED_BUTTON_LIGHTEN).color
+            : face.darken(PauseScene.IDLE_BUTTON_DARKEN).color;
+
+        row.buttonFace.clear();
+        if (isSelected)
+            row.buttonFace.fillStyle(row.button.shade)
+                .fillRoundedRect(left, top, width, PauseScene.BUTTON_HEIGHT, PauseScene.BUTTON_RADIUS);
+        row.buttonFace.fillStyle(faceColor)
+            .fillRoundedRect(left, top - lift, width, PauseScene.BUTTON_HEIGHT, PauseScene.BUTTON_RADIUS);
+        row.texts[0].setY(row.y - lift);
+    }
+
+    private static rowWidth(): number {
+        return PauseScene.PANEL_WIDTH - 2 * PauseScene.ROW_PADDING + 40;
     }
 
     private refreshRow(row: PauseRow) {
@@ -110,11 +150,18 @@ export default class PauseScene extends Scene {
             Sfx.play(this, 'cardSelect');
         this._selectedIndex = index;
 
+        this._rows.forEach((row, rowIndex) => this.drawButton(row, rowIndex === index));
+
         const row: PauseRow = this._rows[index];
-        const width: number = PauseScene.PANEL_WIDTH - 2 * PauseScene.ROW_PADDING + 40;
-        this._highlight.clear().fillStyle(PauseScene.HIGHLIGHT_COLOR, PauseScene.HIGHLIGHT_ALPHA)
-            .fillRoundedRect(UiLayout.WIDTH / 2 - width / 2, row.y - PauseScene.ROW_HEIGHT / 2,
-                width, PauseScene.ROW_HEIGHT, 12);
+        this._highlight.clear();
+        if (row.button)
+            return;
+        const left: number = UiLayout.WIDTH / 2 - PauseScene.rowWidth() / 2;
+        const top: number = row.y - PauseScene.ROW_HEIGHT / 2;
+        this._highlight.fillStyle(0xffffff, PauseScene.ROW_HIGHLIGHT_ALPHA)
+            .fillRect(left, top, PauseScene.rowWidth(), PauseScene.ROW_HEIGHT)
+            .fillStyle(Phaser.Display.Color.HexStringToColor(UiUtils.INK_COLOR).color)
+            .fillRect(left, top, PauseScene.ROW_BAR_WIDTH, PauseScene.ROW_HEIGHT);
     }
 
     private activate(index: number) {
