@@ -10,11 +10,14 @@ import Invulnerability from "../components/Invulnerability.ts";
 import Experience from "../components/Experience.ts";
 import Thrusters from "../components/Thrusters.ts";
 import WingTrails from "../components/WingTrails.ts";
+import Turret from "../components/Turret.ts";
 import type {UpgradeData} from "../gameData/UpgradesData.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 
 export default class Player extends Entity {
     private static readonly WING_TRAILS_SPEED_RATIO: number = 0.5;
+    // The turret fires once it points this close to its target
+    private static readonly TURRET_AIM_TOLERANCE: number = Phaser.Math.DegToRad(15);
 
     private readonly _bulletData: BulletData = {
         scale: 1.8,
@@ -41,6 +44,7 @@ export default class Player extends Entity {
     private _lastShotTime: number;
     private readonly _moveDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _shootDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private readonly _muzzle: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private _targets: Phaser.Physics.Arcade.Group;
     private _magnetRadius: number = 250;
     private _moveSpeedMultiplier: number = 1;
@@ -61,9 +65,11 @@ export default class Player extends Entity {
         this.addComponent(new Experience((this.scene.cache.json.get('difficulty') as DifficultyData).xp));
         this.addComponent(new Thrusters(this));
         this.addComponent(new WingTrails(this));
+        this.addComponent(new Turret(this));
         this.getComponent(Health)?.once(Health.DEATH_EVENT, () => {
             this.getComponent(Thrusters)?.hide();
             this.getComponent(WingTrails)?.hide();
+            this.getComponent(Turret)?.hide();
         });
 
         this.angle = -90;
@@ -99,6 +105,7 @@ export default class Player extends Entity {
         this.getComponent(Movement)?.setAcceleration(this._playerShipData.acceleration, this._playerShipData.deceleration);
         this.getComponent(Thrusters)?.setThrusters(this._playerShipData.thrusters);
         this.getComponent(WingTrails)?.setWingTips(this._playerShipData.wingTips);
+        this.getComponent(Turret)?.setTurret(this._playerShipData.turret);
     }
 
     public applyUpgrade(upgrade: UpgradeData) {
@@ -165,16 +172,24 @@ export default class Player extends Entity {
         this.getComponent(Thrusters)?.update(this._moveDirection.lengthSq() > 0, speedRatio, deltaTime);
         this.getComponent(WingTrails)?.update(speedRatio > Player.WING_TRAILS_SPEED_RATIO);
 
-        // Shoot automatically at the nearest enemy
-        if (timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000) {
-            const nearestTarget = this.findNearestTarget();
-            if (nearestTarget) {
-                this._shootDirection.set(nearestTarget.x - this.x, nearestTarget.y - this.y).normalize();
-                this.getComponent(Weapon)?.shoot(this, this._shootDirection);
-                this.scene.sound.play('sfx_laser1');
+        // The turret tracks the nearest enemy, even out of range so it points at the next threat,
+        // and shoots it automatically once in range
+        const turret = this.getComponent(Turret);
+        const nearestTarget = this.findNearestTarget();
+        const targetRotation: number | null = nearestTarget
+            ? Phaser.Math.Angle.Between(this.x, this.y, nearestTarget.x, nearestTarget.y) : null;
+        turret?.aim(targetRotation);
+        turret?.update(deltaTime);
 
-                this._lastShotTime = timeSinceLaunch;
-            }
+        const isInRange: boolean = nearestTarget !== null && Phaser.Math.Distance.Between(this.x, this.y,
+            nearestTarget.x, nearestTarget.y) <= (this.getComponent(Weapon)?.range ?? 0);
+        if (targetRotation !== null && isInRange && timeSinceLaunch - this._lastShotTime > this._rateOfFire * 1000
+            && turret?.isAimedAt(targetRotation, Player.TURRET_AIM_TOLERANCE)) {
+            this._shootDirection.setToPolar(turret.rotation);
+            this.getComponent(Weapon)?.shoot(this, this._shootDirection, turret.getMuzzle(this._muzzle));
+            this.scene.sound.play('sfx_laser1');
+
+            this._lastShotTime = timeSinceLaunch;
         }
     }
 
@@ -187,11 +202,6 @@ export default class Player extends Entity {
         if (!this._targets)
             return null;
 
-        const nearestTarget = this.scene.physics.closest(this, this._targets.getMatching('active', true)) as Entity | null;
-        const range: number = this.getComponent(Weapon)?.range ?? 0;
-        if (!nearestTarget || Phaser.Math.Distance.Between(this.x, this.y, nearestTarget.x, nearestTarget.y) > range)
-            return null;
-
-        return nearestTarget;
+        return this.scene.physics.closest(this, this._targets.getMatching('active', true)) as Entity | null;
     }
 }

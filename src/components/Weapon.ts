@@ -23,8 +23,8 @@ export default class Weapon implements IComponent {
         this._bulletData = bulletData;
     }
 
-    // Shoots forward, or along direction (normalized) when given
-    public shoot(source: Entity, direction?: Phaser.Math.Vector2) {
+    // Shoots forward, or along direction (normalized) when given, from origin when given
+    public shoot(source: Entity, direction?: Phaser.Math.Vector2, origin?: Phaser.Math.Vector2) {
         if (!this.enabled)
             return;
 
@@ -36,8 +36,9 @@ export default class Weapon implements IComponent {
             // Get forward vector of the source entity
             const sourceForward: Phaser.Math.Vector2 = direction ?? new Phaser.Math.Vector2(1, 0).rotate(source.rotation);
             const bulletVelocity: Phaser.Math.Vector2 = sourceForward.clone().scale(this._bulletData.speed);
-            bullet.enable(source.x + sourceForward.x * source.arcadeBody.radius, source.y + sourceForward.y * source.arcadeBody.radius,
-                bulletVelocity.x, bulletVelocity.y, this._bulletData);
+            const startX: number = origin?.x ?? source.x + sourceForward.x * source.arcadeBody.radius;
+            const startY: number = origin?.y ?? source.y + sourceForward.y * source.arcadeBody.radius;
+            bullet.enable(startX, startY, bulletVelocity.x, bulletVelocity.y, this._bulletData);
 
             source.scene.tweens.add({
                 targets: bullet,

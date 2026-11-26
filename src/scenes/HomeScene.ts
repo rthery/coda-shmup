@@ -2,6 +2,7 @@ import {Loader} from "phaser";
 import GameConstants from "../GameConstants.ts";
 import Thrusters from "../components/Thrusters.ts";
 import WingTrails from "../components/WingTrails.ts";
+import Turret from "../components/Turret.ts";
 import type {PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import type {InputType} from "../managers/GameInputManager.ts";
 import UiUtils from "../utils/UiUtils.ts";
@@ -14,6 +15,7 @@ export default class HomeScene extends Phaser.Scene {
     private _playerShip: Phaser.GameObjects.Image;
     private _thrusters: Thrusters;
     private _wingTrails: WingTrails;
+    private _turret: Turret;
     private _title: Phaser.GameObjects.Container;
     private _startPrompt: Phaser.GameObjects.Text;
     private _started: boolean = false;
@@ -76,6 +78,8 @@ export default class HomeScene extends Phaser.Scene {
         const bgScreenSpeed: number = HomeScene.BG_SCROLL_SPEED * HomeScene.BG_TILE_SCALE * 1000;
         this._wingTrails = new WingTrails(this._playerShip, bgScreenSpeed);
         this._wingTrails.setWingTips(playerShipData.wingTips);
+        this._turret = new Turret(this._playerShip);
+        this._turret.setTurret(playerShipData.turret);
 
         this.tweens.add({
             targets: this._playerShip,
@@ -148,6 +152,7 @@ export default class HomeScene extends Phaser.Scene {
         // Cruising forward, as the background scrolls
         this._thrusters.update(true, 1, deltaTime);
         this._wingTrails.update(true);
+        this._turret.update(deltaTime);
 
         if (!this._started && this.gameInputManager.confirmJustPressed()) {
             this._startGame();
