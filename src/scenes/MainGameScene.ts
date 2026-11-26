@@ -235,7 +235,7 @@ export default class MainGameScene extends Scene {
     }
 
     update(_timeSinceLaunch: number, deltaTime: number) {
-        if (this.gameInputManager.pauseJustPressed()) {
+        if (this.gameInputManager.pauseJustPressed() || this.gameInputManager.focusJustLost()) {
             this.openPause();
             return;
         }

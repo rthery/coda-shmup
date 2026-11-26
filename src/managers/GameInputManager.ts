@@ -56,6 +56,9 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private _pauseJustDown: boolean = false;
     // Keyboard events arrive before the step resets the flags: they wait here for the next step
     private _isPausePending: boolean = false;
+    // Opens the pause screen but never closes it, unlike the pause key
+    private _focusJustLost: boolean = false;
+    private _isFocusLossPending: boolean = false;
 
     private _prevGamepadButtons = new Map<string, boolean>();
     private _activeInputType: InputType = 'keyboard';
@@ -65,10 +68,17 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
         this.game.events.on(Phaser.Core.Events.STEP, this._preUpdate, this);
         this.game.events.on(Phaser.Core.Events.POST_STEP, this._postUpdate, this);
-        // Key ups are lost while the window is unfocused
-        this.game.events.on(Phaser.Core.Events.BLUR, () => this._heldKeyCodes.clear());
+        // Key ups are lost while the window is unfocused. A run pauses then: it would resume straight into the swarm
+        this.game.events.on(Phaser.Core.Events.BLUR, this._onFocusLost, this);
+        this.game.events.on(Phaser.Core.Events.HIDDEN, this._onFocusLost, this);
 
         console.log('[GameInputManager] Initialized');
+    }
+
+    private _onFocusLost(): void {
+        this._heldKeyCodes.clear();
+        this._clearTouch();
+        this._isFocusLossPending = true;
     }
 
     private _preUpdate(): void {
@@ -78,6 +88,8 @@ export default class GameInputManager extends Plugins.BasePlugin {
         this._restartJustDown = false;
         this._pauseJustDown = this._isPausePending;
         this._isPausePending = false;
+        this._focusJustLost = this._isFocusLossPending;
+        this._isFocusLossPending = false;
 
         // Ignore the OS key repeat: SPACE may still be held from the previous scene
         if (this._shootKey && Input.Keyboard.JustDown(this._shootKey) && !this._shootKey.originalEvent?.repeat) {
@@ -365,6 +377,11 @@ export default class GameInputManager extends Plugins.BasePlugin {
         return this._pauseJustDown;
     }
 
+    // The window lost focus or got hidden since the last step
+    public focusJustLost(): boolean {
+        return this._focusJustLost;
+    }
+
     public get activeInputType(): InputType {
         return this._activeInputType;
     }
@@ -386,6 +403,8 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
         this.game.events.off(Phaser.Core.Events.STEP, this._preUpdate, this);
         this.game.events.off(Phaser.Core.Events.POST_STEP, this._postUpdate, this);
+        this.game.events.off(Phaser.Core.Events.BLUR, this._onFocusLost, this);
+        this.game.events.off(Phaser.Core.Events.HIDDEN, this._onFocusLost, this);
 
         super.destroy();
 
