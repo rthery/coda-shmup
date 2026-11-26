@@ -120,7 +120,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
         this._player = new Player(this.scene!, 0, 0);
         this._player.setDepth(EntityManager.ENTITIES_DEPTHS.PLAYER);
-        this._player.init(this._playerBullets);
+        this._player.init(this._playerBullets, this.scene!.gameInputManager.anyDeviceInput);
         // Fly in from below the screen to the arena center
         const playerStartX: number = GameConstants.ARENA_WIDTH / 2;
         const playerEndY: number = GameConstants.ARENA_HEIGHT / 2;

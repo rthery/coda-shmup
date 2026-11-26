@@ -16,6 +16,7 @@ import MagnetField from "../components/MagnetField.ts";
 import type {UpgradeData, UpgradeId, UpgradePreview} from "../gameData/UpgradesData.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 import Sfx from "../audio/Sfx.ts";
+import type PlayerInput from "../managers/PlayerInput.ts";
 
 export default class Player extends Entity {
     // Lives the ship starts with: shield cells come on top and are lost first
@@ -74,6 +75,7 @@ export default class Player extends Entity {
     private _xpGems: Phaser.Physics.Arcade.Group | null = null;
     private _magnetRadius: number = 250;
     private _moveSpeedMultiplier: number = 1;
+    private _input: PlayerInput;
 
     public get magnetRadius(): number {
         return this._magnetRadius;
@@ -122,7 +124,8 @@ export default class Player extends Entity {
         console.log("[Cheat] " + upgrade.title + " rank " + this.getUpgradeRank(upgrade.id));
     }
 
-    public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
+    public init(bulletsGroup: Phaser.Physics.Arcade.Group, input: PlayerInput) {
+        this._input = input;
         this.addComponent(new Health(Player.HULL_POINTS, this));
         this.addComponent(new Invulnerability(Player.INVULNERABILITY_DURATION, this));
         this.addComponent(new Movement());
@@ -327,8 +330,7 @@ export default class Player extends Entity {
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
         super.preUpdate(timeSinceLaunch, deltaTime);
 
-        // Arrow keys, touch or gamepad
-        this._moveDirection.copy(this.scene.gameInputManager.moveDirection);
+        this._moveDirection.copy(this._input.moveDirection);
 
         this._moveDirection.normalize();
         const movement = this.getComponent(Movement);

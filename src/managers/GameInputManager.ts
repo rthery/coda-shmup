@@ -1,5 +1,7 @@
 import {Input, Plugins, Scene} from 'phaser';
 import GameConstants from "../GameConstants.ts";
+import type PlayerInput from "./PlayerInput.ts";
+import type {InputDevice, KeyboardKeySet} from "./PlayerInput.ts";
 
 declare module 'phaser' {
     interface Scene {
@@ -22,6 +24,13 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private static readonly MOVE_RIGHT_CODE = 'KeyD';
     private static readonly MOVE_UP_CODE = 'KeyW';
     private static readonly MOVE_DOWN_CODE = 'KeyS';
+    // Coop: each key set drives one player, by physical position
+    private static readonly KEY_SETS: Record<KeyboardKeySet, {
+        left: string, right: string, up: string, down: string, confirm: string[]
+    }> = {
+        wasd: {left: 'KeyA', right: 'KeyD', up: 'KeyW', down: 'KeyS', confirm: ['Space']},
+        arrows: {left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown', confirm: ['Enter', 'NumpadEnter']},
+    };
 
     private _scene: Scene | null = null;
 
@@ -33,6 +42,10 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private _restartKey: Input.Keyboard.Key | null = null;
     // Phaser keys match key codes, which change with the layout: these are tracked by physical position
     private readonly _heldKeyCodes = new Set<string>();
+    // Pressed during the last step, by physical position: they wait in the pending set for the next step
+    private _justPressedKeyCodes = new Set<string>();
+    private _pendingPressedKeyCodes = new Set<string>();
+    private readonly _anyDeviceInput: PlayerInput;
 
     // Touch: a floating joystick, the first touch sets its center
     private _touchPointerId: number = -1;
@@ -58,7 +71,53 @@ export default class GameInputManager extends Plugins.BasePlugin {
         // Key ups are lost while the window is unfocused
         this.game.events.on(Phaser.Core.Events.BLUR, () => this._heldKeyCodes.clear());
 
+        this._anyDeviceInput = this.getInput({type: 'any'});
+
         console.log('[GameInputManager] Initialized');
+    }
+
+    // Every device at once: solo runs and menus
+    public get anyDeviceInput(): PlayerInput {
+        return this._anyDeviceInput;
+    }
+
+    public getInput(device: InputDevice): PlayerInput {
+        return new DeviceInput(device, this);
+    }
+
+    public readMoveDirection(device: InputDevice, out: Phaser.Math.Vector2): Phaser.Math.Vector2 {
+        switch (device.type) {
+            case 'any':
+                return out.copy(this.moveDirection);
+            case 'keyboard': {
+                const keys = GameInputManager.KEY_SETS[device.keys];
+                const held = this._heldKeyCodes;
+                return out.set((held.has(keys.right) ? 1 : 0) - (held.has(keys.left) ? 1 : 0),
+                    (held.has(keys.down) ? 1 : 0) - (held.has(keys.up) ? 1 : 0));
+            }
+            case 'gamepad': {
+                const pad = this._getConnectedGamepads().find(pad => pad.index === device.index);
+                if (!pad)
+                    return out.set(0, 0);
+                if (pad.leftStick.length() > GameInputManager.STICK_DEADZONE)
+                    return out.copy(pad.leftStick);
+                return out.set((pad.right ? 1 : 0) - (pad.left ? 1 : 0), (pad.down ? 1 : 0) - (pad.up ? 1 : 0));
+            }
+        }
+    }
+
+    public readConfirmJustPressed(device: InputDevice): boolean {
+        switch (device.type) {
+            case 'any':
+                return this.confirmJustPressed();
+            case 'keyboard':
+                return GameInputManager.KEY_SETS[device.keys].confirm.some(code => this._justPressedKeyCodes.has(code));
+            case 'gamepad': {
+                const pad = this._getConnectedGamepads().find(pad => pad.index === device.index);
+                return !!pad && (this._isGamepadButtonJustPressed(pad, GameInputManager.CONFIRM_BUTTON_INDEX)
+                    || this._isGamepadButtonJustPressed(pad, GameInputManager.START_BUTTON_INDEX));
+            }
+        }
     }
 
     private _preUpdate(): void {
@@ -68,6 +127,8 @@ export default class GameInputManager extends Plugins.BasePlugin {
         this._restartJustDown = false;
         this._pauseJustDown = this._isPausePending;
         this._isPausePending = false;
+        [this._justPressedKeyCodes, this._pendingPressedKeyCodes] = [this._pendingPressedKeyCodes, this._justPressedKeyCodes];
+        this._pendingPressedKeyCodes.clear();
 
         // Ignore the OS key repeat: SPACE may still be held from the previous scene
         if (this._shootKey && Input.Keyboard.JustDown(this._shootKey) && !this._shootKey.originalEvent?.repeat) {
@@ -214,6 +275,8 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
     private _onAnyKeyDown(event: KeyboardEvent): void {
         this._heldKeyCodes.add(event.code);
+        if (!event.repeat)
+            this._pendingPressedKeyCodes.add(event.code);
         // Escape by position, P by character: P moves between layouts
         if (!event.repeat && (event.code === 'Escape' || event.key.toLowerCase() === 'p'))
             this._isPausePending = true;
@@ -370,5 +433,20 @@ export default class GameInputManager extends Plugins.BasePlugin {
         super.destroy();
 
         console.log('[GameInputManager] Destroyed');
+    }
+}
+
+class DeviceInput implements PlayerInput {
+    private readonly _moveDirection = new Phaser.Math.Vector2();
+
+    constructor(public readonly device: InputDevice, private readonly _manager: GameInputManager) {
+    }
+
+    public get moveDirection(): Phaser.Math.Vector2 {
+        return this._manager.readMoveDirection(this.device, this._moveDirection);
+    }
+
+    public confirmJustPressed(): boolean {
+        return this._manager.readConfirmJustPressed(this.device);
     }
 }
