@@ -10,6 +10,26 @@ export default class DifficultyCurve {
         this._keyframes = data.keyframes;
     }
 
+    // 0 at the start, +1 at each keyframe reached after the first
+    public threatLevelAt(time: number): number {
+        let level: number = 0;
+        for (let i = 1; i < this._keyframes.length; i++) {
+            if (this._keyframes[i].time <= time)
+                level = i;
+        }
+        return level;
+    }
+
+    public get maxThreatLevel(): number {
+        return this._keyframes.length - 1;
+    }
+
+    // 0 to 1, from the start to the last keyframe
+    public progressAt(time: number): number {
+        const lastTime: number = this._keyframes[this._keyframes.length - 1].time;
+        return lastTime > 0 ? Phaser.Math.Clamp(time / lastTime, 0, 1) : 1;
+    }
+
     // Reuses the same object on every call: read it, don't keep it
     public at(time: number): Readonly<DifficultyKeyframeData> {
         const keyframes: DifficultyKeyframeData[] = this._keyframes;

@@ -8,12 +8,17 @@ import GameConstants from "../GameConstants.ts";
 import Experience from "../components/Experience.ts";
 import Movement from "../components/Movement.ts";
 import Player from "../entities/Player.ts";
+import DifficultyCurve from "../utils/DifficultyCurve.ts";
+import type {DifficultyData} from "../gameData/DifficultyData.ts";
 import type Enemy from "../entities/Enemy.ts";
 
 export default class MainGameScene extends Scene {
     private static readonly KILL_SCORE: number = 10;
     private static readonly HIT_STOP_DURATION: number = 30; // ms
     private static readonly HIT_STOP_COOLDOWN: number = 400; // ms
+    // Background and planet tints at the last difficulty keyframe: the arena reddens as the threat rises
+    private static readonly MAX_THREAT_BACKGROUND_TINT: number = 0xff8a80;
+    private static readonly MAX_THREAT_PLANET_TINT: number = 0xffb0a0;
 
     private saveManager: SaveManager;
     private entityManager: EntityManager;
@@ -21,6 +26,9 @@ export default class MainGameScene extends Scene {
     private _runTime: number = 0; // ms
     private _lastHitStopTime: number = -Infinity; // ms, real time
     private _hitStopEndTime: number = 0; // ms, real time
+    private _background: Phaser.GameObjects.TileSprite;
+    private _planet: Phaser.GameObjects.Image;
+    private _difficulty: DifficultyCurve;
     private player: Player;
     private readonly cameraLookAhead: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
 
@@ -38,9 +46,10 @@ export default class MainGameScene extends Scene {
         // The world is bigger than the screen: the camera will move inside it
         this.cameras.main.setBounds(0, 0, GameConstants.ARENA_WIDTH, GameConstants.ARENA_HEIGHT);
 
-        this.add.tileSprite(0, 0, GameConstants.ARENA_WIDTH, GameConstants.ARENA_HEIGHT, 'bg')
+        this._background = this.add.tileSprite(0, 0, GameConstants.ARENA_WIDTH, GameConstants.ARENA_HEIGHT, 'bg')
             .setOrigin(0).setTileScale(2);
-        this.add.image(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2, 'planet').setScale(7.5);
+        this._planet = this.add.image(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2, 'planet').setScale(7.5);
+        this._difficulty = new DifficultyCurve(this.cache.json.get('difficulty') as DifficultyData);
 
         if (!this.entityManager) {
             console.error('EntityManager plugin not found');
@@ -98,6 +107,19 @@ export default class MainGameScene extends Scene {
         this.registry.inc(RegistryConstants.Keys.PLAYER_SCORE,
             MainGameScene.KILL_SCORE * this.registry.get(RegistryConstants.Keys.PLAYER_COMBO));
         this.setKillStreak(this._killStreak + 1);
+    }
+
+    private updateThreatTint(runSeconds: number) {
+        const progress: number = Math.round(this._difficulty.progressAt(runSeconds) * 100);
+        this._background.setTint(MainGameScene.interpolateTint(MainGameScene.MAX_THREAT_BACKGROUND_TINT, progress));
+        this._planet.setTint(MainGameScene.interpolateTint(MainGameScene.MAX_THREAT_PLANET_TINT, progress));
+    }
+
+    // From white (no tint) to the given tint, progress from 0 to 100
+    private static interpolateTint(tint: number, progress: number): number {
+        const color = Phaser.Display.Color.Interpolate.ColorWithColor(
+            Phaser.Display.Color.ValueToColor(0xffffff), Phaser.Display.Color.ValueToColor(tint), 100, progress);
+        return Phaser.Display.Color.GetColor(color.r, color.g, color.b);
     }
 
     // Freezes the game for a few frames. The scene clock stops with it, so the game loop ends it, in real time
@@ -163,8 +185,10 @@ export default class MainGameScene extends Scene {
         // update() doesn't run while the scene is paused, so level-up screens don't count
         this._runTime += deltaTime;
         const runSeconds: number = Math.floor(this._runTime / 1000);
-        if (runSeconds !== this.registry.get(RegistryConstants.Keys.RUN_TIME))
+        if (runSeconds !== this.registry.get(RegistryConstants.Keys.RUN_TIME)) {
             this.registry.set(RegistryConstants.Keys.RUN_TIME, runSeconds);
+            this.updateThreatTint(runSeconds);
+        }
 
         // Look ahead in the move direction: the follow offset is subtracted from the target position
         const velocity = this.player.getComponent(Movement)?.velocity;

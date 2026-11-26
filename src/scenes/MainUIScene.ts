@@ -5,6 +5,8 @@ import Player from "../entities/Player.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
 import UiUtils from "../utils/UiUtils.ts";
+import DifficultyCurve from "../utils/DifficultyCurve.ts";
+import type {DifficultyData} from "../gameData/DifficultyData.ts";
 
 export default class MainUIScene extends Scene {
     private static readonly MARGIN: number = 64;
@@ -15,6 +17,10 @@ export default class MainUIScene extends Scene {
     private static readonly XP_BAR_X: number = 200;
     private static readonly BRACKET_INSET: number = 28;
     private static readonly BRACKET_LENGTH: number = 56;
+    private static readonly THREAT_BANNER_Y: number = 560;
+    private static readonly THREAT_COLOR: string = '#ffb02e';
+    private static readonly MAX_THREAT_COLOR: number = 0xff4a3d;
+    private static readonly MAX_THREAT_COLOR_STRING: string = '#ff4a3d';
     private static readonly DAMAGE_VIGNETTE_KEY: string = 'damageVignette';
     private static readonly DAMAGE_VIGNETTE_DURATION: number = 600;
     private static readonly LAST_LIFE_TINT: number = 0xff6060;
@@ -38,6 +44,11 @@ export default class MainUIScene extends Scene {
     private _damageVignette: GameObjects.Image;
     private _scoreText: GameObjects.BitmapText;
     private _runTimeText: GameObjects.Text;
+    private _difficulty: DifficultyCurve;
+    private _threatLevel: number = 0;
+    private _threatBanner: GameObjects.Container;
+    private _threatTitle: GameObjects.Text;
+    private _threatLines: GameObjects.Rectangle[];
     private _comboText: GameObjects.Text;
     private _comboTextX: number;
     private _comboPips: GameObjects.Polygon[];
@@ -101,6 +112,9 @@ export default class MainUIScene extends Scene {
         // The clock that drives the difficulty
         this._runTimeText = this.add.text(this.scale.width / 2, MainUIScene.MARGIN + 26, "",
             {fontSize: '44px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5).setAlpha(0.8);
+        this._difficulty = new DifficultyCurve(this.cache.json.get('difficulty') as DifficultyData);
+        this._threatLevel = 0;
+        this.createThreatBanner();
         this.onRunTimeChanged(null, 0);
 
         const xpBarY: number = MainUIScene.XP_BAR_Y;
@@ -155,6 +169,17 @@ export default class MainUIScene extends Scene {
 
     private onRunTimeChanged(_: any, seconds: number) {
         this._runTimeText.setText(UiUtils.formatTime(seconds));
+
+        // The clock warms up with the threat, from white to red
+        const threatColor = Phaser.Display.Color.Interpolate.ColorWithColor(
+            Phaser.Display.Color.ValueToColor(0xffffff), Phaser.Display.Color.ValueToColor(MainUIScene.MAX_THREAT_COLOR),
+            100, Math.round(this._difficulty.progressAt(seconds) * 100));
+        this._runTimeText.setColor(Phaser.Display.Color.RGBToString(threatColor.r, threatColor.g, threatColor.b));
+
+        const threatLevel: number = this._difficulty.threatLevelAt(seconds);
+        if (threatLevel > this._threatLevel)
+            this.showThreatBanner(threatLevel);
+        this._threatLevel = threatLevel;
     }
 
     private onPlayerScoreChanged(_: any, value: number) {
@@ -275,6 +300,43 @@ export default class MainUIScene extends Scene {
             this.resetXpBar(experience.xp / experience.xpToNextLevel, experience.level);
             experience.on(Experience.CHANGE_EVENT, this.onPlayerXpChanged, this);
         }
+    }
+
+    private createThreatBanner() {
+        const centerX: number = this.scale.width / 2;
+        const warning = this.add.text(0, -56, "WARNING",
+            {fontSize: '28px', color: MainUIScene.THREAT_COLOR, fontFamily: 'future', letterSpacing: 14}).setOrigin(0.5);
+        this._threatTitle = this.add.text(0, 0, "",
+            {fontSize: '64px', color: MainUIScene.THREAT_COLOR, fontFamily: 'future'}).setOrigin(0.5)
+            .setShadow(0, 6, '#000', 0, false, true);
+        this._threatLines = [-100, 52].map(y => this.add.rectangle(0, y, this.scale.width - 2 * MainUIScene.MARGIN, 4,
+            Phaser.Display.Color.HexStringToColor(MainUIScene.THREAT_COLOR).color));
+        this._threatBanner = this.add.container(centerX, MainUIScene.THREAT_BANNER_Y,
+            [...this._threatLines, warning, this._threatTitle]).setAlpha(0);
+    }
+
+    // Lines open from the center, the text blinks like an alarm, then it all fades out
+    private showThreatBanner(level: number) {
+        const isMax: boolean = level >= this._difficulty.maxThreatLevel;
+        this._threatTitle.setText(isMax ? "MAXIMUM THREAT" : "THREAT LEVEL " + (level + 1))
+            .setColor(isMax ? MainUIScene.MAX_THREAT_COLOR_STRING : MainUIScene.THREAT_COLOR);
+
+        this.tweens.killTweensOf([this._threatBanner, ...this._threatLines]);
+        this._threatBanner.setAlpha(1);
+        this.tweens.add({targets: this._threatLines, scaleX: {from: 0, to: 1}, duration: 300, ease: 'Quad.easeOut'});
+        this.tweens.add({
+            targets: this._threatBanner,
+            alpha: {from: 1, to: 0.25},
+            duration: 150,
+            yoyo: true,
+            repeat: 2,
+            onComplete: () => this.tweens.add({
+                targets: this._threatBanner,
+                alpha: 0,
+                delay: 1400,
+                duration: 400
+            })
+        });
     }
 
     // Red at the screen edges, clear in the middle, drawn once
