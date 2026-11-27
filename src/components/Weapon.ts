@@ -26,21 +26,43 @@ export default class Weapon implements IComponent {
         if (!this._bullets)
             return;
 
-        const bullet: Bullet = this._bullets.get() as Bullet;
-        if (bullet) {
-            // Get forward vector of the source entity
-            const sourceForward: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0).rotate(source.rotation);
-            const bulletVelocity: Phaser.Math.Vector2 = sourceForward.clone().scale(this._bulletData.speed);
-            bullet.enable(source.x + sourceForward.x * source.arcadeBody.radius, source.y + sourceForward.y * source.arcadeBody.radius,
-                bulletVelocity.x, bulletVelocity.y, this._bulletData);
+        const sourceForward: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0).rotate(source.rotation);
+        this.fireInDirection(source, sourceForward);
+    }
 
-            // Maths way
-            // const forwardVectorX: number = Math.cos(source.rotation);
-            // const forwardVectorY: number = Math.sin(source.rotation);
-            // const bulletVelocityX: number = forwardVectorX * this._bulletData.speed;
-            // const bulletVelocityY: number = forwardVectorY * this._bulletData.speed;
-            // bullet.enable(source.x + forwardVectorX * source.arcadeBody.radius, source.y + forwardVectorY * source.arcadeBody.radius,
-            //     bulletVelocityX, bulletVelocityY, this._bulletData);
+    public shootSpread(source: Entity, bulletCount: number, angleDegrees: number) {
+        if (!this.enabled || !this._bullets || bulletCount <= 0) {
+            return;
         }
+
+        const forward = new Phaser.Math.Vector2(1, 0).rotate(source.rotation);
+        if (bulletCount === 1) {
+            this.fireInDirection(source, forward);
+            return;
+        }
+
+        const spreadRadians = Phaser.Math.DegToRad(angleDegrees);
+        const step = spreadRadians / (angleDegrees === 360 ? bulletCount : bulletCount - 1);
+        const firstAngle = -spreadRadians / 2;
+
+        for (let i = 0; i < bulletCount; i++) {
+            this.fireInDirection(source, forward.clone().rotate(firstAngle + step * i));
+        }
+    }
+
+    private fireInDirection(source: Entity, direction: Phaser.Math.Vector2) {
+        const bullet: Bullet = this._bullets.get() as Bullet;
+        if (!bullet) {
+            return;
+        }
+
+        const bulletVelocity = direction.clone().scale(this._bulletData.speed);
+        bullet.enable(
+            source.x + direction.x * source.arcadeBody.radius,
+            source.y + direction.y * source.arcadeBody.radius,
+            bulletVelocity.x,
+            bulletVelocity.y,
+            this._bulletData
+        );
     }
 }
