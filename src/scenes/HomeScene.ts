@@ -9,7 +9,7 @@ import UiUtils, {type HintPart} from "../utils/UiUtils.ts";
 import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 import type SaveManager from "../managers/SaveManager.ts";
-import type {InputDevice} from "../managers/PlayerInput.ts";
+import {isSameDevice, type InputDevice} from "../managers/PlayerInput.ts";
 
 // A ship on the home screen, cruising forward
 type HomeShip = {
@@ -46,6 +46,8 @@ export default class HomeScene extends Phaser.Scene {
     private _playerShip: HomeShip;
     // Player 2, joined before the run starts: its device, or a bot. Its ship is kept to come back
     private _joinedDevice: InputDevice | null;
+    // Player 1's device: the one used last, up to the last frame, that isn't player 2's
+    private _playerDevice: InputDevice;
     private _joinedShip: HomeShip | null;
     // "P1" and "P2" with an icon of what drives them, under each ship
     private _labels: Phaser.GameObjects.Container[];
@@ -122,6 +124,7 @@ export default class HomeScene extends Phaser.Scene {
 
         this._started = false;
         this._joinedDevice = null;
+        this._playerDevice = this.gameInputManager.lastUsedDevice;
         this._joinedShip = null;
         this._labels = [];
 
@@ -176,7 +179,7 @@ export default class HomeScene extends Phaser.Scene {
     }
 
     private _getPromptText(type: InputType): HintPart[] {
-        return type === 'touch' ? ['TAP TO START'] : this.gameInputManager.startHintParts();
+        return type === 'touch' ? ['TAP TO START'] : this.gameInputManager.startHintParts(this._playerDevice);
     }
 
     // How player 2 joins, or leaves once it has. No coop on touch
@@ -238,8 +241,9 @@ export default class HomeScene extends Phaser.Scene {
             return;
         }
         const device: InputDevice | null = inputManager.findJoiningDevice();
-        // Space starts the run
-        if (device && !(device.type === 'keyboard' && device.keys === 'wasd'))
+        // Space starts the run, Enter always joins (player 1 keeps Space), and player 1's own pad doesn't join
+        if (device && !(device.type === 'keyboard' && device.keys === 'wasd')
+            && !(device.type === 'gamepad' && isSameDevice(device, this._playerDevice)))
             this.join(device);
     }
 
@@ -334,6 +338,15 @@ export default class HomeScene extends Phaser.Scene {
         });
     }
 
+    // The start hint follows player 1's device
+    private updatePlayerDevice() {
+        const lastUsed: InputDevice = this.gameInputManager.lastUsedDevice;
+        if (isSameDevice(lastUsed, this._playerDevice) || (this._joinedDevice && isSameDevice(lastUsed, this._joinedDevice)))
+            return;
+        this._playerDevice = lastUsed;
+        this._updateJoinPrompt();
+    }
+
     private updateShip(ship: HomeShip, deltaTime: number) {
         ship.thrusters.update(true, 1, deltaTime);
         ship.wingTrails.update(true);
@@ -352,9 +365,10 @@ export default class HomeScene extends Phaser.Scene {
 
         if (this._started)
             return;
-        if (this.gameInputManager.startJustPressed())
+        if (this.gameInputManager.startJustPressed(this._joinedDevice))
             this._startGame();
         else
             this._updateJoining();
+        this.updatePlayerDevice();
     }
 }

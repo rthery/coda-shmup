@@ -59,7 +59,7 @@ Two players on one screen, each on their own device, or one player with a bot. T
 
 ### Joining
 
-- Home screen: Space or a gamepad's Start launches the run (or a tap on touch). Before that, Enter or a gamepad's A makes player 2 join: its ship flies in next to player 1's. Backspace or the pad's B makes it leave. The joined device goes to `MainGameScene` in the scene data.
+- Home screen: player 1's device is the one used last that isn't player 2's. The start hint shows its key: Space, or that pad's Start (Options on PlayStation, + on Switch). Space or any pad's Start but player 2's launches the run (or a tap on touch). Player 1's own pad never joins as player 2, so two gamepads work: pad 2 presses A, pad 1 presses Start. Before that, Enter or a gamepad's A makes player 2 join: its ship flies in next to player 1's. Backspace or the pad's B makes it leave. The joined device goes to `MainGameScene` in the scene data.
 - During a run, `MainGameScene.updateJoining()` lets a second player in with the confirm of a key set or pad player 1 didn't use up to the last frame (Space, Enter or A). `EntityManager.joinPlayer()` flies the ship in from below the screen next to player 1, briefly invulnerable. The device goes into player 1's `excluded` list.
 - Player 2 leaves the same way during a run, and B adds a bot or removes it: the leaving ship flies off below the screen, its HUD row goes, player 1 gets its device back and the difficulty drops back.
 - On the home screen both ships sway, labeled with a big P1 or P2 and an icon of what drives them: WASD or ZQSD, arrows, keyboard, the pad's controller, or the bot.

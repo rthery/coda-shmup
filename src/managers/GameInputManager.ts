@@ -41,7 +41,7 @@ export default class GameInputManager extends Plugins.BasePlugin {
     };
     // Kenney Input Prompts. The bottom face button confirms: B on Nintendo pads
     private static readonly GAMEPAD_ICONS: Record<GamepadFamily, Record<GamepadButton, string>> = {
-        xbox: {confirm: 'ui_pad_xbox_a', cancel: 'ui_pad_xbox_b', start: 'ui_pad_xbox_menu',
+        xbox: {confirm: 'ui_pad_xbox_a', cancel: 'ui_pad_xbox_b', start: 'ui_pad_xbox_start',
             dpadVertical: 'ui_pad_xbox_dpad_vertical'},
         playstation: {confirm: 'ui_pad_playstation_cross', cancel: 'ui_pad_playstation_circle',
             start: 'ui_pad_playstation_options', dpadVertical: 'ui_pad_playstation_dpad_vertical'},
@@ -146,10 +146,16 @@ export default class GameInputManager extends Plugins.BasePlugin {
         return null;
     }
 
-    // Home: Space or any gamepad's Start launches the run, or a tap on touch screens
-    public startJustPressed(): boolean {
-        return this.readConfirmJustPressed(GameInputManager.KEYBOARD_DEVICES.wasd) || this._touchJustDown
-            || this._getConnectedGamepads().some(pad => this._isGamepadButtonJustPressed(pad, GameInputManager.START_BUTTON_INDEX));
+    // Home: Space or a gamepad's Start launches the run, or a tap on touch screens. Not player 2's pad
+    public startJustPressed(joinedDevice: InputDevice | null): boolean {
+        if (this.readConfirmJustPressed(GameInputManager.KEYBOARD_DEVICES.wasd) || this._touchJustDown)
+            return true;
+        for (const pad of this._getConnectedGamepads()) {
+            if (this._isGamepadButtonJustPressed(pad, GameInputManager.START_BUTTON_INDEX)
+                && !(joinedDevice?.type === 'gamepad' && joinedDevice.index === pad.index))
+                return true;
+        }
+        return false;
     }
 
     // A joined player leaving: Backspace on its key set, the cancel button on its pad
@@ -162,9 +168,11 @@ export default class GameInputManager extends Plugins.BasePlugin {
         return !!pad && this._isGamepadButtonJustPressed(pad, GameInputManager.CANCEL_BUTTON_INDEX);
     }
 
-    public startHintParts(): HintPart[] {
-        const startIcon: string | null = this.gamepadIcon('start');
-        return ['PRESS', this.keyHintPart('Space'), ...(startIcon ? ['OR', {icon: startIcon}] : []), 'TO START'];
+    // In player 1's controls: Space on the keyboard, Start on its gamepad
+    public startHintParts(playerDevice: InputDevice): HintPart[] {
+        const start: HintPart = playerDevice.type === 'gamepad' ? this.gamepadHintPart('start', playerDevice.index)
+            : this.keyHintPart('Space');
+        return ['PRESS', start, 'TO START'];
     }
 
     // How the joined player leaves, or how the bot goes
