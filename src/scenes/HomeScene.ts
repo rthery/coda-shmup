@@ -47,7 +47,7 @@ export default class HomeScene extends Phaser.Scene {
     private static readonly DUO_SWAY_DELAY: number = 150; // ms
     private static readonly STICK_THRESHOLD: number = 0.5;
     // Solo, local coop and online coop: cards stacked like the level-up ones, the selected one lifted and nudged
-    private static readonly MENU_TOP: number = 1000;
+    private static readonly MENU_TOP: number = 880;
     private static readonly MENU_CARD_WIDTH: number = 820;
     private static readonly MENU_CARD_HEIGHT: number = 200;
     private static readonly MENU_CARD_GAP: number = 24;
@@ -63,7 +63,7 @@ export default class HomeScene extends Phaser.Scene {
         {title: 'ONLINE COOP', label: '2 PLAYERS', subtitle: 'COMING SOON', frame: 'ui_header_blade_red', isDisabled: true},
     ];
     // Local coop: a panel with a row per player and a START button like the pause screen's
-    private static readonly LOBBY_TOP: number = 1000;
+    private static readonly LOBBY_TOP: number = 880;
     private static readonly LOBBY_WIDTH: number = 820;
     private static readonly ROW_HEIGHT: number = 130;
     private static readonly ROW_GAP: number = 20;
@@ -79,8 +79,8 @@ export default class HomeScene extends Phaser.Scene {
     private static readonly START_COLORS = {fill: 0x1fbf75, shade: 0x15955a};
     private static readonly DISABLED_BUTTON_COLOR: number = 0xb7bec9;
     // Above the menu, higher than the old single ship so the stacked cards fit under it
-    private static readonly TITLE_Y: number = 460;
-    private static readonly SHIP_Y: number = 800;
+    private static readonly TITLE_Y: number = 400;
+    private static readonly SHIP_Y: number = 710;
     // Readable on the panels' light body: the ships' blue and orange, darker
     private static readonly PLAYER_INK_COLORS: number[] = [0x2a7fc4, 0xd9731f];
     private static readonly READY_COLOR: string = '#2f8f52';
