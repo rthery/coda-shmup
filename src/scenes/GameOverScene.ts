@@ -184,6 +184,7 @@ export default class GameOverScene extends Phaser.Scene {
     private _getPromptText(type: InputType): HintPart[] {
         const inputManager = this.gameInputManager;
         switch (type) {
+            case 'mouse': return [];
             case 'touch': return ['TAP TO PLAY AGAIN'];
             case 'gamepad': return [inputManager.gamepadHintPart('confirm'), 'OR', inputManager.gamepadHintPart('start'),
                 'TO PLAY AGAIN'];
@@ -192,7 +193,8 @@ export default class GameOverScene extends Phaser.Scene {
     }
 
     update() {
-        if (!this._started && this.gameInputManager.confirmJustPressed()) {
+        // A click anywhere too
+        if (!this._started && (this.gameInputManager.confirmJustPressed() || this.gameInputManager.clickJustPressed())) {
             // The first press only skips the reveal
             if (!this._revealed) {
                 this.finishReveal();

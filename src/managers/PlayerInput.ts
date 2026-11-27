@@ -12,6 +12,8 @@ export type InputDevice =
 export default interface PlayerInput {
     readonly device: InputDevice;
     readonly moveDirection: Phaser.Math.Vector2;
+    // Where the mouse points in the arena when it steers this player, null otherwise
+    steeringTarget(out: Phaser.Math.Vector2): Phaser.Math.Vector2 | null;
     confirmJustPressed(): boolean;
 }
 

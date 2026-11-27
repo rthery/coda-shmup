@@ -195,6 +195,7 @@ export default class PauseScene extends Scene {
     private getHintText(type: InputType): HintPart[] {
         const inputManager = this.gameInputManager;
         switch (type) {
+            case 'mouse': return [];
             case 'touch': return ['TAP AN OPTION'];
             case 'gamepad': return [inputManager.gamepadHintPart('confirm'), 'TO SELECT,',
                 inputManager.gamepadHintPart('start'), 'TO RESUME'];

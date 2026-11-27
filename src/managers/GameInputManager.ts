@@ -10,7 +10,7 @@ declare module 'phaser' {
     }
 }
 
-export type InputType = 'keyboard' | 'touch' | 'gamepad';
+export type InputType = 'keyboard' | 'mouse' | 'touch' | 'gamepad';
 export type GamepadButton = 'confirm' | 'cancel' | 'top' | 'start' | 'dpadVertical';
 type GamepadFamily = 'xbox' | 'playstation' | 'switch';
 
@@ -20,6 +20,8 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
     private static readonly STICK_DEADZONE = 0.3;
     private static readonly TOUCH_DEADZONE = 24;
+    // The mouse takes over from another input once it moves this far, so a nudged mouse doesn't
+    private static readonly MOUSE_SWITCH_DISTANCE = 16;
     private static readonly CONFIRM_BUTTON_INDEX = 0;
     private static readonly START_BUTTON_INDEX = 9;
     // B on Xbox pads, circle on PlayStation ones: back on the home screen
@@ -99,6 +101,13 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private readonly _touchOrigin = new Phaser.Math.Vector2();
     private readonly _touchDirection = new Phaser.Math.Vector2();
     private _touchJustDown: boolean = false;
+    private _clickJustDown: boolean = false;
+    // When each input was last used, ms: the mouse steers a player whose keys were used before it
+    private _mouseTime: number = -Infinity;
+    private readonly _keySetTimes = {wasd: -Infinity, arrows: -Infinity};
+    private _otherInputTime: number = -Infinity;
+    // Where the mouse was when another input took over
+    private readonly _mouseAnchor = new Phaser.Math.Vector2(NaN, NaN);
     private readonly _moveDirection = new Phaser.Math.Vector2();
 
     private _confirmJustDown: boolean = false;
@@ -191,9 +200,11 @@ export default class GameInputManager extends Plugins.BasePlugin {
             : this.keyHintPart(GameInputManager.BOT_KEY_CODE);
     }
 
-    // Choosing in a menu, in the last used device's buttons
+    // Choosing in a menu, in the last used device's buttons. None with the mouse: it points and clicks
     public menuHintParts(): HintPart[] {
         switch (this._activeInputType) {
+            case 'mouse':
+                return [];
             case 'touch':
                 return ['TAP TO START'];
             case 'gamepad':
@@ -349,6 +360,7 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
             if (movedStick || pressedAction) {
                 this._setInputType('gamepad');
+                this._otherInputTime = performance.now();
             }
 
             if (this._isGamepadButtonJustPressed(pad, GameInputManager.CONFIRM_BUTTON_INDEX)) {
@@ -373,6 +385,7 @@ export default class GameInputManager extends Plugins.BasePlugin {
         }
 
         this._touchJustDown = false;
+        this._clickJustDown = false;
         this._confirmJustDown = false;
         this._restartJustDown = false;
     }
@@ -480,6 +493,12 @@ export default class GameInputManager extends Plugins.BasePlugin {
         this._heldKeyCodes.add(event.code);
         if (!event.repeat)
             this._pendingPressedKeyCodes.add(event.code);
+        for (const keys of GameInputManager.KEY_SET_NAMES) {
+            const keySet = GameInputManager.KEY_SETS[keys];
+            if (event.code === keySet.left || event.code === keySet.right || event.code === keySet.up
+                || event.code === keySet.down || keySet.confirm.includes(event.code))
+                this._keySetTimes[keys] = performance.now();
+        }
         const axisSign = GameInputManager.AXIS_SIGNS[event.code];
         if (axisSign && !event.repeat)
             this._lastPressedSign[axisSign.axis] = axisSign.sign;
@@ -495,10 +514,13 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
     private _onPointerDown(pointer: Phaser.Input.Pointer): void {
         if (!pointer.wasTouch) {
+            this._clickJustDown = true;
+            this._useMouse(pointer, true);
             return;
         }
 
         this._touchJustDown = true;
+        this._otherInputTime = performance.now();
         this._setInputType('touch');
 
         if (this._touchPointerId !== -1) {
@@ -511,6 +533,10 @@ export default class GameInputManager extends Plugins.BasePlugin {
     }
 
     private _onPointerMove(pointer: Phaser.Input.Pointer): void {
+        if (!pointer.wasTouch) {
+            this._useMouse(pointer, false);
+            return;
+        }
         if (pointer.id !== this._touchPointerId) {
             return;
         }
@@ -530,6 +556,46 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private _clearTouch(): void {
         this._touchPointerId = -1;
         this._touchDirection.set(0, 0);
+    }
+
+    // A click always counts, a move only past a few pixels from where another input took over
+    private _useMouse(pointer: Phaser.Input.Pointer, isClick: boolean): void {
+        if (this._activeInputType !== 'mouse' && !isClick) {
+            if (Number.isNaN(this._mouseAnchor.x))
+                this._mouseAnchor.set(pointer.x, pointer.y);
+            if (Phaser.Math.Distance.Between(pointer.x, pointer.y, this._mouseAnchor.x, this._mouseAnchor.y)
+                < GameInputManager.MOUSE_SWITCH_DISTANCE)
+                return;
+        }
+        this._mouseTime = performance.now();
+        this._mouseAnchor.set(NaN, NaN);
+        this._setInputType('mouse');
+    }
+
+    // Player 1's keyboard comes with the mouse: whichever of the two was used last steers
+    public usesMouse(device: InputDevice): boolean {
+        const keys = this._keySetTimes;
+        switch (device.type) {
+            case 'any':
+                return this._mouseTime > Math.max(keys.wasd, keys.arrows, this._otherInputTime);
+            case 'keyboard':
+                return device.keys === 'wasd' ? this._mouseTime > keys.wasd
+                    : device.keys === 'all' && this._mouseTime > Math.max(keys.wasd, keys.arrows);
+            default:
+                return false;
+        }
+    }
+
+    // The cursor in the arena, for a player the mouse steers, null otherwise
+    public readSteeringTarget(device: InputDevice, out: Phaser.Math.Vector2): Phaser.Math.Vector2 | null {
+        if (!this._scene || !this.usesMouse(device))
+            return null;
+        return this._scene.input.activePointer.positionToCamera(this._scene.cameras.main, out) as Phaser.Math.Vector2;
+    }
+
+    // The game over screen: a click anywhere continues
+    public clickJustPressed(): boolean {
+        return this._clickJustDown;
     }
 
     private _onGamepadConnected(pad: Phaser.Input.Gamepad.Gamepad): void {
@@ -679,6 +745,10 @@ class DeviceInput implements PlayerInput {
 
     public get moveDirection(): Phaser.Math.Vector2 {
         return this._manager.readMoveDirection(this.device, this._moveDirection);
+    }
+
+    public steeringTarget(out: Phaser.Math.Vector2): Phaser.Math.Vector2 | null {
+        return this._manager.readSteeringTarget(this.device, out);
     }
 
     public confirmJustPressed(): boolean {

@@ -24,6 +24,7 @@ Two players on one screen, each on their own device, or one player with a bot. T
   - `keyboard`: keys by physical position: WASD + Space, arrows + Enter, or the whole keyboard (`all`).
   - `gamepad`: one pad index, stick or d-pad, A or Start to confirm.
 - Menu-level queries (`confirmJustPressed`, `pauseJustPressed`, `restartJustPressed`) stay global and answer for any device.
+- The mouse comes with player 1's keyboard (`any`, `all` or `wasd`): whichever of the two was used last drives. With the mouse, the ship flies toward the cursor, slowing down within `MOUSE_SLOW_DISTANCE` and stopping under it, menus are clicked, the pause button shows, and no input hint shows.
 - `Player.preUpdate` reads its own `playerInput`. This is the seam the online mode plugs a remote input into.
 
 ### Team state

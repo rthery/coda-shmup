@@ -387,8 +387,9 @@ export default class MainUIScene extends Scene {
         return shown;
     }
 
+    // Touch and the mouse tap or click it, the keys and pads have their own
     private onInputTypeChanged(type: InputType) {
-        this._pauseButton.setVisible(type === 'touch');
+        this._pauseButton.setVisible(type === 'touch' || type === 'mouse');
     }
 
     // Drawn only while a finger holds it during the run, not under the level-up or pause screens
@@ -569,7 +570,7 @@ export default class MainUIScene extends Scene {
         this._joinHintIcon = inputManager.gamepadIcon('top');
         if (hasBot && playerDevice)
             UiUtils.setButtonHint(this._joinHint, [inputManager.botHintPart(playerDevice), 'TO REMOVE THE BOT']);
-        this._joinHint.setVisible(hasBot);
+        this._joinHint.setVisible(hasBot && inputManager.activeInputType !== 'mouse');
     }
 
     private onPlayerLeft(index: number) {

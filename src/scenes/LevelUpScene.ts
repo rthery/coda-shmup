@@ -289,6 +289,9 @@ export default class LevelUpScene extends Scene {
         const device: InputDevice = this._player.playerInput.device;
         if (device.type === 'bot')
             return ['THE BOT PICKS'];
+        // The mouse points at a card and clicks it
+        if (this.gameInputManager.usesMouse(device))
+            return [];
         const type: InputType = device.type === 'any' ? this.gameInputManager.activeInputType
             : device.type === 'gamepad' ? 'gamepad' : 'keyboard';
         switch (type) {

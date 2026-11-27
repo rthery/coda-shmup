@@ -24,6 +24,9 @@ export default class Player extends Entity {
     private static readonly POD_LABEL_OFFSET: number = 70;
     private static readonly RESPAWN_INVULNERABILITY_DURATION: number = 2000; // ms
     private static readonly LEAVE_DURATION: number = 700; // ms
+    // Mouse steering: full speed beyond this distance to the cursor, stopped within the other
+    private static readonly MOUSE_SLOW_DISTANCE: number = 220;
+    private static readonly MOUSE_STOP_DISTANCE: number = 12;
     private static readonly WING_TRAILS_SPEED_RATIO: number = 0.5;
     // The turret fires once it points this close to its target
     private static readonly TURRET_AIM_TOLERANCE: number = Phaser.Math.DegToRad(15);
@@ -72,6 +75,7 @@ export default class Player extends Entity {
     private _rateOfFire: number;
     private _lastShotTime: number;
     private readonly _moveDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private readonly _steeringTarget: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _shootDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _muzzle: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private readonly _upgradeRanks: Map<UpgradeId, number> = new Map();
@@ -342,9 +346,7 @@ export default class Player extends Entity {
         if (Player.isInvulnerable && health)
             health.enabled = false;
 
-        this._moveDirection.copy(this._input.moveDirection);
-
-        this._moveDirection.normalize();
+        this.readMoveDirection();
         const movement = this.getComponent(Movement);
         movement?.accelerateInDirection(this, this._moveDirection, deltaTime);
 
@@ -400,6 +402,22 @@ export default class Player extends Entity {
 
             this._lastShotTime = timeSinceLaunch;
         }
+    }
+
+    // Full speed toward where the keys, stick or touch push. With the mouse, toward the cursor, slowing down as the
+    // ship gets close and stopping under it
+    private readMoveDirection() {
+        const target = this._input.steeringTarget(this._steeringTarget);
+        if (!target) {
+            this._moveDirection.copy(this._input.moveDirection).normalize();
+            return;
+        }
+        this._moveDirection.set(target.x - this.x, target.y - this.y);
+        const distance: number = this._moveDirection.length();
+        if (distance < Player.MOUSE_STOP_DISTANCE)
+            this._moveDirection.reset();
+        else
+            this._moveDirection.scale(Math.min(1, distance / Player.MOUSE_SLOW_DISTANCE) / distance);
     }
 
     // Coop: a destroyed ship ejects a pod, that can't shoot nor be hit, and comes back after the delay

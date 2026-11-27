@@ -30,6 +30,10 @@ export default class BotInput implements PlayerInput {
         this._entityManager = entityManager;
     }
 
+    public steeringTarget(): Phaser.Math.Vector2 | null {
+        return null;
+    }
+
     public confirmJustPressed(): boolean {
         return false;
     }

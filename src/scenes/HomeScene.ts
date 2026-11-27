@@ -392,7 +392,9 @@ export default class HomeScene extends Phaser.Scene {
                 inputManager.backHintPart(player), 'BACK']);
             return;
         }
-        UiUtils.setButtonHint(this._hint, ['PRESS', inputManager.confirmHintPart(player), 'TO START']);
+        // The mouse clicks the START button
+        UiUtils.setButtonHint(this._hint, inputManager.usesMouse(player) ? []
+            : ['PRESS', inputManager.confirmHintPart(player), 'TO START']);
         UiUtils.setButtonHint(this._subHint, joined.type === 'bot'
             ? [inputManager.botHintPart(player), 'TO REMOVE THE BOT']
             : ['P2:', inputManager.backHintPart(joined), 'TO LEAVE']);
