@@ -2,7 +2,10 @@ import {GameObjects, Plugins, Physics, Scene} from "phaser";
 import Health from "../components/Health.ts";
 import Bullet from "../entities/Bullet.ts";
 import Enemy from "../entities/Enemy.ts";
+import Entity from "../entities/Entity.ts";
 import Player from "../entities/Player.ts";
+import SpreadEnemy from "../entities/SpreadEnemy.ts";
+import type {SpreadEnemyData} from "../gameData/SpreadEnemyData.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
@@ -24,6 +27,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private _player: Player;
     private _playerBullets: Physics.Arcade.Group;
     private _enemies: Physics.Arcade.Group;
+    private _spreadEnemies?: Physics.Arcade.Group;
+    private _spreadEnemyData?: SpreadEnemyData;
     private _enemyBullets: Physics.Arcade.Group;
 
     constructor(scene: Scene, pluginManager: Plugins.PluginManager) {
@@ -73,19 +78,40 @@ export default class EntityManager extends Plugins.ScenePlugin {
             loop: true
         });
 
+        this.initSpreadEnemies();
+
         console.log("[EntityManager] Enemies initialized");
 
         return this._enemies;
     }
 
-    public initGroupCollisions() {
-        this.scene!.physics.add.overlap(this._playerBullets, this._enemies, (bullet, enemy) => {
-            this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
+    // Spread enemies share the enemy bullets group, but have their own group and spawn timer, both driven by the JSON data
+    private initSpreadEnemies() {
+        this._spreadEnemyData = this.scene!.cache.json.get('spreadEnemy') as SpreadEnemyData | undefined;
+        if (!this._spreadEnemyData) {
+            console.error("[EntityManager] 'spreadEnemy' JSON data not found, spread enemies disabled");
+            return;
+        }
 
-            (bullet as Bullet).disable();
-            (enemy as Enemy).getComponent(Health)?.damage((bullet as Bullet).damage);
+        const spreadEnemyData: SpreadEnemyData = this._spreadEnemyData;
+        this._spreadEnemies = this.scene!.physics.add.group({
+            classType: SpreadEnemy,
+            defaultKey: 'sprites',
+            defaultFrame: SpreadEnemy.IDLE_FRAME,
+            createCallback: (enemy) => {
+                (enemy as SpreadEnemy).init(this._enemyBullets, spreadEnemyData);
+            }
         });
 
+        this.scene!.time.addEvent({
+            delay: spreadEnemyData.spawn.interval,
+            callback: this.spawnSpreadEnemy,
+            callbackScope: this,
+            loop: true
+        });
+    }
+
+    public initGroupCollisions() {
         this.scene!.physics.add.overlap(this._player, this._enemyBullets, (player, bullet) => {
             (bullet as Bullet).disable();
             (player as Player).getComponent(Health)?.damage((bullet as Bullet).damage);
@@ -93,17 +119,32 @@ export default class EntityManager extends Plugins.ScenePlugin {
             this.scene?.cameras.main.shake(100, 0.01);
         });
 
-        this.scene!.physics.add.overlap(this._player, this._enemies, (player, enemy) => {
-            this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
+        // Every kind of enemy reacts the same way to the player bullets and to the player
+        const enemyGroups: Physics.Arcade.Group[] = [this._enemies];
+        if (this._spreadEnemies) {
+            enemyGroups.push(this._spreadEnemies);
+        }
 
-            const enemyHealth = (enemy as Enemy).getComponent(Health);
-            enemyHealth?.damage(enemyHealth?.max);
+        for (const enemies of enemyGroups) {
+            this.scene!.physics.add.overlap(this._playerBullets, enemies, (bullet, enemy) => {
+                this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
 
-            const playerHealth = (player as Player).getComponent(Health);
-            playerHealth?.damage(1);
+                (bullet as Bullet).disable();
+                (enemy as Entity).getComponent(Health)?.damage((bullet as Bullet).damage);
+            });
 
-            this.scene?.cameras.main.shake(100, 0.03);
-        });
+            this.scene!.physics.add.overlap(this._player, enemies, (player, enemy) => {
+                this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
+
+                const enemyHealth = (enemy as Entity).getComponent(Health);
+                enemyHealth?.damage(enemyHealth?.max);
+
+                const playerHealth = (player as Player).getComponent(Health);
+                playerHealth?.damage(1);
+
+                this.scene?.cameras.main.shake(100, 0.03);
+            });
+        }
 
         console.log("[EntityManager] Group collisions initialized");
     }
@@ -123,5 +164,26 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this.game!.events.emit(GameConstants.Events.ENEMY_SPAWNED_EVENT, enemy);
 
         console.log("[EntityManager] Enemy spawned");
+    }
+
+    private spawnSpreadEnemy() {
+        if (!this._spreadEnemies || !this._spreadEnemyData) {
+            return;
+        }
+
+        if (this._spreadEnemies.countActive(true) >= this._spreadEnemyData.spawn.maxActive) {
+            return;
+        }
+
+        const enemy = this._spreadEnemies.get() as SpreadEnemy;
+        if (!enemy) {
+            return;
+        }
+
+        enemy.enable(Phaser.Math.Between(64, this.scene!.cameras.main.width - 64), 0);
+
+        this.game!.events.emit(GameConstants.Events.ENEMY_SPAWNED_EVENT, enemy);
+
+        console.log("[EntityManager] Spread enemy spawned");
     }
 }

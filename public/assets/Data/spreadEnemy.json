@@ -1,0 +1,30 @@
+{
+  "health": 3,
+  "spawn": {
+    "interval": 5000,
+    "maxActive": 2
+  },
+  "movement": {
+    "speedY": 0.15,
+    "amplitude": 260,
+    "frequency": 0.35,
+    "phase": 0
+  },
+  "attack": {
+    "shootDelay": {
+      "min": 2000,
+      "max": 3000
+    },
+    "spread": {
+      "count": 5,
+      "angle": 60
+    },
+    "bullet": {
+      "width": 14,
+      "height": 14,
+      "color": "#5cf2a0",
+      "speed": 384,
+      "damage": 1
+    }
+  }
+}
