@@ -1,7 +1,7 @@
 import {Input, Plugins, Scene} from 'phaser';
 import GameConstants from "../GameConstants.ts";
 import type PlayerInput from "./PlayerInput.ts";
-import {isSameDevice, type InputDevice, type KeyboardKeySet} from "./PlayerInput.ts";
+import type {InputDevice} from "./PlayerInput.ts";
 import type {HintPart} from "../utils/UiUtils.ts";
 
 declare module 'phaser' {
@@ -11,7 +11,7 @@ declare module 'phaser' {
 }
 
 export type InputType = 'keyboard' | 'touch' | 'gamepad';
-export type GamepadButton = 'confirm' | 'cancel' | 'start' | 'dpadVertical';
+export type GamepadButton = 'confirm' | 'cancel' | 'top' | 'start' | 'dpadVertical';
 type GamepadFamily = 'xbox' | 'playstation' | 'switch';
 
 export default class GameInputManager extends Plugins.BasePlugin {
@@ -22,9 +22,11 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private static readonly TOUCH_DEADZONE = 24;
     private static readonly CONFIRM_BUTTON_INDEX = 0;
     private static readonly START_BUTTON_INDEX = 9;
-    // B on Xbox pads, circle on PlayStation ones: a joined player leaves
+    // B on Xbox pads, circle on PlayStation ones: back on the home screen
     private static readonly CANCEL_BUTTON_INDEX = 1;
-    private static readonly LEAVE_KEY_CODE = 'Backspace';
+    // Y on Xbox pads, triangle on PlayStation ones: adds the bot on the home screen
+    private static readonly TOP_BUTTON_INDEX = 3;
+    private static readonly BACK_KEY_CODE = 'Backspace';
     // In a run: adds a bot teammate
     private static readonly BOT_KEY_CODE = 'KeyB';
     // Physical key positions, not characters: WASD on a US keyboard, ZQSD on AZERTY
@@ -33,7 +35,7 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private static readonly MOVE_UP_CODE = 'KeyW';
     private static readonly MOVE_DOWN_CODE = 'KeyS';
     // Coop: each key set drives one player, by physical position
-    private static readonly KEY_SETS: Record<KeyboardKeySet, {
+    private static readonly KEY_SETS: Record<'wasd' | 'arrows', {
         left: string, right: string, up: string, down: string, confirm: string[]
     }> = {
         wasd: {left: 'KeyA', right: 'KeyD', up: 'KeyW', down: 'KeyS', confirm: ['Space']},
@@ -41,18 +43,18 @@ export default class GameInputManager extends Plugins.BasePlugin {
     };
     // Kenney Input Prompts. The bottom face button confirms: B on Nintendo pads
     private static readonly GAMEPAD_ICONS: Record<GamepadFamily, Record<GamepadButton, string>> = {
-        xbox: {confirm: 'ui_pad_xbox_a', cancel: 'ui_pad_xbox_b', start: 'ui_pad_xbox_start',
+        xbox: {confirm: 'ui_pad_xbox_a', cancel: 'ui_pad_xbox_b', top: 'ui_pad_xbox_y', start: 'ui_pad_xbox_start',
             dpadVertical: 'ui_pad_xbox_dpad_vertical'},
-        playstation: {confirm: 'ui_pad_playstation_cross', cancel: 'ui_pad_playstation_circle',
+        playstation: {confirm: 'ui_pad_playstation_cross', cancel: 'ui_pad_playstation_circle', top: 'ui_pad_playstation_triangle',
             start: 'ui_pad_playstation_options', dpadVertical: 'ui_pad_playstation_dpad_vertical'},
-        switch: {confirm: 'ui_pad_switch_b', cancel: 'ui_pad_switch_a', start: 'ui_pad_switch_plus',
+        switch: {confirm: 'ui_pad_switch_b', cancel: 'ui_pad_switch_a', top: 'ui_pad_switch_x', start: 'ui_pad_switch_plus',
             dpadVertical: 'ui_pad_switch_dpad_vertical'},
     };
     private static readonly CONTROLLER_ICONS: Record<GamepadFamily, string> = {
         xbox: 'ui_device_xbox', playstation: 'ui_device_playstation', switch: 'ui_device_switch'
     };
     private static readonly GAMEPAD_BUTTON_NAMES: Record<GamepadButton, string> = {
-        confirm: 'A', cancel: 'B', start: 'START', dpadVertical: 'UP / DOWN'
+        confirm: 'A', cancel: 'B', top: 'Y', start: 'START', dpadVertical: 'UP / DOWN'
     };
     // Kenney Input Prompts, by physical key
     private static readonly KEY_ICONS: Record<string, string> = {
@@ -61,10 +63,10 @@ export default class GameInputManager extends Plugins.BasePlugin {
     };
     // Keys whose label moves between layouts: KeyW is Z on AZERTY
     private static readonly LAYOUT_KEY_ICONS: Record<string, string> = {w: 'ui_key_w', z: 'ui_key_z'};
-    private static readonly KEY_SET_NAMES: readonly KeyboardKeySet[] = ['wasd', 'arrows'];
-    private static readonly KEYBOARD_DEVICES: Record<KeyboardKeySet, InputDevice> = {
-        wasd: {type: 'keyboard', keys: 'wasd'},
-        arrows: {type: 'keyboard', keys: 'arrows'},
+    private static readonly KEY_SET_NAMES: readonly ('wasd' | 'arrows')[] = ['wasd', 'arrows'];
+    private static readonly KEYBOARD_DEVICES = {
+        wasd: {type: 'keyboard', keys: 'wasd'} as InputDevice,
+        arrows: {type: 'keyboard', keys: 'arrows'} as InputDevice,
     };
 
     private _scene: Scene | null = null;
@@ -97,10 +99,7 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
     private _prevGamepadButtons = new Map<string, boolean>();
     private _activeInputType: InputType = 'keyboard';
-    // The key set or pad used last: a solo player's own device, that can't make a second player join
-    private _lastUsedDevice: InputDevice = GameInputManager.KEYBOARD_DEVICES.wasd;
     private readonly _gamepadDevices = new Map<number, InputDevice>();
-    private readonly _keySetDirection = new Phaser.Math.Vector2();
     // The keyboard's labels by physical key, where the browser tells them (Chrome, Edge)
     private _keyLabels: Map<string, string> | null = null;
 
@@ -128,60 +127,67 @@ export default class GameInputManager extends Plugins.BasePlugin {
         return new DeviceInput(device, this);
     }
 
-    public get lastUsedDevice(): InputDevice {
-        return this._lastUsedDevice;
-    }
-
-    // A player joining: the key set whose confirm was just pressed (Space, Enter), or the pad whose A was
-    public findJoiningDevice(): InputDevice | null {
+    // Home: the key set whose confirm was just pressed (Space, Enter), or the pad whose A or Start was
+    public findConfirmingDevice(): InputDevice | null {
         for (const keys of GameInputManager.KEY_SET_NAMES) {
             const device: InputDevice = GameInputManager.KEYBOARD_DEVICES[keys];
             if (this.readConfirmJustPressed(device))
                 return device;
         }
         for (const pad of this._getConnectedGamepads()) {
-            if (this._isGamepadButtonJustPressed(pad, GameInputManager.CONFIRM_BUTTON_INDEX))
-                return this._getGamepadDevice(pad.index);
+            const device: InputDevice = this._getGamepadDevice(pad.index);
+            if (this.readConfirmJustPressed(device))
+                return device;
         }
         return null;
     }
 
-    // Home: Space or a gamepad's Start launches the run, or a tap on touch screens. Not player 2's pad
-    public startJustPressed(joinedDevice: InputDevice | null): boolean {
-        if (this.readConfirmJustPressed(GameInputManager.KEYBOARD_DEVICES.wasd) || this._touchJustDown)
-            return true;
-        for (const pad of this._getConnectedGamepads()) {
-            if (this._isGamepadButtonJustPressed(pad, GameInputManager.START_BUTTON_INDEX)
-                && !(joinedDevice?.type === 'gamepad' && joinedDevice.index === pad.index))
-                return true;
-        }
-        return false;
+    public tapJustPressed(): boolean {
+        return this._touchJustDown;
     }
 
-    // A joined player leaving: Backspace on its key set, the cancel button on its pad
-    public leaveJustPressed(device: InputDevice): boolean {
-        if (device.type === 'keyboard')
-            return this._justPressedKeyCodes.has(GameInputManager.LEAVE_KEY_CODE);
+    // Home: Escape on the left keys, Backspace on the arrows, either on the whole keyboard, the cancel button on a pad
+    public backJustPressed(device: InputDevice): boolean {
+        if (device.type === 'keyboard') {
+            const isEscape: boolean = this._justPressedKeyCodes.has('Escape');
+            const isBackspace: boolean = this._justPressedKeyCodes.has(GameInputManager.BACK_KEY_CODE);
+            return device.keys === 'wasd' ? isEscape : device.keys === 'arrows' ? isBackspace : isEscape || isBackspace;
+        }
         if (device.type !== 'gamepad')
             return false;
         const pad = this._getConnectedGamepads().find(pad => pad.index === device.index);
         return !!pad && this._isGamepadButtonJustPressed(pad, GameInputManager.CANCEL_BUTTON_INDEX);
     }
 
-    // In player 1's controls: Space on the keyboard, Start on its gamepad
-    public startHintParts(playerDevice: InputDevice): HintPart[] {
-        const start: HintPart = playerDevice.type === 'gamepad' ? this.gamepadHintPart('start', playerDevice.index)
-            : this.keyHintPart('Space');
-        return ['PRESS', start, 'TO START'];
+    // A device's buttons in hints: its confirm, its back, how it adds the bot
+    public confirmHintPart(device: InputDevice): HintPart {
+        if (device.type === 'gamepad')
+            return this.gamepadHintPart('confirm', device.index);
+        return this.keyHintPart(device.type === 'keyboard' && device.keys === 'arrows' ? 'Enter' : 'Space');
     }
 
-    // How the joined player leaves, or how the bot goes
-    public leaveHintParts(device: InputDevice): HintPart[] {
-        if (device.type === 'bot')
-            return [this.keyHintPart(GameInputManager.BOT_KEY_CODE), 'TO REMOVE THE BOT'];
-        const leave: HintPart = device.type === 'gamepad' ? this.gamepadHintPart('cancel', device.index)
-            : this.keyHintPart(GameInputManager.LEAVE_KEY_CODE);
-        return ['P2: PRESS', leave, 'TO LEAVE'];
+    public backHintPart(device: InputDevice): HintPart {
+        if (device.type === 'gamepad')
+            return this.gamepadHintPart('cancel', device.index);
+        return this.keyHintPart(device.type === 'keyboard' && device.keys === 'arrows' ? GameInputManager.BACK_KEY_CODE : 'Escape');
+    }
+
+    public botHintPart(device: InputDevice): HintPart {
+        return device.type === 'gamepad' ? this.gamepadHintPart('top', device.index)
+            : this.keyHintPart(GameInputManager.BOT_KEY_CODE);
+    }
+
+    // Choosing in a menu, in the last used device's buttons
+    public menuHintParts(): HintPart[] {
+        switch (this._activeInputType) {
+            case 'touch':
+                return ['TAP TO START'];
+            case 'gamepad':
+                return [this.gamepadHintPart('dpadVertical'), 'TO CHOOSE,', this.gamepadHintPart('confirm'), 'TO SELECT'];
+            default:
+                return [this.keyHintPart('ArrowUp'), this.keyHintPart('ArrowDown'), 'TO CHOOSE,',
+                    this.keyHintPart('Space'), 'TO SELECT'];
+        }
     }
 
     // A button's icon in the style of the given gamepad, or the first connected one, null without one.
@@ -201,11 +207,10 @@ export default class GameInputManager extends Plugins.BasePlugin {
             case 'gamepad':
                 return GameInputManager.CONTROLLER_ICONS[this.gamepadFamily(device.index) ?? 'xbox'];
             case 'keyboard':
-                return device.keys === 'arrows' ? 'ui_device_arrows' : leftKeysIcon;
+                return device.keys === 'arrows' ? 'ui_device_arrows' : device.keys === 'wasd' ? leftKeysIcon
+                    : 'ui_device_keyboard';
             case 'any':
-                // Player 1: the whole keyboard, or its left keys once player 2 took the arrows
-                return device.excluded?.some(owned => owned.type === 'keyboard' && owned.keys === 'arrows')
-                    ? leftKeysIcon : 'ui_device_keyboard';
+                return 'ui_device_keyboard';
         }
     }
 
@@ -231,49 +236,31 @@ export default class GameInputManager extends Plugins.BasePlugin {
         return icon ? {icon} : code;
     }
 
-    // How a second player joins. The gamepad's icon shows only once a gamepad is detected
-    public joinHintParts(): HintPart[] {
-        const gamepadIcon: string | null = this.gamepadIcon('confirm');
-        return ['P2: PRESS', this.keyHintPart('Enter'), ...(gamepadIcon ? ['OR', {icon: gamepadIcon}] : []),
-            'TO JOIN,', this.keyHintPart(GameInputManager.BOT_KEY_CODE), 'FOR A BOT'];
-    }
-
     // The icon, or the button's name when no gamepad reports one
     public gamepadHintPart(button: GamepadButton, padIndex?: number): HintPart {
         const icon: string | null = this.gamepadIcon(button, padIndex);
         return icon ? {icon} : GameInputManager.GAMEPAD_BUTTON_NAMES[button];
     }
 
+    // Keyboard B, or Y on a pad (triangle on PlayStation, X on Switch)
     public botJustPressed(): boolean {
-        return this._justPressedKeyCodes.has(GameInputManager.BOT_KEY_CODE);
+        return this._justPressedKeyCodes.has(GameInputManager.BOT_KEY_CODE) || this._getConnectedGamepads()
+            .some(pad => this._isGamepadButtonJustPressed(pad, GameInputManager.TOP_BUTTON_INDEX));
     }
 
     public readMoveDirection(device: InputDevice, out: Phaser.Math.Vector2): Phaser.Math.Vector2 {
         switch (device.type) {
             case 'bot':
                 return out.set(0, 0);
-            case 'any': {
-                const excluded = device.excluded;
-                if (!excluded?.length)
-                    return out.copy(this.moveDirection);
-                // Every device the other players don't own, the first one pushed wins
-                for (const keys of GameInputManager.KEY_SET_NAMES) {
-                    const keySet: InputDevice = GameInputManager.KEYBOARD_DEVICES[keys];
-                    if (!GameInputManager.isExcluded(keySet, excluded)
-                        && this.readMoveDirection(keySet, this._keySetDirection).lengthSq() > 0)
-                        return out.copy(this._keySetDirection);
-                }
-                if (this._touchDirection.lengthSq() > 0)
-                    return out.copy(this._touchDirection);
-                for (const pad of this._getConnectedGamepads()) {
-                    const padDevice: InputDevice = this._getGamepadDevice(pad.index);
-                    if (!GameInputManager.isExcluded(padDevice, excluded)
-                        && this.readMoveDirection(padDevice, out).lengthSq() > 0)
-                        return out;
-                }
-                return out.set(0, 0);
-            }
+            case 'any':
+                return out.copy(this.moveDirection);
             case 'keyboard': {
+                if (device.keys === 'all') {
+                    // The left keys first, the arrows when they're not pushed
+                    if (this.readMoveDirection(GameInputManager.KEYBOARD_DEVICES.wasd, out).lengthSq() > 0)
+                        return out;
+                    return this.readMoveDirection(GameInputManager.KEYBOARD_DEVICES.arrows, out);
+                }
                 const keys = GameInputManager.KEY_SETS[device.keys];
                 const held = this._heldKeyCodes;
                 return out.set((held.has(keys.right) ? 1 : 0) - (held.has(keys.left) ? 1 : 0),
@@ -294,23 +281,12 @@ export default class GameInputManager extends Plugins.BasePlugin {
         switch (device.type) {
             case 'bot':
                 return false;
-            case 'any': {
-                const excluded = device.excluded;
-                if (!excluded?.length)
-                    return this.confirmJustPressed();
-                for (const keys of GameInputManager.KEY_SET_NAMES) {
-                    const keySet: InputDevice = GameInputManager.KEYBOARD_DEVICES[keys];
-                    if (!GameInputManager.isExcluded(keySet, excluded) && this.readConfirmJustPressed(keySet))
-                        return true;
-                }
-                for (const pad of this._getConnectedGamepads()) {
-                    const padDevice: InputDevice = this._getGamepadDevice(pad.index);
-                    if (!GameInputManager.isExcluded(padDevice, excluded) && this.readConfirmJustPressed(padDevice))
-                        return true;
-                }
-                return this._touchJustDown;
-            }
+            case 'any':
+                return this.confirmJustPressed();
             case 'keyboard':
+                if (device.keys === 'all')
+                    return this.readConfirmJustPressed(GameInputManager.KEYBOARD_DEVICES.wasd)
+                        || this.readConfirmJustPressed(GameInputManager.KEYBOARD_DEVICES.arrows);
                 return GameInputManager.KEY_SETS[device.keys].confirm.some(code => this._justPressedKeyCodes.has(code));
             case 'gamepad': {
                 const pad = this._getConnectedGamepads().find(pad => pad.index === device.index);
@@ -346,7 +322,6 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
             if (movedStick || pressedAction) {
                 this._setInputType('gamepad');
-                this._lastUsedDevice = this._getGamepadDevice(pad.index);
             }
 
             if (this._isGamepadButtonJustPressed(pad, GameInputManager.CONFIRM_BUTTON_INDEX)) {
@@ -478,12 +453,6 @@ export default class GameInputManager extends Plugins.BasePlugin {
         this._heldKeyCodes.add(event.code);
         if (!event.repeat)
             this._pendingPressedKeyCodes.add(event.code);
-        for (const keys of GameInputManager.KEY_SET_NAMES) {
-            const keySet = GameInputManager.KEY_SETS[keys];
-            if (event.code === keySet.left || event.code === keySet.right || event.code === keySet.up
-                || event.code === keySet.down || keySet.confirm.includes(event.code))
-                this._lastUsedDevice = GameInputManager.KEYBOARD_DEVICES[keys];
-        }
         // Escape by position, P by character: P moves between layouts
         if (!event.repeat && (event.code === 'Escape' || event.key.toLowerCase() === 'p'))
             this._isPausePending = true;
@@ -571,14 +540,6 @@ export default class GameInputManager extends Plugins.BasePlugin {
             this._gamepadDevices.set(index, device);
         }
         return device;
-    }
-
-    private static isExcluded(device: InputDevice, excluded: readonly InputDevice[]): boolean {
-        for (const other of excluded) {
-            if (isSameDevice(device, other))
-                return true;
-        }
-        return false;
     }
 
     private _getGamepadButtonKey(pad: Phaser.Input.Gamepad.Gamepad, buttonIndex: number): string {

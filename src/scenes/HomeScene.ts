@@ -4,12 +4,14 @@ import Thrusters from "../components/Thrusters.ts";
 import WingTrails from "../components/WingTrails.ts";
 import Turret from "../components/Turret.ts";
 import type {PlayerShipsData} from "../gameData/PlayerShipsData.ts";
-import type {InputType} from "../managers/GameInputManager.ts";
 import UiUtils, {type HintPart} from "../utils/UiUtils.ts";
 import UiLayout from "../utils/UiLayout.ts";
 import Sfx from "../audio/Sfx.ts";
 import type SaveManager from "../managers/SaveManager.ts";
 import {isSameDevice, type InputDevice} from "../managers/PlayerInput.ts";
+
+// Choosing 1 or 2 players, waiting for player 2, then flying out
+type HomeState = 'menu' | 'lobby' | 'started';
 
 // A ship on the home screen, cruising forward
 type HomeShip = {
@@ -41,22 +43,32 @@ export default class HomeScene extends Phaser.Scene {
     private static readonly LABEL_CLUSTER_SIZE: number = 110;
     private static readonly LABEL_ICON_SIZE: number = 52;
     private static readonly PLAYER_COLORS: string[] = ['#7fd4ff', '#ff9a3c'];
+    private static readonly MENU_Y: number = 1360;
+    private static readonly MENU_SPACING: number = 100;
+    private static readonly SELECTED_COLOR: string = '#ffcc00';
+    private static readonly SELECTED_SCALE: number = 1.1;
+    private static readonly UNSELECTED_ALPHA: number = 0.6;
+    private static readonly STICK_THRESHOLD: number = 0.5;
 
     private _bg: Phaser.GameObjects.TileSprite;
     private _playerShip: HomeShip;
-    // Player 2, joined before the run starts: its device, or a bot. Its ship is kept to come back
-    private _joinedDevice: InputDevice | null;
-    // Player 1's device: the one used last, up to the last frame, that isn't player 2's
-    private _playerDevice: InputDevice;
+    // Player 2's ship, kept to come back after leaving
     private _joinedShip: HomeShip | null;
     // "P1" and "P2" with an icon of what drives them, under each ship
     private _labels: Phaser.GameObjects.Container[];
     private _title: Phaser.GameObjects.Container;
-    // The title and the prompt, on the portrait frame
+    // The title, the menu and the hints, on the portrait frame
     private _frame: Phaser.GameObjects.Container;
-    private _startPrompt: Phaser.GameObjects.Container;
-    private _joinPrompt: Phaser.GameObjects.Container;
-    private _started: boolean = false;
+    private _menuOptions: Phaser.GameObjects.Text[];
+    private _menuIndex: number;
+    // null until the first update, so a direction held when the screen opens doesn't move the selection
+    private _previousMoveY: number | null;
+    private _hint: Phaser.GameObjects.Container;
+    private _subHint: Phaser.GameObjects.Container;
+    private _state: HomeState;
+    // 2 players: the device that picked the option, and player 2's once it joins (or the bot)
+    private _playerDevice: InputDevice | null;
+    private _joinedDevice: InputDevice | null;
     private saveManager: SaveManager;
 
     constructor() {
@@ -122,11 +134,13 @@ export default class HomeScene extends Phaser.Scene {
         Sfx.startMusic(this);
         console.log(this.sys.game.renderer.type === Phaser.WEBGL ? 'WebGL' : 'Canvas');
 
-        this._started = false;
+        this._state = 'menu';
+        this._playerDevice = null;
         this._joinedDevice = null;
-        this._playerDevice = this.gameInputManager.lastUsedDevice;
         this._joinedShip = null;
         this._labels = [];
+        this._menuIndex = 0;
+        this._previousMoveY = null;
 
         this._bg = this.add.tileSprite(0, 0, 1, 1, 'bg').setOrigin(0).setTileScale(HomeScene.BG_TILE_SCALE);
 
@@ -140,28 +154,31 @@ export default class HomeScene extends Phaser.Scene {
                 .setOrigin(0.5).setShadow(0, 8, '#000', 0, false, true),
         ]);
 
-        this._startPrompt = UiUtils.addPulsingButtonHint(this, centerX, UiLayout.HEIGHT - 220,
-            this._getPromptText(this.gameInputManager.activeInputType));
+        this._menuOptions = ['1 PLAYER', '2 PLAYERS'].map((label, index) => this.add.text(centerX,
+            HomeScene.MENU_Y + index * HomeScene.MENU_SPACING, label, {fontSize: '64px', color: '#fff', fontFamily: 'future'})
+            .setOrigin(0.5).setShadow(0, 6, '#000', 0, false, true));
+        this._hint = UiUtils.addPulsingButtonHint(this, centerX, UiLayout.HEIGHT - 220, []);
         // Long: smaller, to fit a portrait screen
-        this._joinPrompt = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 140, [], UiUtils.SMALL_HINT_FONT_SIZE)
+        this._subHint = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 140, [], UiUtils.SMALL_HINT_FONT_SIZE)
             .setAlpha(0.5);
-        this._updateJoinPrompt();
-        this._frame = this.add.container(0, 0, [this._title, this._startPrompt, this._joinPrompt]);
+        this._frame = this.add.container(0, 0, [this._title, ...this._menuOptions, this._hint, this._subHint]);
+        this.updateMenu();
+        this.updateHints();
         UiLayout.onResize(this, () => this.layout());
 
-        this.game.events.on('input-type-changed', this._onInputTypeChanged, this);
-        this.game.events.on('gamepad-connected', this._updateJoinPrompt, this);
-        this.game.events.on('gamepad-disconnected', this._updateJoinPrompt, this);
+        this.game.events.on('input-type-changed', this.updateHints, this);
+        this.game.events.on('gamepad-connected', this.updateHints, this);
+        this.game.events.on('gamepad-disconnected', this.updateHints, this);
         this.events.once('shutdown', () => {
-            this.game.events.off('input-type-changed', this._onInputTypeChanged, this);
-            this.game.events.off('gamepad-connected', this._updateJoinPrompt, this);
-            this.game.events.off('gamepad-disconnected', this._updateJoinPrompt, this);
+            this.game.events.off('input-type-changed', this.updateHints, this);
+            this.game.events.off('gamepad-connected', this.updateHints, this);
+            this.game.events.off('gamepad-disconnected', this.updateHints, this);
         });
 
         console.log("HomeScene created");
     }
 
-    // The ship and the stars at the game's scale, as in a run. Only the title and the prompt fit the frame
+    // The ship and the stars at the game's scale, as in a run. Only the title, the menu and the hints fit the frame
     private layout() {
         const camera = this.cameras.main;
         camera.setOrigin(0.5).setZoom(1).centerOn(UiLayout.WIDTH / 2, UiLayout.HEIGHT / 2);
@@ -171,24 +188,44 @@ export default class HomeScene extends Phaser.Scene {
         this._frame.setScale(zoom).setPosition(UiLayout.WIDTH / 2 * (1 - zoom), UiLayout.HEIGHT / 2 * (1 - zoom));
     }
 
-    private _onInputTypeChanged(type: InputType): void {
-        if (!this._started) {
-            UiUtils.setButtonHint(this._startPrompt, this._getPromptText(type));
-            this._updateJoinPrompt();
-        }
+    // The selected option in yellow and a bit bigger. Touch only gets "TAP TO START": no coop on touch
+    private updateMenu() {
+        const isMenuShown: boolean = this._state === 'menu' && this.gameInputManager.activeInputType !== 'touch';
+        this._menuOptions.forEach((option, index) => {
+            const isSelected: boolean = index === this._menuIndex;
+            option.setVisible(isMenuShown).setColor(isSelected ? HomeScene.SELECTED_COLOR : '#ffffff')
+                .setScale(isSelected ? HomeScene.SELECTED_SCALE : 1).setAlpha(isSelected ? 1 : HomeScene.UNSELECTED_ALPHA);
+        });
     }
 
-    private _getPromptText(type: InputType): HintPart[] {
-        return type === 'touch' ? ['TAP TO START'] : this.gameInputManager.startHintParts(this._playerDevice);
-    }
-
-    // How player 2 joins, or leaves once it has. No coop on touch
-    private _updateJoinPrompt(): void {
+    private updateHints() {
+        if (this._state === 'started')
+            return;
         const inputManager = this.gameInputManager;
-        UiUtils.setButtonHint(this._startPrompt, this._getPromptText(inputManager.activeInputType));
-        UiUtils.setButtonHint(this._joinPrompt, this._joinedDevice
-            ? inputManager.leaveHintParts(this._joinedDevice) : inputManager.joinHintParts());
-        this._joinPrompt.setVisible(inputManager.activeInputType !== 'touch');
+        this.updateMenu();
+        if (this._state === 'menu') {
+            UiUtils.setButtonHint(this._hint, inputManager.menuHintParts());
+            this._subHint.setVisible(false);
+            return;
+        }
+
+        const player: InputDevice = this._playerDevice!;
+        const joined: InputDevice | null = this._joinedDevice;
+        this._subHint.setVisible(true);
+        if (!joined) {
+            // Player 2 joins with a device player 1 doesn't hold: the arrows' Enter, or another pad's A
+            const keyboardJoin: HintPart = inputManager.keyHintPart(player.type === 'keyboard' ? 'Enter' : 'Space');
+            const hasOtherPad: boolean = inputManager.gamepadCount > (player.type === 'gamepad' ? 1 : 0);
+            UiUtils.setButtonHint(this._hint, ['P2: PRESS', keyboardJoin,
+                ...(hasOtherPad ? ['OR', inputManager.gamepadHintPart('confirm')] : []), 'TO JOIN']);
+            UiUtils.setButtonHint(this._subHint, [inputManager.botHintPart(player), 'FOR A BOT,',
+                inputManager.backHintPart(player), 'BACK']);
+            return;
+        }
+        UiUtils.setButtonHint(this._hint, ['PRESS', inputManager.confirmHintPart(player), 'TO START']);
+        UiUtils.setButtonHint(this._subHint, joined.type === 'bot'
+            ? [inputManager.botHintPart(player), 'TO REMOVE THE BOT']
+            : ['P2:', inputManager.backHintPart(joined), 'TO LEAVE']);
     }
 
     private createShip(shipId: number, x: number, y: number): HomeShip {
@@ -225,31 +262,93 @@ export default class HomeScene extends Phaser.Scene {
         });
     }
 
-    // Enter or a gamepad's A makes player 2 join, and its Backspace or B makes it leave. Keyboard B adds or removes the bot
-    private _updateJoining(): void {
+    private updateMenuInput() {
         const inputManager = this.gameInputManager;
+        if (inputManager.activeInputType === 'touch') {
+            if (inputManager.tapJustPressed())
+                this.startGame([{type: 'any'}]);
+            return;
+        }
+
+        const moveDirectionY: number = inputManager.moveDirection.y;
+        const moveY: number = Math.abs(moveDirectionY) > HomeScene.STICK_THRESHOLD ? Math.sign(moveDirectionY) : 0;
+        if (this._previousMoveY !== null && moveY !== 0 && moveY !== this._previousMoveY) {
+            this._menuIndex = Phaser.Math.Wrap(this._menuIndex + moveY, 0, this._menuOptions.length);
+            Sfx.play(this, 'cardSelect');
+            this.updateMenu();
+        }
+        this._previousMoveY = moveY;
+
+        // The device that picks the option is player 1's
+        const device: InputDevice | null = inputManager.findConfirmingDevice();
+        if (!device)
+            return;
+        if (this._menuIndex === 0)
+            this.startGame([{type: 'any'}]);
+        else
+            this.openLobby(device);
+    }
+
+    // 2 players: player 1 owns the device that picked the option, the whole keyboard until player 2 takes the arrows
+    private openLobby(device: InputDevice) {
+        Sfx.play(this, 'cardPick');
+        this._state = 'lobby';
+        this._playerDevice = device.type === 'keyboard' ? {type: 'keyboard', keys: 'all'} : device;
+        this._labels = [this.addLabel(this._playerShip, 1, this.gameInputManager.deviceIcon(this._playerDevice))];
+        this.updateHints();
+    }
+
+    private closeLobby() {
+        if (this._joinedDevice)
+            this.removeJoined();
+        this._labels.forEach(label => label.destroy());
+        this._labels = [];
+        this._state = 'menu';
+        this._playerDevice = null;
+        this._previousMoveY = null;
+        this.updateHints();
+    }
+
+    private updateLobbyInput() {
+        const inputManager = this.gameInputManager;
+        const player: InputDevice = this._playerDevice!;
+        const joined: InputDevice | null = this._joinedDevice;
+        if (inputManager.backJustPressed(player)) {
+            this.closeLobby();
+            return;
+        }
+
+        if (joined) {
+            if (joined.type === 'bot' ? inputManager.botJustPressed() : inputManager.backJustPressed(joined))
+                this.removeJoined();
+            else if (inputManager.readConfirmJustPressed(player))
+                this.startGame([player, joined]);
+            return;
+        }
+
         if (inputManager.botJustPressed()) {
-            if (!this._joinedDevice)
-                this.join({type: 'bot'});
-            else if (this._joinedDevice.type === 'bot')
-                this.removeJoined();
+            this.join({type: 'bot'});
             return;
         }
-        if (this._joinedDevice) {
-            if (inputManager.leaveJustPressed(this._joinedDevice))
-                this.removeJoined();
+        const device: InputDevice | null = inputManager.findConfirmingDevice();
+        if (!device)
             return;
-        }
-        const device: InputDevice | null = inputManager.findJoiningDevice();
-        // Space starts the run, Enter always joins (player 1 keeps Space), and player 1's own pad doesn't join
-        if (device && !(device.type === 'keyboard' && device.keys === 'wasd')
-            && !(device.type === 'gamepad' && isSameDevice(device, this._playerDevice)))
+        if (device.type === 'keyboard') {
+            // Sharing the keyboard: player 2 takes the arrows with Enter, player 1 keeps WASD and Space
+            if (player.type !== 'keyboard')
+                this.join({type: 'keyboard', keys: 'all'});
+            else if (device.keys === 'arrows')
+                this.join(device);
+        } else if (!isSameDevice(device, player)) {
             this.join(device);
+        }
     }
 
     // Player 2's ship flies in next to player 1's, both labeled with what drives them
     private join(device: InputDevice) {
         this._joinedDevice = device;
+        if (device.type === 'keyboard' && device.keys === 'arrows')
+            this._playerDevice = {type: 'keyboard', keys: 'wasd'};
         Sfx.play(this, 'launch');
         const centerX: number = UiLayout.WIDTH / 2;
         const y: number = UiLayout.HEIGHT / 2;
@@ -268,17 +367,15 @@ export default class HomeScene extends Phaser.Scene {
             this.sway(joinedShip, joinedX, HomeScene.DUO_SWAY_X, HomeScene.DUO_SWAY_DELAY);
         }});
 
-        const inputManager = this.gameInputManager;
-        this._labels = [
-            this.addLabel(this._playerShip, 1, inputManager.deviceIcon({type: 'any', excluded: [device]})),
-            this.addLabel(joinedShip, 2, inputManager.deviceIcon(device))
-        ];
-        this._updateJoinPrompt();
+        this.setLabels(device);
+        this.updateHints();
     }
 
-    // Player 2 or the bot flies away, player 1 has the screen to itself again
+    // Player 2 or the bot flies away, player 1 gets the whole keyboard back and the middle of the screen
     private removeJoined() {
         this._joinedDevice = null;
+        if (this._playerDevice?.type === 'keyboard')
+            this._playerDevice = {type: 'keyboard', keys: 'all'};
         const joinedShip = this._joinedShip!;
         this.tweens.killTweensOf(joinedShip.image);
         joinedShip.thrusters.setBoost(true);
@@ -290,10 +387,17 @@ export default class HomeScene extends Phaser.Scene {
                 joinedShip.turret.hide();
                 joinedShip.image.setVisible(false);
             }});
-        this._labels.forEach(label => label.destroy());
-        this._labels = [];
         this.sway(this._playerShip, UiLayout.WIDTH / 2, HomeScene.SHIP_SWAY_X);
-        this._updateJoinPrompt();
+        this.setLabels(null);
+        this.updateHints();
+    }
+
+    private setLabels(joinedDevice: InputDevice | null) {
+        this._labels.forEach(label => label.destroy());
+        const inputManager = this.gameInputManager;
+        this._labels = [this.addLabel(this._playerShip, 1, inputManager.deviceIcon(this._playerDevice!))];
+        if (joinedDevice)
+            this._labels.push(this.addLabel(this._joinedShip!, 2, inputManager.deviceIcon(joinedDevice)));
     }
 
     // Follows its ship's sway
@@ -307,21 +411,21 @@ export default class HomeScene extends Phaser.Scene {
             / Math.max(image.width, image.height));
         const label = this.add.container(ship.image.x, UiLayout.HEIGHT / 2 + HomeScene.LABEL_OFFSET_Y, [text, image])
             .setData('ship', ship).setAlpha(0);
-        this.tweens.add({targets: label, alpha: 1, delay: 400, duration: 250});
+        this.tweens.add({targets: label, alpha: 1, duration: 250});
         return label;
     }
 
-    private _startGame(): void {
-        this._started = true;
+    private startGame(devices: InputDevice[]): void {
+        this._state = 'started';
         Sfx.play(this, 'start');
         Sfx.play(this, 'launch');
 
         const ships: HomeShip[] = this._joinedDevice ? [this._playerShip, this._joinedShip!] : [this._playerShip];
-        this.tweens.killTweensOf([...ships.map(ship => ship.image), this._startPrompt]);
+        this.tweens.killTweensOf(ships.map(ship => ship.image));
         // The title clears the ships' way out
         this.tweens.add({targets: this._title, y: -200, alpha: 0, duration: 400, ease: 'Quad.easeIn'});
-        this.tweens.add({targets: [this._startPrompt, this._joinPrompt, ...this._labels], alpha: 0, duration: 200});
-        const joinedDevices: InputDevice[] = this._joinedDevice ? [this._joinedDevice] : [];
+        this.tweens.killTweensOf(this._hint);
+        this.tweens.add({targets: [this._hint, this._subHint, ...this._menuOptions, ...this._labels], alpha: 0, duration: 200});
         ships.forEach((ship, index) => {
             ship.thrusters.setBoost(true);
             this.tweens.add({
@@ -332,19 +436,10 @@ export default class HomeScene extends Phaser.Scene {
                 ease: 'Quad.easeIn',
                 onComplete: index > 0 ? undefined : () => {
                     this.scene.launch(GameConstants.SceneKeys.MAIN_UI);
-                    this.scene.start(GameConstants.SceneKeys.MAIN_GAME, {joinedDevices});
+                    this.scene.start(GameConstants.SceneKeys.MAIN_GAME, {devices});
                 }
             });
         });
-    }
-
-    // The start hint follows player 1's device
-    private updatePlayerDevice() {
-        const lastUsed: InputDevice = this.gameInputManager.lastUsedDevice;
-        if (isSameDevice(lastUsed, this._playerDevice) || (this._joinedDevice && isSameDevice(lastUsed, this._joinedDevice)))
-            return;
-        this._playerDevice = lastUsed;
-        this._updateJoinPrompt();
     }
 
     private updateShip(ship: HomeShip, deltaTime: number) {
@@ -363,12 +458,9 @@ export default class HomeScene extends Phaser.Scene {
         for (const label of this._labels)
             label.x = (label.getData('ship') as HomeShip).image.x;
 
-        if (this._started)
-            return;
-        if (this.gameInputManager.startJustPressed(this._joinedDevice))
-            this._startGame();
-        else
-            this._updateJoining();
-        this.updatePlayerDevice();
+        if (this._state === 'menu')
+            this.updateMenuInput();
+        else if (this._state === 'lobby')
+            this.updateLobbyInput();
     }
 }

@@ -11,7 +11,7 @@ Two players on one screen, each on their own device, or one player with a bot. T
 - Score, combo and run time are shared. A hit on any player breaks the combo.
 - One best score, saved with the number of players who made it, shown on game over as "BEST 012345 · 2P".
 - No touch in coop: touch only drives a solo run.
-- Space or any gamepad's Start launches a run (solo if nobody joined). A second player joins on the home screen or anytime during a run with Enter or a gamepad's A, from a device player 1 isn't using, and leaves with Backspace or the pad's B. Keyboard B adds or removes a bot.
+- The players are picked on the home screen, 1 or 2, and stay for the run. Player 2 can be the bot.
 - Difficulty scales with the number of players who joined (not the number alive).
 - Solo plays exactly as it did before.
 
@@ -20,8 +20,8 @@ Two players on one screen, each on their own device, or one player with a bot. T
 ### Input: one `PlayerInput` per player
 
 - `PlayerInput` interface: `device`, `moveDirection` and `confirmJustPressed()`. `GameInputManager.getInput(device)` builds one for an `InputDevice`:
-  - `any`: every device minus `excluded`, the ones the other human players own. Player 1's, and the only one touch drives.
-  - `keyboard`: a key set by physical position, WASD + Space or arrows + Enter.
+  - `any`: every device, for a solo run, and the only one touch drives.
+  - `keyboard`: keys by physical position: WASD + Space, arrows + Enter, or the whole keyboard (`all`).
   - `gamepad`: one pad index, stick or d-pad, A or Start to confirm.
 - Menu-level queries (`confirmJustPressed`, `pauseJustPressed`, `restartJustPressed`) stay global and answer for any device.
 - `Player.preUpdate` reads its own `playerInput`. This is the seam the online mode plugs a remote input into.
@@ -57,18 +57,20 @@ Two players on one screen, each on their own device, or one player with a bot. T
 
 - `LevelUpScene` gets the players and runs one pick per player, in order ("LEVEL 3 · PLAYER 2"). Each pick reads only that player's input, with its own 3 random cards and its own hint. The scene closes after the last pick.
 
-### Joining
+### Joining (`HomeScene`)
 
-- Home screen: player 1's device is the one used last that isn't player 2's. The start hint shows its key: Space, or that pad's Start (Options on PlayStation, + on Switch). Space or any pad's Start but player 2's launches the run (or a tap on touch). Player 1's own pad never joins as player 2, so two gamepads work: pad 2 presses A, pad 1 presses Start. Before that, Enter or a gamepad's A makes player 2 join: its ship flies in next to player 1's. Backspace or the pad's B makes it leave. The joined device goes to `MainGameScene` in the scene data.
-- During a run, `MainGameScene.updateJoining()` lets a second player in with the confirm of a key set or pad player 1 didn't use up to the last frame (Space, Enter or A). `EntityManager.joinPlayer()` flies the ship in from below the screen next to player 1, briefly invulnerable. The device goes into player 1's `excluded` list.
-- Player 2 leaves the same way during a run, and B adds a bot or removes it: the leaving ship flies off below the screen, its HUD row goes, player 1 gets its device back and the difficulty drops back.
-- On the home screen both ships sway, labeled with a big P1 or P2 and an icon of what drives them: WASD or ZQSD, arrows, keyboard, the pad's controller, or the bot.
-- B adds a bot instead. `BotInput` steers toward its teammate past `FOLLOW_DISTANCE`, away from enemies inside `DANGER_RADIUS`, and toward the nearest free star. On level-up it picks a random card after `BOT_PICK_DELAY`.
-- Every input hint shows key and button icons. Keys follow the keyboard's labels where the browser reports the layout (Chrome, Edge), so KeyW shows Z on AZERTY.
-- Join hints show the gamepad's confirm button icon (Xbox A, PlayStation cross or Switch B, from the pad's id) only once a gamepad is detected. Browsers only report a pad after one of its buttons is pressed.
-- The HUD shows how to join at the bottom while there's room (not on touch), and a "PLAYER 2 JOINED" or "BOT JOINED" banner.
-- Joining raises the difficulty and the XP curve to the new player count.
-- Joined devices are kept across an R restart. Game over goes back home, solo.
+- The home screen has a menu: 1 PLAYER and 2 PLAYERS, chosen with up and down, picked with Space, Enter or A. Touch only gets "TAP TO START".
+- 1 PLAYER starts a solo run on every device.
+- 2 PLAYERS opens a lobby. The device that picked the option is player 1's: one pad, or the whole keyboard (`keys: 'all'`).
+  - Player 2 joins with a device player 1 doesn't hold: Enter takes the arrows (player 1 keeps WASD, Space and Escape), Space takes the whole keyboard when player 1 is on a pad, another pad's A takes that pad. Its ship flies in next to player 1's.
+  - B on the keyboard or Y on a pad adds the bot, and removes it.
+  - Player 2 leaves with its back: Backspace on the arrows, Escape on the whole keyboard, B on a pad. Player 1's back closes the lobby.
+  - Player 1's confirm launches the run once player 2 or the bot is in.
+- Both ships sway, labeled with a big P1 or P2 and an icon of what drives them: WASD or ZQSD, arrows, keyboard, the pad's controller, or the bot.
+- The players' devices go to `MainGameScene` in the scene data and are kept across an R restart. Game over goes back home.
+- During a run nobody joins or leaves. B or a pad's Y still removes the bot: its ship flies off below the screen, its HUD row goes and the difficulty drops back. The HUD shows how at the bottom.
+- `BotInput` steers toward its teammate past `FOLLOW_DISTANCE`, away from enemies inside `DANGER_RADIUS`, and toward the nearest free star. On level-up it picks a random card after `BOT_PICK_DELAY`.
+- Every input hint shows key and button icons. Keys follow the keyboard's labels where the browser reports the layout (Chrome, Edge), so KeyW shows Z on AZERTY. Gamepad icons follow the pad's maker (Xbox, PlayStation, Switch), from its id. Browsers only report a pad after one of its buttons is pressed.
 
 ### Difficulty
 

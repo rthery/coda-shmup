@@ -5,7 +5,7 @@
 			"format": "RGBA8888",
 			"size": {
 				"w": 1024,
-				"h": 985
+				"h": 1017
 			},
 			"scale": 1,
 			"frames": [
@@ -1165,7 +1165,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_a",
+					"filename": "ui_pad_playstation_triangle",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1186,7 +1186,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_b",
+					"filename": "ui_pad_switch_a",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1291,7 +1291,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_dpad_vertical",
+					"filename": "ui_pad_switch_b",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1312,7 +1312,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_plus",
+					"filename": "ui_pad_switch_dpad_vertical",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1333,7 +1333,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_xbox_dpad_vertical",
+					"filename": "ui_pad_switch_plus",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1354,7 +1354,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_xbox_start",
+					"filename": "ui_pad_switch_x",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1375,6 +1375,69 @@
 					}
 				},
 				{
+					"filename": "ui_pad_xbox_dpad_vertical",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 948,
+						"y": 721,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_xbox_start",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 948,
+						"y": 789,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_xbox_y",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 948,
+						"y": 857,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
 					"filename": "ui_crosshair",
 					"rotated": false,
 					"trimmed": false,
@@ -1389,10 +1452,31 @@
 						"h": 60
 					},
 					"frame": {
-						"x": 948,
-						"y": 721,
+						"x": 2,
+						"y": 925,
 						"w": 60,
 						"h": 60
+					}
+				},
+				{
+					"filename": "playerTurret",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 60,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 60,
+						"h": 26
+					},
+					"frame": {
+						"x": 2,
+						"y": 989,
+						"w": 60,
+						"h": 26
 					}
 				},
 				{
@@ -1410,10 +1494,31 @@
 						"h": 58
 					},
 					"frame": {
-						"x": 948,
-						"y": 785,
+						"x": 66,
+						"y": 925,
 						"w": 60,
 						"h": 58
+					}
+				},
+				{
+					"filename": "playerTurret_orange",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 60,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 60,
+						"h": 26
+					},
+					"frame": {
+						"x": 66,
+						"y": 987,
+						"w": 60,
+						"h": 26
 					}
 				},
 				{
@@ -1431,8 +1536,8 @@
 						"h": 36
 					},
 					"frame": {
-						"x": 948,
-						"y": 847,
+						"x": 130,
+						"y": 925,
 						"w": 60,
 						"h": 36
 					}
@@ -1452,52 +1557,10 @@
 						"h": 36
 					},
 					"frame": {
-						"x": 2,
-						"y": 887,
+						"x": 130,
+						"y": 965,
 						"w": 60,
 						"h": 36
-					}
-				},
-				{
-					"filename": "playerTurret",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 60,
-						"h": 26
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 60,
-						"h": 26
-					},
-					"frame": {
-						"x": 2,
-						"y": 927,
-						"w": 60,
-						"h": 26
-					}
-				},
-				{
-					"filename": "playerTurret_orange",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 60,
-						"h": 26
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 60,
-						"h": 26
-					},
-					"frame": {
-						"x": 2,
-						"y": 957,
-						"w": 60,
-						"h": 26
 					}
 				},
 				{
@@ -1515,8 +1578,8 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 812,
-						"y": 585,
+						"x": 744,
+						"y": 589,
 						"w": 64,
 						"h": 64
 					}
@@ -1536,8 +1599,8 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 744,
-						"y": 589,
+						"x": 898,
+						"y": 556,
 						"w": 64,
 						"h": 64
 					}

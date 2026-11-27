@@ -288,11 +288,10 @@ export default class LevelUpScene extends Scene {
         const key = (code: string): HintPart => inputManager.keyHintPart(code);
         if (device.type === 'keyboard' && device.keys === 'arrows')
             return [key('ArrowUp'), key('ArrowDown'), 'TO CHOOSE,', key('Enter'), 'TO PICK'];
-        // Player 1 reads WASD and the arrows: the arrows are the hint, unless player 2 took them
-        const areArrowsTaken: boolean = device.type === 'keyboard'
-            || (device.type === 'any' && !!device.excluded?.some(owned => owned.type === 'keyboard' && owned.keys === 'arrows'));
-        return areArrowsTaken ? [key('KeyW'), key('KeyS'), 'TO CHOOSE,', key('Space'), 'TO PICK']
-            : [key('ArrowUp'), key('ArrowDown'), 'TO CHOOSE,', key('Space'), 'TO PICK'];
+        if (device.type === 'keyboard' && device.keys === 'wasd')
+            return [key('KeyW'), key('KeyS'), 'TO CHOOSE,', key('Space'), 'TO PICK'];
+        // The whole keyboard, or every device in solo: the arrows are the hint
+        return [key('ArrowUp'), key('ArrowDown'), 'TO CHOOSE,', key('Space'), 'TO PICK'];
     }
 
     update() {

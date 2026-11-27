@@ -1,8 +1,9 @@
-export type KeyboardKeySet = 'wasd' | 'arrows';
+// The whole keyboard, or one half of it when two players share it
+export type KeyboardKeySet = 'wasd' | 'arrows' | 'all';
 
-// Which device drives a player: every device but the other players' ones, one device, or the game itself
+// Which device drives a player: every device in solo, the one each player picked in coop, or the game itself
 export type InputDevice =
-    | { type: 'any', excluded?: InputDevice[] }
+    | { type: 'any' }
     | { type: 'keyboard', keys: KeyboardKeySet }
     | { type: 'gamepad', index: number }
     | { type: 'bot' };

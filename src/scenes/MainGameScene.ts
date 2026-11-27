@@ -8,7 +8,7 @@ import CheatManager from "../managers/CheatManager.ts";
 import GameConstants from "../GameConstants.ts";
 import Experience from "../components/Experience.ts";
 import Team from "../Team.ts";
-import {isSameDevice, type InputDevice} from "../managers/PlayerInput.ts";
+import type {InputDevice} from "../managers/PlayerInput.ts";
 import type PlayerInput from "../managers/PlayerInput.ts";
 import BotInput from "../managers/BotInput.ts";
 import Movement from "../components/Movement.ts";
@@ -49,11 +49,8 @@ export default class MainGameScene extends Scene {
     private _planet: Phaser.GameObjects.Image;
     private _difficulty: DifficultyCurve;
     private _team: Team;
-    // Players 2 and up, kept across a restart. Player 1 reads every device the human ones don't own
-    private _joinedDevices: InputDevice[];
-    private _ownedDevices: InputDevice[];
-    // The device player 1 used up to the last frame: pressing its confirm doesn't make a second player join
-    private _soloDevice: InputDevice;
+    // What drives each player, picked on the home screen and kept across a restart
+    private _devices: InputDevice[];
     private readonly cameraLookAhead: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     // The camera follows the middle of the ships still in the fight
     private readonly _cameraTarget: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
@@ -65,9 +62,9 @@ export default class MainGameScene extends Scene {
     }
 
     // noinspection JSUnusedGlobalSymbols
-    init(data: { joinedDevices?: InputDevice[] }) {
-        this._joinedDevices = [...(data?.joinedDevices ?? [])];
-        this._ownedDevices = this._joinedDevices.filter(device => device.type !== 'bot');
+    init(data: { devices?: InputDevice[] }) {
+        // Solo: every device
+        this._devices = [...(data?.devices ?? [{type: 'any'}])];
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -84,7 +81,7 @@ export default class MainGameScene extends Scene {
             .setOrigin(0).setTileScale(2);
         this._planet = this.add.image(GameConstants.ARENA_WIDTH / 2, GameConstants.ARENA_HEIGHT / 2, 'planet').setScale(2.5);
         this._difficulty = new DifficultyCurve(this.cache.json.get('difficulty') as DifficultyData,
-            1 + this._joinedDevices.length);
+            this._devices.length);
 
         if (!this.entityManager) {
             console.error('EntityManager plugin not found');
@@ -96,9 +93,7 @@ export default class MainGameScene extends Scene {
         const team = new Team(this._difficulty.xpCurve);
         this._team = team;
         this.game.events.emit(GameConstants.Events.TEAM_CREATED_EVENT, team);
-        const inputs = [this.gameInputManager.getInput({type: 'any', excluded: this._ownedDevices}),
-            ...this._joinedDevices.map(device => this.createInput(device))];
-        this._soloDevice = this.gameInputManager.lastUsedDevice;
+        const inputs: PlayerInput[] = this._devices.map(device => this.createInput(device));
         const players = this.entityManager.initAndSpawnPlayers(team, inputs, () => {
             this.cameras.main.startFollow(this._cameraTarget, true, 0.15, 0.15);
         });
@@ -276,7 +271,7 @@ export default class MainGameScene extends Scene {
         }
 
         if (this.gameInputManager.restartJustPressed()) {
-            this.scene.restart({joinedDevices: this._joinedDevices});
+            this.scene.restart({devices: this._devices});
         }
 
         // update() doesn't run while the scene is paused, so level-up screens don't count
@@ -287,7 +282,7 @@ export default class MainGameScene extends Scene {
             this.updateThreatTint(runSeconds);
         }
 
-        this.updateJoining();
+        this.updateBotRemoval();
         this.updateLeashes();
         this.updateCamera(deltaTime);
     }
@@ -296,58 +291,21 @@ export default class MainGameScene extends Scene {
         return device.type === 'bot' ? new BotInput(this._team, this.entityManager) : this.gameInputManager.getInput(device);
     }
 
-    // A second player joins anytime with Enter, Space or A on a device player 1 isn't using, and leaves with its
-    // Backspace or B. Keyboard B adds a bot or removes it
-    private updateJoining() {
-        const inputManager = this.gameInputManager;
-        const players = this._team.players;
-        if (inputManager.botJustPressed()) {
-            const bot: Player | undefined = players.find(player => player.playerInput.device.type === 'bot');
-            if (bot)
-                this.removePlayer(bot);
-            else if (players.length < GameConstants.MAX_PLAYERS)
-                this.joinPlayer({type: 'bot'});
-        } else if (players.length < GameConstants.MAX_PLAYERS) {
-            const joining: InputDevice | null = inputManager.findJoiningDevice();
-            if (joining && !isSameDevice(joining, this._soloDevice))
-                this.joinPlayer(joining);
-        } else {
-            for (let i = 1; i < players.length; i++) {
-                if (inputManager.leaveJustPressed(players[i].playerInput.device)) {
-                    this.removePlayer(players[i]);
-                    break;
-                }
-            }
-        }
-        this._soloDevice = inputManager.lastUsedDevice;
-    }
+    // The players are picked on the home screen, but B or a pad's Y can still send the bot away
+    private updateBotRemoval() {
+        if (!this.gameInputManager.botJustPressed())
+            return;
+        const bot: Player | undefined = this._team.players.find(player => player.playerInput.device.type === 'bot');
+        if (!bot)
+            return;
 
-    // Player 1 gets the leaving player's device back
-    private removePlayer(player: Player) {
-        const index: number = this._team.players.indexOf(player);
-        const device: InputDevice = player.playerInput.device;
-        this._joinedDevices.splice(this._joinedDevices.findIndex(joined => isSameDevice(joined, device)), 1);
-        const ownedIndex: number = this._ownedDevices.findIndex(owned => isSameDevice(owned, device));
-        if (ownedIndex !== -1)
-            this._ownedDevices.splice(ownedIndex, 1);
-        this.entityManager.removePlayer(player);
+        const index: number = this._team.players.indexOf(bot);
+        this._devices.splice(this._devices.findIndex(device => device.type === 'bot'), 1);
+        this.entityManager.removePlayer(bot);
         this._difficulty.setPlayerCount(this._team.players.length);
         this._team.experience.setCurve(this._difficulty.xpCurve);
         Sfx.play(this, 'launch');
-        this.game.events.emit(GameConstants.Events.PLAYER_LEFT_EVENT, index, device.type === 'bot');
-    }
-
-    private joinPlayer(device: InputDevice) {
-        this._joinedDevices.push(device);
-        if (device.type !== 'bot')
-            this._ownedDevices.push(device);
-
-        const player = this.entityManager.joinPlayer(this.createInput(device));
-        this.initPlayer(player);
-        this._difficulty.setPlayerCount(this._team.players.length);
-        this._team.experience.setCurve(this._difficulty.xpCurve);
-        Sfx.play(this, 'launch');
-        this.game.events.emit(GameConstants.Events.PLAYER_JOINED_EVENT, this._team.players.length, device.type === 'bot');
+        this.game.events.emit(GameConstants.Events.PLAYER_LEFT_EVENT, index);
     }
 
     private updateCamera(deltaTime: number) {

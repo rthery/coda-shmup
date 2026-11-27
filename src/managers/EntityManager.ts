@@ -9,7 +9,6 @@ import type Team from "../Team.ts";
 import type PlayerInput from "./PlayerInput.ts";
 import type {PlayerShipsData} from "../gameData/PlayerShipsData.ts";
 import Thrusters from "../components/Thrusters.ts";
-import Invulnerability from "../components/Invulnerability.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
@@ -30,8 +29,6 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private static readonly DAMAGE_NUMBER_JITTER: number = 16;
     private static readonly PLAYER_EXPLOSION_SIZE: number = 2;
     private static readonly PLAYER_START_SPACING: number = 220;
-    private static readonly JOIN_FLY_IN_DURATION: number = 900; // ms
-    private static readonly JOIN_INVULNERABILITY_DURATION: number = 1000; // ms
     // Extra explosion per combo level above X1
     private static readonly EXPLOSION_PER_COMBO: number = 0.5;
     private static readonly PICKUP_POOL_SIZE: number = 8;
@@ -148,25 +145,6 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this._players.forEach(player => this.game!.events.emit(GameConstants.Events.PLAYER_SPAWNED_EVENT, player));
 
         return team.players;
-    }
-
-    // During a run: the new ship flies in from below the screen next to its teammate, invulnerable for a while
-    public joinPlayer(input: PlayerInput): Player {
-        const view = this.scene!.cameras.main.worldView;
-        const teammate: Player = this._players[0];
-        const halfWidth: number = 60;
-        const x: number = Phaser.Math.Clamp(teammate.x + EntityManager.PLAYER_START_SPACING, halfWidth,
-            GameConstants.ARENA_WIDTH - halfWidth);
-        const player = this.createPlayer(input, x, view.bottom);
-        player.setTargets(this._enemies);
-        player.setXpGems(this._xpGems);
-        this.flyIn(player, x, teammate.y, EntityManager.JOIN_FLY_IN_DURATION, null);
-        player.getComponent(Invulnerability)?.activate(EntityManager.JOIN_INVULNERABILITY_DURATION);
-        this._difficulty.setPlayerCount(this._players.length);
-
-        console.log("[EntityManager] Player " + this._players.length + " joined");
-        this.game!.events.emit(GameConstants.Events.PLAYER_SPAWNED_EVENT, player);
-        return player;
     }
 
     // The bot leaving a run: removed from the overlaps' array and the team at once, its ship flies off
