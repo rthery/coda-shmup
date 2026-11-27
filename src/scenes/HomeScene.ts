@@ -36,33 +36,55 @@ export default class HomeScene extends Phaser.Scene {
     private static readonly SHIP_SPACING_X: number = 150;
     private static readonly DUO_SWAY_X: number = 48;
     private static readonly DUO_SWAY_DELAY: number = 150; // ms
-    private static readonly LABEL_OFFSET_Y: number = 110;
-    private static readonly LABEL_ICON_OFFSET_Y: number = 75;
-    // Longest side: a key cluster (WASD, arrows) is three keys wide, a keyboard or a gamepad is one icon,
-    // close to its 48 px to stay sharp
-    private static readonly LABEL_CLUSTER_SIZE: number = 110;
-    private static readonly LABEL_ICON_SIZE: number = 52;
-    private static readonly PLAYER_COLORS: string[] = ['#7fd4ff', '#ff9a3c'];
-    private static readonly MENU_Y: number = 1360;
-    private static readonly MENU_SPACING: number = 100;
-    private static readonly SELECTED_COLOR: string = '#ffcc00';
-    private static readonly SELECTED_SCALE: number = 1.1;
-    private static readonly UNSELECTED_ALPHA: number = 0.6;
     private static readonly STICK_THRESHOLD: number = 0.5;
+    // 1 or 2 players: two cards side by side, the selected one lifted over its shadow like the level-up cards
+    private static readonly MENU_CENTER_Y: number = 1350;
+    private static readonly MENU_CARD_WIDTH: number = 440;
+    private static readonly MENU_CARD_HEIGHT: number = 340;
+    private static readonly MENU_CARD_GAP: number = 40;
+    private static readonly CARD_LIFT: number = 14;
+    private static readonly CARD_ALPHA: number = 0.8;
+    private static readonly CARD_SHADOW_ALPHA: number = 0.45;
+    private static readonly CARD_SHADOW_RADIUS: number = 18;
+    private static readonly MENU_SHIP_SPACING: number = 70;
+    private static readonly MENU_SHIP_SCALE: number = 1.2;
+    // 2 players: a panel with a slot per player and a START button like the pause screen's
+    private static readonly LOBBY_CENTER_Y: number = 1350;
+    private static readonly LOBBY_WIDTH: number = 920;
+    private static readonly LOBBY_HEIGHT: number = 540;
+    private static readonly SLOT_WIDTH: number = 380;
+    private static readonly SLOT_HEIGHT: number = 250;
+    private static readonly SLOT_GAP: number = 40;
+    private static readonly SLOT_RADIUS: number = 16;
+    // Longest side: a key cluster (WASD, arrows) is three keys wide, a keyboard or a gamepad is one icon
+    private static readonly SLOT_CLUSTER_SIZE: number = 120;
+    private static readonly SLOT_ICON_SIZE: number = 64;
+    private static readonly BUTTON_WIDTH: number = 440;
+    private static readonly BUTTON_HEIGHT: number = 84;
+    private static readonly BUTTON_RADIUS: number = 12;
+    private static readonly BUTTON_LIFT: number = 8;
+    private static readonly START_COLORS = {fill: 0x1fbf75, shade: 0x15955a};
+    private static readonly DISABLED_BUTTON_COLOR: number = 0xb7bec9;
+    // Readable on the panels' light body: the ships' blue and orange, darker
+    private static readonly PLAYER_INK_COLORS: number[] = [0x2a7fc4, 0xd9731f];
+    private static readonly READY_COLOR: string = '#2f8f52';
+    private static readonly ICON_INK: number = 0x4a5263;
 
     private _bg: Phaser.GameObjects.TileSprite;
     private _playerShip: HomeShip;
     // Player 2's ship, kept to come back after leaving
     private _joinedShip: HomeShip | null;
-    // "P1" and "P2" with an icon of what drives them, under each ship
-    private _labels: Phaser.GameObjects.Container[];
     private _title: Phaser.GameObjects.Container;
-    // The title, the menu and the hints, on the portrait frame
+    // The title, the menu, the lobby and the hints, on the portrait frame
     private _frame: Phaser.GameObjects.Container;
-    private _menuOptions: Phaser.GameObjects.Text[];
+    private _menuCards: Phaser.GameObjects.Container[];
     private _menuIndex: number;
     // null until the first update, so a direction held when the screen opens doesn't move the selection
-    private _previousMoveY: number | null;
+    private _previousMoveX: number | null;
+    private _lobby: Phaser.GameObjects.Container;
+    private _slots: Phaser.GameObjects.Container[];
+    private _startButton: Phaser.GameObjects.Graphics;
+    private _startText: Phaser.GameObjects.Text;
     private _hint: Phaser.GameObjects.Container;
     private _subHint: Phaser.GameObjects.Container;
     private _state: HomeState;
@@ -138,9 +160,8 @@ export default class HomeScene extends Phaser.Scene {
         this._playerDevice = null;
         this._joinedDevice = null;
         this._joinedShip = null;
-        this._labels = [];
         this._menuIndex = 0;
-        this._previousMoveY = null;
+        this._previousMoveX = null;
 
         this._bg = this.add.tileSprite(0, 0, 1, 1, 'bg').setOrigin(0).setTileScale(HomeScene.BG_TILE_SCALE);
 
@@ -154,14 +175,13 @@ export default class HomeScene extends Phaser.Scene {
                 .setOrigin(0.5).setShadow(0, 8, '#000', 0, false, true),
         ]);
 
-        this._menuOptions = ['1 PLAYER', '2 PLAYERS'].map((label, index) => this.add.text(centerX,
-            HomeScene.MENU_Y + index * HomeScene.MENU_SPACING, label, {fontSize: '64px', color: '#fff', fontFamily: 'future'})
-            .setOrigin(0.5).setShadow(0, 6, '#000', 0, false, true));
+        this._menuCards = [this.createMenuCard(0), this.createMenuCard(1)];
+        this._lobby = this.createLobby();
         this._hint = UiUtils.addPulsingButtonHint(this, centerX, UiLayout.HEIGHT - 220, []);
         // Long: smaller, to fit a portrait screen
         this._subHint = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 140, [], UiUtils.SMALL_HINT_FONT_SIZE)
             .setAlpha(0.5);
-        this._frame = this.add.container(0, 0, [this._title, ...this._menuOptions, this._hint, this._subHint]);
+        this._frame = this.add.container(0, 0, [this._title, ...this._menuCards, this._lobby, this._hint, this._subHint]);
         this.updateMenu();
         this.updateHints();
         UiLayout.onResize(this, () => this.layout());
@@ -188,14 +208,138 @@ export default class HomeScene extends Phaser.Scene {
         this._frame.setScale(zoom).setPosition(UiLayout.WIDTH / 2 * (1 - zoom), UiLayout.HEIGHT / 2 * (1 - zoom));
     }
 
-    // The selected option in yellow and a bit bigger. Touch only gets "TAP TO START": no coop on touch
+    // SOLO in the ship's blue, COOP in green with both ships
+    private createMenuCard(index: number): Phaser.GameObjects.Container {
+        const width: number = HomeScene.MENU_CARD_WIDTH;
+        const height: number = HomeScene.MENU_CARD_HEIGHT;
+        const top: number = -height / 2;
+        const bodyCenterY: number = top + UiUtils.HEADER_HEIGHT + (height - UiUtils.HEADER_HEIGHT) / 2;
+        const isCoop: boolean = index === 1;
+
+        const shadow = this.add.graphics().fillStyle(0x000000, HomeScene.CARD_SHADOW_ALPHA)
+            .fillRoundedRect(-width / 2, top + HomeScene.CARD_LIFT, width, height, HomeScene.CARD_SHADOW_RADIUS);
+        const panel = UiUtils.addPanel(this, 0, 0, width, height, isCoop ? 'ui_header_blade_green' : 'ui_header_blade_blue')
+            .setInteractive({useHandCursor: true})
+            .on(Phaser.Input.Events.GAMEOBJECT_POINTER_OVER, () => this.selectMenu(index))
+            .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => this.chooseMenu({type: 'keyboard', keys: 'all'}));
+        const title = UiUtils.addHeaderTitle(this, -width / 2, top, isCoop ? 'COOP' : 'SOLO');
+        const ships: Phaser.GameObjects.Image[] = (isCoop ? [1, 2] : [1]).map((shipId, shipIndex) => {
+            const texture: string = (this.cache.json.get('playerShips') as PlayerShipsData)[shipId].texture;
+            const x: number = isCoop ? (shipIndex === 0 ? -1 : 1) * HomeScene.MENU_SHIP_SPACING : 0;
+            return this.add.image(x, bodyCenterY - 35, 'sprites', texture).setAngle(-90).setScale(HomeScene.MENU_SHIP_SCALE);
+        });
+        const label = this.add.text(0, bodyCenterY + 62, isCoop ? '2 PLAYERS' : '1 PLAYER',
+            {fontSize: '48px', color: UiUtils.INK_COLOR, fontFamily: 'future'}).setOrigin(0.5);
+
+        const x: number = UiLayout.WIDTH / 2 + (index === 0 ? -1 : 1) * (width + HomeScene.MENU_CARD_GAP) / 2;
+        return this.add.container(x, HomeScene.MENU_CENTER_Y, [shadow, panel, title, ...ships, label])
+            .setData('shadow', shadow).setData('restY', HomeScene.MENU_CENTER_Y);
+    }
+
+    // The two player slots and the START button
+    private createLobby(): Phaser.GameObjects.Container {
+        const width: number = HomeScene.LOBBY_WIDTH;
+        const height: number = HomeScene.LOBBY_HEIGHT;
+        const top: number = -height / 2;
+        const panel = UiUtils.addPanel(this, 0, 0, width, height, 'ui_header_blade_green');
+        const title = UiUtils.addHeaderTitle(this, -width / 2, top, '2 PLAYERS');
+        const slotY: number = top + UiUtils.HEADER_HEIGHT + 40 + HomeScene.SLOT_HEIGHT / 2;
+        const slotOffsetX: number = (HomeScene.SLOT_WIDTH + HomeScene.SLOT_GAP) / 2;
+        this._slots = [this.add.container(-slotOffsetX, slotY), this.add.container(slotOffsetX, slotY)];
+
+        const buttonY: number = height / 2 - 50 - HomeScene.BUTTON_HEIGHT / 2;
+        this._startButton = this.add.graphics();
+        this._startText = this.add.text(0, buttonY, 'START', {fontSize: '40px', color: '#fff', fontFamily: 'future'})
+            .setOrigin(0.5).setData('restY', buttonY);
+        const buttonZone = this.add.zone(0, buttonY, HomeScene.BUTTON_WIDTH, HomeScene.BUTTON_HEIGHT)
+            .setInteractive({useHandCursor: true})
+            .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => this.tryStartCoop());
+        return this.add.container(UiLayout.WIDTH / 2, HomeScene.LOBBY_CENTER_Y,
+            [panel, title, ...this._slots, this._startButton, this._startText, buttonZone]).setVisible(false);
+    }
+
+    // The menu on keyboards and gamepads. Touch only gets "TAP TO START": no coop on touch
     private updateMenu() {
         const isMenuShown: boolean = this._state === 'menu' && this.gameInputManager.activeInputType !== 'touch';
-        this._menuOptions.forEach((option, index) => {
+        this._menuCards.forEach((card, index) => {
             const isSelected: boolean = index === this._menuIndex;
-            option.setVisible(isMenuShown).setColor(isSelected ? HomeScene.SELECTED_COLOR : '#ffffff')
-                .setScale(isSelected ? HomeScene.SELECTED_SCALE : 1).setAlpha(isSelected ? 1 : HomeScene.UNSELECTED_ALPHA);
+            card.setVisible(isMenuShown).setAlpha(isSelected ? 1 : HomeScene.CARD_ALPHA)
+                .setY(card.getData('restY') - (isSelected ? HomeScene.CARD_LIFT : 0));
+            (card.getData('shadow') as Phaser.GameObjects.Graphics).setVisible(isSelected);
         });
+    }
+
+    private selectMenu(index: number) {
+        if (index === this._menuIndex || this._state !== 'menu')
+            return;
+        this._menuIndex = index;
+        Sfx.play(this, 'cardSelect');
+        this.updateMenu();
+    }
+
+    // The device that picks the option is player 1's
+    private chooseMenu(device: InputDevice) {
+        if (this._state !== 'menu')
+            return;
+        if (this._menuIndex === 0)
+            this.startGame([{type: 'any'}]);
+        else
+            this.openLobby(device);
+    }
+
+    // A slot: the player's number in its ship's color, what drives it, and whether it's in
+    private drawSlot(playerNumber: number, device: InputDevice | null) {
+        const slot: Phaser.GameObjects.Container = this._slots[playerNumber - 1];
+        this.tweens.killTweensOf(slot.list);
+        slot.removeAll(true);
+        const width: number = HomeScene.SLOT_WIDTH;
+        const height: number = HomeScene.SLOT_HEIGHT;
+        const color: number = HomeScene.PLAYER_INK_COLORS[playerNumber - 1];
+        const frame = this.add.graphics().fillStyle(0x000000, 0.06)
+            .fillRoundedRect(-width / 2, -height / 2, width, height, HomeScene.SLOT_RADIUS)
+            .lineStyle(4, color, device ? 1 : 0.35)
+            .strokeRoundedRect(-width / 2, -height / 2, width, height, HomeScene.SLOT_RADIUS);
+        const numberText = this.add.text(0, -height / 2 + 50, `P${playerNumber}`, {fontSize: '64px', fontFamily: 'future',
+            color: Phaser.Display.Color.IntegerToColor(color).rgba}).setOrigin(0.5).setAlpha(device ? 1 : 0.5);
+        slot.add([frame, numberText]);
+
+        if (!device) {
+            const waiting = this.add.text(0, 30, 'WAITING...',
+                {fontSize: '32px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future'}).setOrigin(0.5);
+            this.tweens.add({targets: waiting, alpha: 0.3, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'});
+            slot.add(waiting);
+            return;
+        }
+        // The pack's icons are white: inked to read on the panel
+        const icon = this.add.image(0, 15, 'sprites', this.gameInputManager.deviceIcon(device)).setTint(HomeScene.ICON_INK);
+        const isCluster: boolean = icon.width > icon.height * 1.2 && icon.width > 100;
+        icon.setScale((isCluster ? HomeScene.SLOT_CLUSTER_SIZE : HomeScene.SLOT_ICON_SIZE) / Math.max(icon.width, icon.height));
+        const ready = this.add.text(0, height / 2 - 36, 'READY',
+            {fontSize: '32px', color: HomeScene.READY_COLOR, fontFamily: 'future'}).setOrigin(0.5);
+        slot.add([icon, ready]);
+        this.tweens.add({targets: icon, scale: {from: 1.25 * icon.scale, to: icon.scale}, duration: 250, ease: 'Back.easeOut'});
+    }
+
+    // Solid green and lifted once player 2 or the bot is in, flat and gray before
+    private drawStartButton() {
+        const isReady: boolean = this._joinedDevice !== null;
+        const width: number = HomeScene.BUTTON_WIDTH;
+        const restY: number = this._startText.getData('restY');
+        const top: number = restY - HomeScene.BUTTON_HEIGHT / 2;
+        const lift: number = isReady ? HomeScene.BUTTON_LIFT : 0;
+        this._startButton.clear();
+        if (isReady)
+            this._startButton.fillStyle(HomeScene.START_COLORS.shade)
+                .fillRoundedRect(-width / 2, top, width, HomeScene.BUTTON_HEIGHT, HomeScene.BUTTON_RADIUS);
+        this._startButton.fillStyle(isReady ? HomeScene.START_COLORS.fill : HomeScene.DISABLED_BUTTON_COLOR)
+            .fillRoundedRect(-width / 2, top - lift, width, HomeScene.BUTTON_HEIGHT, HomeScene.BUTTON_RADIUS);
+        this._startText.setY(restY - lift).setAlpha(isReady ? 1 : 0.7);
+    }
+
+    private refreshLobby() {
+        this.drawSlot(1, this._playerDevice);
+        this.drawSlot(2, this._joinedDevice);
+        this.drawStartButton();
     }
 
     private updateHints() {
@@ -270,23 +414,15 @@ export default class HomeScene extends Phaser.Scene {
             return;
         }
 
-        const moveDirectionY: number = inputManager.moveDirection.y;
-        const moveY: number = Math.abs(moveDirectionY) > HomeScene.STICK_THRESHOLD ? Math.sign(moveDirectionY) : 0;
-        if (this._previousMoveY !== null && moveY !== 0 && moveY !== this._previousMoveY) {
-            this._menuIndex = Phaser.Math.Wrap(this._menuIndex + moveY, 0, this._menuOptions.length);
-            Sfx.play(this, 'cardSelect');
-            this.updateMenu();
-        }
-        this._previousMoveY = moveY;
+        const moveDirectionX: number = inputManager.moveDirection.x;
+        const moveX: number = Math.abs(moveDirectionX) > HomeScene.STICK_THRESHOLD ? Math.sign(moveDirectionX) : 0;
+        if (this._previousMoveX !== null && moveX !== 0 && moveX !== this._previousMoveX)
+            this.selectMenu(Phaser.Math.Wrap(this._menuIndex + moveX, 0, this._menuCards.length));
+        this._previousMoveX = moveX;
 
-        // The device that picks the option is player 1's
         const device: InputDevice | null = inputManager.findConfirmingDevice();
-        if (!device)
-            return;
-        if (this._menuIndex === 0)
-            this.startGame([{type: 'any'}]);
-        else
-            this.openLobby(device);
+        if (device)
+            this.chooseMenu(device);
     }
 
     // 2 players: player 1 owns the device that picked the option, the whole keyboard until player 2 takes the arrows
@@ -294,18 +430,20 @@ export default class HomeScene extends Phaser.Scene {
         Sfx.play(this, 'cardPick');
         this._state = 'lobby';
         this._playerDevice = device.type === 'keyboard' ? {type: 'keyboard', keys: 'all'} : device;
-        this._labels = [this.addLabel(this._playerShip, 1, this.gameInputManager.deviceIcon(this._playerDevice))];
+        this._lobby.setVisible(true);
+        this.tweens.add({targets: this._lobby, alpha: {from: 0, to: 1}, y: {from: HomeScene.LOBBY_CENTER_Y + 40,
+            to: HomeScene.LOBBY_CENTER_Y}, duration: 250, ease: 'Quad.easeOut'});
+        this.refreshLobby();
         this.updateHints();
     }
 
     private closeLobby() {
         if (this._joinedDevice)
             this.removeJoined();
-        this._labels.forEach(label => label.destroy());
-        this._labels = [];
+        this._lobby.setVisible(false);
         this._state = 'menu';
         this._playerDevice = null;
-        this._previousMoveY = null;
+        this._previousMoveX = null;
         this.updateHints();
     }
 
@@ -322,7 +460,7 @@ export default class HomeScene extends Phaser.Scene {
             if (joined.type === 'bot' ? inputManager.botJustPressed() : inputManager.backJustPressed(joined))
                 this.removeJoined();
             else if (inputManager.readConfirmJustPressed(player))
-                this.startGame([player, joined]);
+                this.tryStartCoop();
             return;
         }
 
@@ -367,7 +505,7 @@ export default class HomeScene extends Phaser.Scene {
             this.sway(joinedShip, joinedX, HomeScene.DUO_SWAY_X, HomeScene.DUO_SWAY_DELAY);
         }});
 
-        this.setLabels(device);
+        this.refreshLobby();
         this.updateHints();
     }
 
@@ -388,31 +526,14 @@ export default class HomeScene extends Phaser.Scene {
                 joinedShip.image.setVisible(false);
             }});
         this.sway(this._playerShip, UiLayout.WIDTH / 2, HomeScene.SHIP_SWAY_X);
-        this.setLabels(null);
+        this.refreshLobby();
         this.updateHints();
     }
 
-    private setLabels(joinedDevice: InputDevice | null) {
-        this._labels.forEach(label => label.destroy());
-        const inputManager = this.gameInputManager;
-        this._labels = [this.addLabel(this._playerShip, 1, inputManager.deviceIcon(this._playerDevice!))];
-        if (joinedDevice)
-            this._labels.push(this.addLabel(this._joinedShip!, 2, inputManager.deviceIcon(joinedDevice)));
-    }
-
-    // Follows its ship's sway
-    private addLabel(ship: HomeShip, playerNumber: number, icon: string): Phaser.GameObjects.Container {
-        const color: string = HomeScene.PLAYER_COLORS[playerNumber - 1];
-        const text = this.add.text(0, 0, `P${playerNumber}`, {fontSize: '64px', color, fontFamily: 'future'})
-            .setOrigin(0.5).setShadow(0, 6, '#000', 0, false, true);
-        const image = this.add.image(0, HomeScene.LABEL_ICON_OFFSET_Y, 'sprites', icon);
-        const isCluster: boolean = image.width > image.height * 1.2 && image.width > 100;
-        image.setScale((isCluster ? HomeScene.LABEL_CLUSTER_SIZE : HomeScene.LABEL_ICON_SIZE)
-            / Math.max(image.width, image.height));
-        const label = this.add.container(ship.image.x, UiLayout.HEIGHT / 2 + HomeScene.LABEL_OFFSET_Y, [text, image])
-            .setData('ship', ship).setAlpha(0);
-        this.tweens.add({targets: label, alpha: 1, duration: 250});
-        return label;
+    // Once player 2 or the bot is in
+    private tryStartCoop() {
+        if (this._state === 'lobby' && this._playerDevice && this._joinedDevice)
+            this.startGame([this._playerDevice, this._joinedDevice]);
     }
 
     private startGame(devices: InputDevice[]): void {
@@ -425,7 +546,7 @@ export default class HomeScene extends Phaser.Scene {
         // The title clears the ships' way out
         this.tweens.add({targets: this._title, y: -200, alpha: 0, duration: 400, ease: 'Quad.easeIn'});
         this.tweens.killTweensOf(this._hint);
-        this.tweens.add({targets: [this._hint, this._subHint, ...this._menuOptions, ...this._labels], alpha: 0, duration: 200});
+        this.tweens.add({targets: [this._hint, this._subHint, ...this._menuCards, this._lobby], alpha: 0, duration: 200});
         ships.forEach((ship, index) => {
             ship.thrusters.setBoost(true);
             this.tweens.add({
@@ -455,8 +576,6 @@ export default class HomeScene extends Phaser.Scene {
         this.updateShip(this._playerShip, deltaTime);
         if (this._joinedShip)
             this.updateShip(this._joinedShip, deltaTime);
-        for (const label of this._labels)
-            label.x = (label.getData('ship') as HomeShip).image.x;
 
         if (this._state === 'menu')
             this.updateMenuInput();

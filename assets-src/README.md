@@ -30,7 +30,7 @@ Les sprites viennent du pack Kenney « Space Shooter Redux », licence CC0 (doma
 `playerShip1_orange` (tourné vers la droite comme `playerShip3_blue`) et `playerLife1_orange` sont le vaisseau du joueur 2.
 `playerTurret_orange` et `playerTurretTwin_orange` reprennent les tourelles avec le dôme dans l'orange de ce vaisseau.
 `laserOrange01`, `laserOrange12` et `laserOrange16` sont les `laserBlue` passés en orange : les lasers du joueur 2.
-Les `ui_pad_*` (boutons de validation, d'annulation, du haut, start et croix verticale des manettes Xbox, PlayStation et Switch) et les `ui_key_*` (touches du clavier) viennent du pack Kenney « Input Prompts » (CC0) : https://kenney.nl/assets/input-prompts
+Les `ui_pad_*` (boutons de validation, d'annulation, du haut, start et croix verticale ou horizontale des manettes Xbox, PlayStation et Switch) et les `ui_key_*` (touches du clavier) viennent du pack Kenney « Input Prompts » (CC0) : https://kenney.nl/assets/input-prompts
 `ui_device_keyboard`, `ui_device_xbox`, `ui_device_playstation` et `ui_device_switch` en viennent aussi, recadrés. `ui_device_wasd`, `ui_device_zqsd` et `ui_device_arrows` assemblent ses touches en croix. `ui_device_bot` est dessiné dans le même style.
 
 Les sprites `ui_*` viennent du pack Kenney « UI Pack - Sci-Fi », licence CC0 : https://kenney.nl/assets/ui-pack-sci-fi

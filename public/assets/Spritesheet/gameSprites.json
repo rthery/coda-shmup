@@ -5,7 +5,7 @@
 			"format": "RGBA8888",
 			"size": {
 				"w": 1024,
-				"h": 1015
+				"h": 1021
 			},
 			"scale": 1,
 			"frames": [
@@ -367,7 +367,7 @@
 					}
 				},
 				{
-					"filename": "ui_key_arrow_up",
+					"filename": "ui_key_arrow_left",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -556,7 +556,7 @@
 					}
 				},
 				{
-					"filename": "ui_key_b",
+					"filename": "ui_key_arrow_right",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -577,7 +577,7 @@
 					}
 				},
 				{
-					"filename": "ui_key_backspace",
+					"filename": "ui_key_arrow_up",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -598,7 +598,7 @@
 					}
 				},
 				{
-					"filename": "ui_key_enter",
+					"filename": "ui_key_b",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -724,7 +724,7 @@
 					}
 				},
 				{
-					"filename": "ui_key_escape",
+					"filename": "ui_key_backspace",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -745,7 +745,7 @@
 					}
 				},
 				{
-					"filename": "ui_key_s",
+					"filename": "ui_key_enter",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -766,7 +766,7 @@
 					}
 				},
 				{
-					"filename": "ui_key_space",
+					"filename": "ui_key_escape",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -787,7 +787,7 @@
 					}
 				},
 				{
-					"filename": "ui_key_w",
+					"filename": "ui_key_s",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -808,7 +808,7 @@
 					}
 				},
 				{
-					"filename": "ui_key_z",
+					"filename": "ui_key_space",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -955,7 +955,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_playstation_circle",
+					"filename": "ui_key_w",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1060,7 +1060,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_playstation_cross",
+					"filename": "ui_key_z",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1081,7 +1081,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_playstation_dpad_vertical",
+					"filename": "ui_pad_playstation_circle",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1102,7 +1102,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_playstation_options",
+					"filename": "ui_pad_playstation_cross",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1165,7 +1165,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_playstation_triangle",
+					"filename": "ui_pad_playstation_dpad_horizontal",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1186,7 +1186,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_a",
+					"filename": "ui_pad_playstation_dpad_vertical",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1291,7 +1291,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_b",
+					"filename": "ui_pad_playstation_options",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1312,7 +1312,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_dpad_vertical",
+					"filename": "ui_pad_playstation_triangle",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1333,7 +1333,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_plus",
+					"filename": "ui_pad_switch_a",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1354,7 +1354,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_switch_x",
+					"filename": "ui_pad_switch_b",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1375,7 +1375,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_xbox_dpad_vertical",
+					"filename": "ui_pad_switch_dpad_horizontal",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1396,7 +1396,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_xbox_start",
+					"filename": "ui_pad_switch_dpad_vertical",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1417,7 +1417,7 @@
 					}
 				},
 				{
-					"filename": "ui_pad_xbox_y",
+					"filename": "ui_pad_switch_plus",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -1438,24 +1438,24 @@
 					}
 				},
 				{
-					"filename": "ui_device_bot",
+					"filename": "ui_pad_switch_x",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 60,
-						"h": 58
+						"w": 64,
+						"h": 64
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 60,
-						"h": 58
+						"w": 64,
+						"h": 64
 					},
 					"frame": {
 						"x": 2,
 						"y": 925,
-						"w": 60,
-						"h": 58
+						"w": 64,
+						"h": 64
 					}
 				},
 				{
@@ -1474,9 +1474,135 @@
 					},
 					"frame": {
 						"x": 2,
-						"y": 987,
+						"y": 993,
 						"w": 60,
 						"h": 26
+					}
+				},
+				{
+					"filename": "playerTurret_orange",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 60,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 60,
+						"h": 26
+					},
+					"frame": {
+						"x": 66,
+						"y": 993,
+						"w": 60,
+						"h": 26
+					}
+				},
+				{
+					"filename": "ui_pad_xbox_dpad_horizontal",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 70,
+						"y": 925,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_xbox_dpad_vertical",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 138,
+						"y": 925,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_xbox_start",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 206,
+						"y": 925,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_pad_xbox_y",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 64,
+						"h": 64
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 64,
+						"h": 64
+					},
+					"frame": {
+						"x": 274,
+						"y": 925,
+						"w": 64,
+						"h": 64
+					}
+				},
+				{
+					"filename": "ui_device_bot",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 60,
+						"h": 58
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 60,
+						"h": 58
+					},
+					"frame": {
+						"x": 342,
+						"y": 925,
+						"w": 60,
+						"h": 58
 					}
 				},
 				{
@@ -1494,8 +1620,8 @@
 						"h": 36
 					},
 					"frame": {
-						"x": 66,
-						"y": 925,
+						"x": 406,
+						"y": 385,
 						"w": 60,
 						"h": 36
 					}
@@ -1515,31 +1641,10 @@
 						"h": 36
 					},
 					"frame": {
-						"x": 66,
-						"y": 965,
+						"x": 406,
+						"y": 425,
 						"w": 60,
 						"h": 36
-					}
-				},
-				{
-					"filename": "playerTurret_orange",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 60,
-						"h": 26
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 60,
-						"h": 26
-					},
-					"frame": {
-						"x": 130,
-						"y": 925,
-						"w": 60,
-						"h": 26
 					}
 				},
 				{
@@ -1557,8 +1662,8 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 744,
-						"y": 589,
+						"x": 812,
+						"y": 653,
 						"w": 64,
 						"h": 64
 					}
@@ -1578,8 +1683,8 @@
 						"h": 64
 					},
 					"frame": {
-						"x": 898,
-						"y": 556,
+						"x": 880,
+						"y": 692,
 						"w": 64,
 						"h": 64
 					}

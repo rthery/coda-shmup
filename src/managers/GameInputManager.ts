@@ -11,7 +11,7 @@ declare module 'phaser' {
 }
 
 export type InputType = 'keyboard' | 'touch' | 'gamepad';
-export type GamepadButton = 'confirm' | 'cancel' | 'top' | 'start' | 'dpadVertical';
+export type GamepadButton = 'confirm' | 'cancel' | 'top' | 'start' | 'dpadVertical' | 'dpadHorizontal';
 type GamepadFamily = 'xbox' | 'playstation' | 'switch';
 
 export default class GameInputManager extends Plugins.BasePlugin {
@@ -44,22 +44,23 @@ export default class GameInputManager extends Plugins.BasePlugin {
     // Kenney Input Prompts. The bottom face button confirms: B on Nintendo pads
     private static readonly GAMEPAD_ICONS: Record<GamepadFamily, Record<GamepadButton, string>> = {
         xbox: {confirm: 'ui_pad_xbox_a', cancel: 'ui_pad_xbox_b', top: 'ui_pad_xbox_y', start: 'ui_pad_xbox_start',
-            dpadVertical: 'ui_pad_xbox_dpad_vertical'},
+            dpadVertical: 'ui_pad_xbox_dpad_vertical', dpadHorizontal: 'ui_pad_xbox_dpad_horizontal'},
         playstation: {confirm: 'ui_pad_playstation_cross', cancel: 'ui_pad_playstation_circle', top: 'ui_pad_playstation_triangle',
-            start: 'ui_pad_playstation_options', dpadVertical: 'ui_pad_playstation_dpad_vertical'},
+            start: 'ui_pad_playstation_options', dpadVertical: 'ui_pad_playstation_dpad_vertical',
+            dpadHorizontal: 'ui_pad_playstation_dpad_horizontal'},
         switch: {confirm: 'ui_pad_switch_b', cancel: 'ui_pad_switch_a', top: 'ui_pad_switch_x', start: 'ui_pad_switch_plus',
-            dpadVertical: 'ui_pad_switch_dpad_vertical'},
+            dpadVertical: 'ui_pad_switch_dpad_vertical', dpadHorizontal: 'ui_pad_switch_dpad_horizontal'},
     };
     private static readonly CONTROLLER_ICONS: Record<GamepadFamily, string> = {
         xbox: 'ui_device_xbox', playstation: 'ui_device_playstation', switch: 'ui_device_switch'
     };
     private static readonly GAMEPAD_BUTTON_NAMES: Record<GamepadButton, string> = {
-        confirm: 'A', cancel: 'B', top: 'Y', start: 'START', dpadVertical: 'UP / DOWN'
+        confirm: 'A', cancel: 'B', top: 'Y', start: 'START', dpadVertical: 'UP / DOWN', dpadHorizontal: 'LEFT / RIGHT'
     };
     // Kenney Input Prompts, by physical key
     private static readonly KEY_ICONS: Record<string, string> = {
         Space: 'ui_key_space', Enter: 'ui_key_enter', Escape: 'ui_key_escape', ArrowUp: 'ui_key_arrow_up',
-        ArrowDown: 'ui_key_arrow_down', KeyW: 'ui_key_w', KeyS: 'ui_key_s', KeyB: 'ui_key_b', Backspace: 'ui_key_backspace',
+        ArrowDown: 'ui_key_arrow_down', ArrowLeft: 'ui_key_arrow_left', ArrowRight: 'ui_key_arrow_right', KeyW: 'ui_key_w', KeyS: 'ui_key_s', KeyB: 'ui_key_b', Backspace: 'ui_key_backspace',
     };
     // Keys whose label moves between layouts: KeyW is Z on AZERTY
     private static readonly LAYOUT_KEY_ICONS: Record<string, string> = {w: 'ui_key_w', z: 'ui_key_z'};
@@ -191,15 +192,15 @@ export default class GameInputManager extends Plugins.BasePlugin {
             : this.keyHintPart(GameInputManager.BOT_KEY_CODE);
     }
 
-    // Choosing in a menu, in the last used device's buttons
+    // Choosing between side by side options, in the last used device's buttons
     public menuHintParts(): HintPart[] {
         switch (this._activeInputType) {
             case 'touch':
                 return ['TAP TO START'];
             case 'gamepad':
-                return [this.gamepadHintPart('dpadVertical'), 'TO CHOOSE,', this.gamepadHintPart('confirm'), 'TO SELECT'];
+                return [this.gamepadHintPart('dpadHorizontal'), 'TO CHOOSE,', this.gamepadHintPart('confirm'), 'TO SELECT'];
             default:
-                return [this.keyHintPart('ArrowUp'), this.keyHintPart('ArrowDown'), 'TO CHOOSE,',
+                return [this.keyHintPart('ArrowLeft'), this.keyHintPart('ArrowRight'), 'TO CHOOSE,',
                     this.keyHintPart('Space'), 'TO SELECT'];
         }
     }
