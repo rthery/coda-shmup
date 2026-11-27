@@ -21,6 +21,8 @@ import Sfx from "../audio/Sfx.ts";
 export default class EntityManager extends Plugins.ScenePlugin {
     public static readonly PLUGIN_KEY: string = 'EntityManager';
     public static readonly MAPPING_NAME: string = 'entityManager';
+    // Dev cheat, kept across restarts: N stops new enemies from spawning
+    private static _isSpawningDisabled: boolean = false;
 
     private static readonly XP_GEM_SCATTER_MIN_RADIUS: number = 24;
     private static readonly XP_GEM_SCATTER_MAX_RADIUS: number = 56;
@@ -32,6 +34,11 @@ export default class EntityManager extends Plugins.ScenePlugin {
     // Extra explosion per combo level above X1
     private static readonly EXPLOSION_PER_COMBO: number = 0.5;
     private static readonly PICKUP_POOL_SIZE: number = 8;
+    // Pickups land at least this far inside the arena walls: wrecks near or past a wall would drop them out of reach
+    private static readonly PICKUP_WALL_MARGIN: number = 120;
+    // Dev cheat: K drops a random pickup this far from player 1's ship, on screen or off it
+    private static readonly CHEAT_PICKUP_MIN_DISTANCE: number = 300;
+    private static readonly CHEAT_PICKUP_MAX_DISTANCE: number = 1400;
     private static readonly REPAIR_HULL_POINTS: number = 1;
     // The BOMB ring sweeps the screen from the player who took it and destroys each enemy it reaches
     private static readonly BOMB_RING_DURATION: number = 450; // ms
@@ -47,7 +54,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
         PLAYER: 100,
         PLAYER_BULLETS: 90,
         ENEMIES: 80,
-        PICKUPS: 77,
+        PICKUPS: 78,
         XP_GEMS: 75,
         ENEMY_BULLETS: 70,
         EFFECTS: 60
@@ -270,6 +277,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
             }
         });
         GroupUtils.populate(EntityManager.PICKUP_POOL_SIZE, this._pickups);
+        this.game!.events.emit(GameConstants.Events.PICKUPS_CREATED_EVENT, this._pickups);
 
         return this._pickups;
     }
@@ -523,6 +531,23 @@ export default class EntityManager extends Plugins.ScenePlugin {
         }
     }
 
+    public static toggleSpawning() {
+        EntityManager._isSpawningDisabled = !EntityManager._isSpawningDisabled;
+        console.log("[Cheat] Enemy spawning " + (EntityManager._isSpawningDisabled ? "off" : "on"));
+    }
+
+    public cheatSpawnPickup() {
+        const pickup = this._pickups?.get() as Pickup | null;
+        if (!pickup)
+            return;
+        const data: PickupData = Phaser.Utils.Array.GetRandom(this._pickupsData);
+        Phaser.Math.RandomXY(this._spawnOffset, Phaser.Math.FloatBetween(
+            EntityManager.CHEAT_PICKUP_MIN_DISTANCE, EntityManager.CHEAT_PICKUP_MAX_DISTANCE));
+        const player: Player = this._players[0];
+        this.dropPickup(pickup, player.x + this._spawnOffset.x, player.y + this._spawnOffset.y, data);
+        console.log("[Cheat] Pickup " + data.id + " dropped");
+    }
+
     // At most one pickup per kill, each one rare and spaced out by its cooldown
     private rollPickupDrop(x: number, y: number) {
         const runTime: number = this.scene!.registry.get(RegistryConstants.Keys.RUN_TIME) ?? 0;
@@ -536,10 +561,16 @@ export default class EntityManager extends Plugins.ScenePlugin {
             const pickup = this._pickups.get() as Pickup | null;
             if (!pickup)
                 return;
-            pickup.enable(x, y, data);
+            this.dropPickup(pickup, x, y, data);
             this._lastPickupDropTimes.set(data.id, runTime);
             return;
         }
+    }
+
+    private dropPickup(pickup: Pickup, x: number, y: number, data: PickupData) {
+        const margin: number = EntityManager.PICKUP_WALL_MARGIN;
+        pickup.enable(Phaser.Math.Clamp(x, margin, GameConstants.ARENA_WIDTH - margin),
+            Phaser.Math.Clamp(y, margin, GameConstants.ARENA_HEIGHT - margin), data);
     }
 
     private collectPickup(pickup: Pickup, collector: Player) {
@@ -555,7 +586,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
                 this._xpGems.getMatching('active', true).forEach(gem => (gem as XpGem).attract(collector));
                 this.spawnRing(collector.x, collector.y, tint, EntityManager.MAGNET_RING_RADIUS,
                     EntityManager.MAGNET_RING_DURATION, EntityManager.PICKUP_RING_WIDTH);
-                Sfx.play(this.scene!, 'comboUp');
+                Sfx.play(this.scene!, 'magnet');
                 break;
             case 'repair':
                 // Every player still in the fight
@@ -582,6 +613,8 @@ export default class EntityManager extends Plugins.ScenePlugin {
         const color = Phaser.Display.Color.IntegerToColor(tint);
         camera.flash(150, color.red, color.green, color.blue);
         camera.shake(300, 0.02);
+        // The shockwave's zap over a deep boom
+        Sfx.play(this.scene!, 'bomb');
         Sfx.play(this.scene!, 'explosion', {volumeScale: 2.5, detune: -600});
 
         this._enemies.getMatching('active', true).forEach(child => {
@@ -623,7 +656,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
         const difficulty = this._difficulty.at(this.scene!.registry.get(RegistryConstants.Keys.RUN_TIME) ?? 0);
         this.scene!.time.delayedCall(difficulty.spawnInterval, this.spawnEnemy, [], this);
 
-        if (this._enemies.countActive(true) >= difficulty.maxEnemies) {
+        if (EntityManager._isSpawningDisabled || this._enemies.countActive(true) >= difficulty.maxEnemies) {
             return;
         }
 

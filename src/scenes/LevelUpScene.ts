@@ -19,15 +19,22 @@ export default class LevelUpScene extends Scene {
     private static readonly CARD_PADDING: number = 40;
     private static readonly ICON_SCALE: number = 3;
     private static readonly ICON_TEXT_GAP: number = 32;
-    private static readonly SELECTED_CARD_SCALE: number = 1.04;
-    private static readonly CARD_SCALE: number = 0.96;
+    // The selected card rises over its shadow, the others stay down and dimmer, like the pause buttons
+    private static readonly CARD_LIFT: number = 14;
+    // And steps out of the column to the right: a lift alone reads as spacing in a vertical stack
+    private static readonly CARD_NUDGE: number = 30;
+    private static readonly CARD_SHADOW_ALPHA: number = 0.45;
+    private static readonly CARD_SHADOW_RADIUS: number = 18;
     private static readonly CARD_ALPHA: number = 0.8;
-    // Rank pips in the header, left of the crosshair: slanted like the combo pips
+    // Rank pips: slanted like the combo pips
     private static readonly PIP_WIDTH: number = 26;
     private static readonly PIP_HEIGHT: number = 20;
     private static readonly PIP_SKEW: number = 7;
     private static readonly PIP_GAP: number = 8;
-    private static readonly PIPS_RIGHT_MARGIN: number = 150;
+    // The rank block, top right of the body: "RANK 2/5" level with the title, the pips under it, clear of the stat line
+    private static readonly RANK_LABEL_OFFSET_Y: number = -44;
+    private static readonly RANK_PIPS_OFFSET_Y: number = -2;
+    private static readonly RANK_LABEL_GAP: number = 10;
     private static readonly PIP_OWNED_COLOR: number = 0xf5c542;
     private static readonly PIP_EMPTY_COLOR: number = 0x4a5263;
     private static readonly PIP_EMPTY_ALPHA: number = 0.25;
@@ -56,7 +63,6 @@ export default class LevelUpScene extends Scene {
     private _upgrades: UpgradeData[];
     private _cards: GameObjects.Container[];
     private _levelText: GameObjects.Text;
-    private _crosshair: GameObjects.Image;
     private _hintText: GameObjects.Container;
     private _selectedIndex: number;
     // null until the first update, so a direction held when the screen opens doesn't move the selection
@@ -107,7 +113,6 @@ export default class LevelUpScene extends Scene {
         this.tweens.add({targets: this._levelText, alpha: {from: 0, to: 1}, y: {from: this._levelText.y + 20, to: this._levelText.y},
             delay: 150, duration: 250, ease: 'Quad.easeOut'});
 
-        this._crosshair = this.add.image(0, 0, "sprites", "ui_crosshair").setVisible(false);
         this._hintText = UiUtils.addButtonHint(this, centerX, UiLayout.HEIGHT - 200, []).setAlpha(0);
 
         this.game.events.on('input-type-changed', this.onInputTypeChanged, this);
@@ -127,7 +132,6 @@ export default class LevelUpScene extends Scene {
         this._previousMoveY = null;
         this._chosen = false;
         this._isReady = false;
-        this._crosshair.setVisible(false);
         UiUtils.setButtonHint(this._hintText.setAlpha(0), this.getHintText());
         const picker: string = this.isBotPicking ? 'BOT' : `PLAYER ${this._pickIndex + 1}`;
         this._levelText.setText(this.isCoop ? `LEVEL ${this._level}, ${picker} PICKS` : `LEVEL ${this._level} REACHED`);
@@ -188,9 +192,7 @@ export default class LevelUpScene extends Scene {
                 if (!this.isBotPicking)
                     this.choose(index);
             });
-        const categoryText = this.add.text(-halfWidth + 40, top + UiUtils.HEADER_HEIGHT / 2,
-            upgrade.category.toUpperCase(), {fontSize: '32px', color: '#fff', fontFamily: 'future'})
-            .setOrigin(0, 0.5);
+        const categoryText = UiUtils.addHeaderTitle(this, -halfWidth, top, upgrade.category.toUpperCase());
         // The category icon on the left of the body, the texts beside it
         const icon = this.add.image(0, bodyCenterY, 'sprites', LevelUpScene.CATEGORY_ICONS[upgrade.category])
             .setScale(LevelUpScene.ICON_SCALE);
@@ -205,11 +207,29 @@ export default class LevelUpScene extends Scene {
         const nextText = this.add.text(currentText.x + currentText.width, currentText.y, preview.next,
             {fontSize: '36px', color: LevelUpScene.NEXT_VALUE_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
 
-        const pips = this.createRankPips(upgrade, halfWidth - LevelUpScene.PIPS_RIGHT_MARGIN, top + UiUtils.HEADER_HEIGHT / 2);
-        return this.add.container(x, y, [panel, categoryText, icon, titleText, currentText, nextText, ...pips]);
+        const rankBlock = this.createRankBlock(upgrade, halfWidth - LevelUpScene.CARD_PADDING, bodyCenterY);
+        // Where the card rests: it shows below the card once lifted
+        const shadow = this.add.graphics().setVisible(false)
+            .fillStyle(0x000000, LevelUpScene.CARD_SHADOW_ALPHA)
+            .fillRoundedRect(-halfWidth, top + LevelUpScene.CARD_LIFT, LevelUpScene.CARD_WIDTH, LevelUpScene.CARD_HEIGHT,
+                LevelUpScene.CARD_SHADOW_RADIUS);
+        return this.add.container(x, y, [shadow, panel, categoryText, icon, titleText, currentText, nextText, ...rankBlock])
+            .setData('restX', x).setData('restY', y).setData('shadow', shadow);
     }
 
     // One pip per rank: gold when owned, the one this pick adds blinks
+    // The rank this pick reaches, over one pip per rank. Unranked upgrades have none
+    private createRankBlock(upgrade: UpgradeData, right: number, bodyCenterY: number): GameObjects.GameObject[] {
+        if (upgrade.maxRank === null)
+            return [];
+        const labelY: number = bodyCenterY + LevelUpScene.RANK_LABEL_OFFSET_Y;
+        const value = this.add.text(right, labelY, `${this._player.getUpgradeRank(upgrade.id) + 1}/${upgrade.maxRank}`,
+            {fontSize: '40px', color: UiUtils.INK_COLOR, fontFamily: 'future'}).setOrigin(1, 0.5);
+        const label = this.add.text(value.x - value.width - LevelUpScene.RANK_LABEL_GAP, labelY, 'RANK',
+            {fontSize: '28px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future'}).setOrigin(1, 0.5);
+        return [label, value, ...this.createRankPips(upgrade, right, bodyCenterY + LevelUpScene.RANK_PIPS_OFFSET_Y)];
+    }
+
     private createRankPips(upgrade: UpgradeData, right: number, y: number): GameObjects.Polygon[] {
         if (upgrade.maxRank === null)
             return [];
@@ -243,9 +263,6 @@ export default class LevelUpScene extends Scene {
         this._isReady = true;
         // Placed again now the cards have landed
         this.select(this._selectedIndex);
-        this._crosshair.setVisible(true);
-        this.tweens.add({targets: this._crosshair, scale: {from: 2, to: 1}, angle: {from: -90, to: 0}, duration: 250,
-            ease: 'Back.easeOut'});
         this.tweens.add({targets: this._hintText, alpha: 1, duration: 250});
 
         if (this.isBotPicking) {
@@ -321,13 +338,13 @@ export default class LevelUpScene extends Scene {
 
         this._cards.forEach((card, cardIndex) => {
             const isSelected: boolean = cardIndex === index;
-            card.setScale(isSelected ? LevelUpScene.SELECTED_CARD_SCALE : LevelUpScene.CARD_SCALE)
+            card.setY(card.getData('restY') - (isSelected ? LevelUpScene.CARD_LIFT : 0))
                 .setAlpha(isSelected ? 1 : LevelUpScene.CARD_ALPHA);
+            // The entrance slide owns x until the cards land
+            if (this._isReady)
+                card.setX(card.getData('restX') + (isSelected ? LevelUpScene.CARD_NUDGE : 0));
+            (card.getData('shadow') as GameObjects.Graphics).setVisible(isSelected);
         });
-
-        const selectedCard = this._cards[index];
-        const crosshairOffset: number = LevelUpScene.CARD_WIDTH / 2 * LevelUpScene.SELECTED_CARD_SCALE - 70;
-        this._crosshair.setPosition(selectedCard.x + crosshairOffset, selectedCard.y + UiUtils.HEADER_HEIGHT / 2);
     }
 
     private choose(index: number) {

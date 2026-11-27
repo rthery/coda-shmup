@@ -11,6 +11,8 @@ import UiLayout from "../utils/UiLayout.ts";
 import DifficultyCurve from "../utils/DifficultyCurve.ts";
 import type {DifficultyData} from "../gameData/DifficultyData.ts";
 import Sfx from "../audio/Sfx.ts";
+import type {InputType} from "../managers/GameInputManager.ts";
+import type Pickup from "../entities/Pickup.ts";
 
 type LifeRow = {
     container: GameObjects.Container;
@@ -21,6 +23,25 @@ type LifeRow = {
 
 export default class MainUIScene extends Scene {
     private static readonly MARGIN: number = 64;
+    // Touch only: right of the run clock, clear of the score
+    private static readonly PAUSE_BUTTON_OFFSET_X: number = 190;
+    private static readonly PAUSE_BUTTON_RADIUS: number = 40;
+    private static readonly PAUSE_BUTTON_HIT_SIZE: number = 120;
+    private static readonly PAUSE_BAR_WIDTH: number = 10;
+    private static readonly PAUSE_BAR_HEIGHT: number = 30;
+    private static readonly PAUSE_BAR_GAP: number = 8;
+    // The floating joystick: a ring where the thumb landed, and a knob following it up to the ring
+    private static readonly JOYSTICK_RADIUS: number = 110;
+    private static readonly JOYSTICK_KNOB_RADIUS: number = 44;
+    // Off-screen pickups: a badge on the screen edge, like the pause button, with the pickup inside and a chevron
+    // toward it. Kept below the HUD's top rows
+    private static readonly PICKUP_BADGE_TOP: number = 380;
+    private static readonly PICKUP_BADGE_MARGIN: number = 70;
+    private static readonly PICKUP_BADGE_RADIUS: number = 40;
+    private static readonly PICKUP_BADGE_ICON_SCALE: number = 1.1;
+    private static readonly PICKUP_CHEVRON_GAP: number = 10;
+    private static readonly PICKUP_CHEVRON_LENGTH: number = 14;
+    private static readonly PICKUP_CHEVRON_WIDTH: number = 22;
     private static readonly LIFE_ICON_SCALE: number = 2;
     private static readonly LIFE_ICON_SPACING: number = 12;
     private static readonly LIFE_ROW_SPACING: number = 64;
@@ -40,7 +61,15 @@ export default class MainUIScene extends Scene {
     private static readonly JOIN_HINT_CHECK_INTERVAL: number = 500; // ms
     private static readonly JOIN_BANNER_COLOR: string = '#ff9a3c';
     private static readonly JOIN_BANNER_DURATION: number = 1200; // ms
-    private static readonly THREAT_LINE_HEIGHT: number = 4;
+    // Opaque band between two strips of hazard tape, so the banner reads over the bright planet
+    private static readonly THREAT_BAND_Y: number = -24;
+    private static readonly THREAT_BAND_HEIGHT: number = 124;
+    private static readonly THREAT_BAND_COLOR: number = 0x1a1218;
+    private static readonly THREAT_BAND_ALPHA: number = 0.92;
+    private static readonly HAZARD_TAPE_KEY: string = 'hazardTape';
+    private static readonly HAZARD_TAPE_HEIGHT: number = 24;
+    private static readonly HAZARD_STRIPE_WIDTH: number = 24;
+    private static readonly HAZARD_TAPE_SPEED: number = 0.06; // px/ms
     private static readonly THREAT_COLOR: string = '#ffb02e';
     private static readonly MAX_THREAT_COLOR: number = 0xff4a3d;
     private static readonly MAX_THREAT_COLOR_STRING: string = '#ff4a3d';
@@ -74,12 +103,21 @@ export default class MainUIScene extends Scene {
     private _damageVignette: GameObjects.Image;
     private _scoreText: GameObjects.BitmapText;
     private _cornerBrackets: GameObjects.Graphics;
+    private _pauseButton: GameObjects.Container;
+    private _joystick: GameObjects.Graphics;
+    private readonly _joystickOrigin: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private readonly _joystickTip: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
+    private _pickups: Phaser.Physics.Arcade.Group | null = null;
+    private readonly _pickupBadges: { badge: GameObjects.Container, icon: GameObjects.Image, chevron: GameObjects.Graphics }[] = [];
+    private readonly _pickupScreenPoint: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     private _runTimeText: GameObjects.Text;
     private _difficulty: DifficultyCurve;
     private _threatLevel: number = 0;
     private _threatBanner: GameObjects.Container;
     private _threatTitle: GameObjects.Text;
-    private _threatLines: GameObjects.Rectangle[];
+    private _threatWarning: GameObjects.Text;
+    private _threatBand: GameObjects.Rectangle;
+    private _hazardTapes: GameObjects.TileSprite[];
     private _isThreatBannerOnHold: boolean = false;
     private _comboText: GameObjects.Text;
     private _comboTextX: number;
@@ -127,6 +165,8 @@ export default class MainUIScene extends Scene {
         this.game.events.on('input-type-changed', this.updateJoinHint, this);
         this.game.events.on('gamepad-connected', this.updateJoinHint, this);
         this.game.events.on('gamepad-disconnected', this.updateJoinHint, this);
+        this.game.events.on('input-type-changed', this.onInputTypeChanged, this);
+        this.game.events.on(GameConstants.Events.PICKUPS_CREATED_EVENT, this.onPickupsCreated, this);
 
         this.events.once(Scenes.Events.SHUTDOWN, () => {
             this.game.events.off(GameConstants.Events.TEAM_CREATED_EVENT, this.onTeamCreated, this);
@@ -142,6 +182,8 @@ export default class MainUIScene extends Scene {
             this.game.events.off('input-type-changed', this.updateJoinHint, this);
             this.game.events.off('gamepad-connected', this.updateJoinHint, this);
             this.game.events.off('gamepad-disconnected', this.updateJoinHint, this);
+            this.game.events.off('input-type-changed', this.onInputTypeChanged, this);
+            this.game.events.off(GameConstants.Events.PICKUPS_CREATED_EVENT, this.onPickupsCreated, this);
         }, this);
     }
 
@@ -218,6 +260,8 @@ export default class MainUIScene extends Scene {
             {fontSize: '56px', color: MainUIScene.JOIN_BANNER_COLOR, fontFamily: 'future'}).setOrigin(0.5)
             .setShadow(0, 6, '#000', 0, false, true).setAlpha(0);
         this.updateJoinHint();
+        this._joystick = this.add.graphics();
+        this.createPauseButton();
 
         this.scene.bringToTop();
         UiLayout.onResize(this, () => this.layout());
@@ -235,10 +279,12 @@ export default class MainUIScene extends Scene {
         this._scoreText.setX(right);
         this.drawCornerBrackets(area.width);
         this._runTimeText.setX(area.width / 2);
+        this._pauseButton.setX(area.width / 2 + MainUIScene.PAUSE_BUTTON_OFFSET_X);
         this._threatBanner.setX(area.width / 2);
-        this._threatLines.forEach(line => line.setSize(area.width - 2 * MainUIScene.MARGIN, MainUIScene.THREAT_LINE_HEIGHT));
         this._joinHint.setPosition(area.width / 2, area.height - MainUIScene.MARGIN - MainUIScene.JOIN_HINT_FONT_SIZE);
         this._joinBanner.setX(area.width / 2);
+        this._threatBand.setSize(area.width, MainUIScene.THREAT_BAND_HEIGHT);
+        this._hazardTapes.forEach(tape => tape.setSize(area.width, MainUIScene.HAZARD_TAPE_HEIGHT));
 
         this._xpBarWidth = right - MainUIScene.XP_BAR_X;
         this._xpBarTrack.setSize(this._xpBarWidth, this._xpBarTrack.height);
@@ -251,6 +297,114 @@ export default class MainUIScene extends Scene {
         this._comboTextX = firstPipX - MainUIScene.COMBO_PIP_WIDTH / 2 - 20;
         this._comboText.setX(this._comboTextX);
         this._comboMaxText.setX(right);
+    }
+
+    // Touch players have no pause key
+    private createPauseButton() {
+        const barX: number = (MainUIScene.PAUSE_BAR_WIDTH + MainUIScene.PAUSE_BAR_GAP) / 2;
+        const icon = this.add.graphics()
+            .fillStyle(0x000000, 0.35).fillCircle(0, 0, MainUIScene.PAUSE_BUTTON_RADIUS)
+            .lineStyle(3, 0xffffff, 0.4).strokeCircle(0, 0, MainUIScene.PAUSE_BUTTON_RADIUS)
+            .fillStyle(0xffffff, 0.8);
+        [-barX, barX].forEach(x => icon.fillRect(x - MainUIScene.PAUSE_BAR_WIDTH / 2, -MainUIScene.PAUSE_BAR_HEIGHT / 2,
+            MainUIScene.PAUSE_BAR_WIDTH, MainUIScene.PAUSE_BAR_HEIGHT));
+        // A finger-sized target, bigger than the icon
+        const hitZone = this.add.zone(0, 0, MainUIScene.PAUSE_BUTTON_HIT_SIZE, MainUIScene.PAUSE_BUTTON_HIT_SIZE)
+            .setInteractive()
+            .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => this.gameInputManager.requestPause());
+        this._pauseButton = this.add.container(0, MainUIScene.MARGIN + 26, [icon, hitZone]);
+        this.onInputTypeChanged(this.gameInputManager.activeInputType);
+    }
+
+    private onPickupsCreated(pickups: Phaser.Physics.Arcade.Group) {
+        this._pickups = pickups;
+    }
+
+    private addPickupBadge() {
+        const radius: number = MainUIScene.PICKUP_BADGE_RADIUS;
+        const circle = this.add.graphics()
+            .fillStyle(0x000000, 0.35).fillCircle(0, 0, radius)
+            .lineStyle(3, 0xffffff, 0.4).strokeCircle(0, 0, radius);
+        const icon = this.add.image(0, 0, 'sprites', 'pickup_bomb').setScale(MainUIScene.PICKUP_BADGE_ICON_SCALE);
+        // Drawn pointing right, turned toward the pickup
+        const tipX: number = radius + MainUIScene.PICKUP_CHEVRON_GAP + MainUIScene.PICKUP_CHEVRON_LENGTH;
+        const baseX: number = radius + MainUIScene.PICKUP_CHEVRON_GAP;
+        const halfWidth: number = MainUIScene.PICKUP_CHEVRON_WIDTH / 2;
+        const chevron = this.add.graphics().fillStyle(0xffffff, 0.8)
+            .fillTriangle(tipX, 0, baseX, -halfWidth, baseX, halfWidth);
+        this._pickupBadges.push({badge: this.add.container(0, 0, [circle, icon]), icon, chevron});
+    }
+
+    // Pickups expire: a badge on the edge of the screen says where one dropped out of view
+    private updatePickupBadges() {
+        let shown: number = 0;
+        if (this._pickups && this.scene.isActive(GameConstants.SceneKeys.MAIN_GAME))
+            shown = this.placePickupBadges(this._pickups);
+        for (let i = shown; i < this._pickupBadges.length; i++) {
+            this._pickupBadges[i].badge.setVisible(false);
+            this._pickupBadges[i].chevron.setVisible(false);
+        }
+    }
+
+    // Returns how many badges it showed
+    private placePickupBadges(pickups: Phaser.Physics.Arcade.Group): number {
+        let shown: number = 0;
+        const gameCamera = this.scene.get(GameConstants.SceneKeys.MAIN_GAME).cameras.main;
+        const view = gameCamera.worldView;
+        const area = UiLayout.visibleArea(this);
+        const left: number = area.x + MainUIScene.PICKUP_BADGE_MARGIN;
+        const right: number = area.right - MainUIScene.PICKUP_BADGE_MARGIN;
+        const top: number = area.y + MainUIScene.PICKUP_BADGE_TOP;
+        const bottom: number = area.bottom - MainUIScene.PICKUP_BADGE_MARGIN;
+        const centerX: number = (left + right) / 2;
+        const centerY: number = (top + bottom) / 2;
+
+        pickups.getChildren().forEach(child => {
+            const pickup = child as Pickup;
+            if (!pickup.active || view.contains(pickup.x, pickup.y))
+                return;
+
+            // From the arena to the screen, then to this HUD's coordinates
+            this.cameras.main.getWorldPoint((pickup.x - view.x) * gameCamera.zoom, (pickup.y - view.y) * gameCamera.zoom,
+                this._pickupScreenPoint);
+            const directionX: number = this._pickupScreenPoint.x - centerX;
+            const directionY: number = this._pickupScreenPoint.y - centerY;
+            // Along that direction, up to the first edge of the badges' area
+            const reach: number = Math.min(
+                directionX !== 0 ? (right - centerX) / Math.abs(directionX) : Infinity,
+                directionY !== 0 ? (bottom - centerY) / Math.abs(directionY) : Infinity);
+            const x: number = centerX + directionX * reach;
+            const y: number = centerY + directionY * reach;
+
+            if (shown === this._pickupBadges.length)
+                this.addPickupBadge();
+            const {badge, icon, chevron} = this._pickupBadges[shown++];
+            // Blinks with the pickup as it is about to vanish
+            badge.setPosition(x, y).setAlpha(pickup.alpha).setVisible(true);
+            icon.setFrame(pickup.frame.name);
+            chevron.setPosition(x, y).setRotation(Math.atan2(directionY, directionX)).setAlpha(pickup.alpha).setVisible(true);
+        });
+        return shown;
+    }
+
+    private onInputTypeChanged(type: InputType) {
+        this._pauseButton.setVisible(type === 'touch');
+    }
+
+    // Drawn only while a finger holds it during the run, not under the level-up or pause screens
+    private updateJoystick() {
+        this._joystick.clear();
+        const joystick = this.gameInputManager.touchJoystick;
+        if (!joystick || !this.scene.isActive(GameConstants.SceneKeys.MAIN_GAME))
+            return;
+
+        const camera = this.cameras.main;
+        camera.getWorldPoint(joystick.origin.x, joystick.origin.y, this._joystickOrigin);
+        camera.getWorldPoint(joystick.origin.x + joystick.offset.x, joystick.origin.y + joystick.offset.y, this._joystickTip);
+        this._joystickTip.subtract(this._joystickOrigin).limit(MainUIScene.JOYSTICK_RADIUS).add(this._joystickOrigin);
+        this._joystick
+            .lineStyle(4, 0xffffff, 0.3).strokeCircle(this._joystickOrigin.x, this._joystickOrigin.y, MainUIScene.JOYSTICK_RADIUS)
+            .fillStyle(0xffffff, 0.25).fillCircle(this._joystickTip.x, this._joystickTip.y, MainUIScene.JOYSTICK_KNOB_RADIUS);
     }
 
     private onRunTimeChanged(_: any, seconds: number) {
@@ -438,18 +592,48 @@ export default class MainUIScene extends Scene {
     }
 
     private createThreatBanner() {
-        const warning = this.add.text(0, -56, "WARNING",
+        this.createHazardTapeTexture();
+        this._threatBand = this.add.rectangle(0, MainUIScene.THREAT_BAND_Y, 1, MainUIScene.THREAT_BAND_HEIGHT,
+            MainUIScene.THREAT_BAND_COLOR, MainUIScene.THREAT_BAND_ALPHA);
+        const tapeOffset: number = (MainUIScene.THREAT_BAND_HEIGHT + MainUIScene.HAZARD_TAPE_HEIGHT) / 2;
+        this._hazardTapes = [-tapeOffset, tapeOffset].map(offset => this.add.tileSprite(0,
+            MainUIScene.THREAT_BAND_Y + offset, 1, MainUIScene.HAZARD_TAPE_HEIGHT, MainUIScene.HAZARD_TAPE_KEY));
+        this._threatWarning = this.add.text(0, -56, "WARNING",
             {fontSize: '28px', color: MainUIScene.THREAT_COLOR, fontFamily: 'future', letterSpacing: 14}).setOrigin(0.5);
         this._threatTitle = this.add.text(0, 0, "",
-            {fontSize: '64px', color: MainUIScene.THREAT_COLOR, fontFamily: 'future'}).setOrigin(0.5)
+            {fontSize: '64px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5)
             .setShadow(0, 6, '#000', 0, false, true);
-        this._threatLines = [-100, 52].map(y => this.add.rectangle(0, y, 1, MainUIScene.THREAT_LINE_HEIGHT,
-            Phaser.Display.Color.HexStringToColor(MainUIScene.THREAT_COLOR).color));
         this._threatBanner = this.add.container(0, MainUIScene.THREAT_BANNER_Y,
-            [...this._threatLines, warning, this._threatTitle]).setAlpha(0);
+            [this._threatBand, ...this._hazardTapes, this._threatWarning, this._threatTitle]).setAlpha(0);
     }
 
-    // Lines open from the center, the text blinks like an alarm, then it all fades out
+    // White diagonal stripes on the band's color: tinted orange, or red at the maximum threat
+    private createHazardTapeTexture() {
+        if (this.textures.exists(MainUIScene.HAZARD_TAPE_KEY))
+            return;
+
+        const height: number = MainUIScene.HAZARD_TAPE_HEIGHT;
+        const stripe: number = MainUIScene.HAZARD_STRIPE_WIDTH;
+        // Two stripes and two gaps, so the 45° pattern tiles without a seam
+        const width: number = 4 * stripe;
+        const texture = this.textures.createCanvas(MainUIScene.HAZARD_TAPE_KEY, width, height)!;
+        const context: CanvasRenderingContext2D = texture.getContext();
+        context.fillStyle = Phaser.Display.Color.IntegerToColor(MainUIScene.THREAT_BAND_COLOR).rgba;
+        context.fillRect(0, 0, width, height);
+        context.fillStyle = '#fff';
+        for (let x = -height; x < width + height; x += 2 * stripe) {
+            context.beginPath();
+            context.moveTo(x, height);
+            context.lineTo(x + height, 0);
+            context.lineTo(x + height + stripe, 0);
+            context.lineTo(x + stripe, height);
+            context.closePath();
+            context.fill();
+        }
+        texture.refresh();
+    }
+
+    // The band opens from the center, the text blinks like an alarm, then it all fades out
     private showThreatBanner(level: number) {
         const isMax: boolean = level >= this._difficulty.maxThreatLevel;
         // A two-beat alarm, lower for the last level
@@ -457,13 +641,20 @@ export default class MainUIScene extends Scene {
         Sfx.play(this, 'threatAlarm', {detune: alarmDetune});
         this.time.delayedCall(MainUIScene.THREAT_ALARM_GAP, () => Sfx.play(this, 'threatAlarm', {detune: alarmDetune}));
         this._threatTitle.setText(isMax ? "MAXIMUM THREAT" : "THREAT LEVEL " + (level + 1))
-            .setColor(isMax ? MainUIScene.MAX_THREAT_COLOR_STRING : MainUIScene.THREAT_COLOR);
+            .setColor(isMax ? MainUIScene.MAX_THREAT_COLOR_STRING : '#fff');
+        this._threatWarning.setColor(isMax ? MainUIScene.MAX_THREAT_COLOR_STRING : MainUIScene.THREAT_COLOR);
+        const tapeTint: number = isMax ? MainUIScene.MAX_THREAT_COLOR
+            : Phaser.Display.Color.HexStringToColor(MainUIScene.THREAT_COLOR).color;
+        this._hazardTapes.forEach(tape => tape.setTint(tapeTint));
 
-        this.tweens.killTweensOf([this._threatBanner, ...this._threatLines]);
+        const threatTexts: GameObjects.Text[] = [this._threatWarning, this._threatTitle];
+        const bandParts = [this._threatBand, ...this._hazardTapes];
+        this.tweens.killTweensOf([this._threatBanner, ...bandParts, ...threatTexts]);
         this._threatBanner.setAlpha(1);
-        this.tweens.add({targets: this._threatLines, scaleX: {from: 0, to: 1}, duration: 300, ease: 'Quad.easeOut'});
+        threatTexts.forEach(text => text.setAlpha(1));
+        this.tweens.add({targets: bandParts, scaleX: {from: 0, to: 1}, duration: 300, ease: 'Quad.easeOut'});
         this.tweens.add({
-            targets: this._threatBanner,
+            targets: threatTexts,
             alpha: {from: 1, to: 0.25},
             duration: 150,
             yoyo: true,
@@ -487,13 +678,23 @@ export default class MainUIScene extends Scene {
         this._isThreatBannerOnHold = isOnHold;
 
         this._threatBanner.setVisible(!isOnHold);
-        this.tweens.getTweensOf([this._threatBanner, ...this._threatLines])
+        this.tweens.getTweensOf([this._threatBanner, this._threatBand, ...this._hazardTapes,
+            this._threatWarning, this._threatTitle])
             .forEach(tween => isOnHold ? tween.pause() : tween.resume());
     }
 
     update(_timeSinceLaunch: number, deltaTime: number) {
         this.holdThreatBannerBehindScreens();
         this.checkJoinHintIcon(deltaTime);
+        this.updateJoystick();
+        this.updatePickupBadges();
+
+        // The tape strips run in opposite directions while the banner shows
+        if (this._isThreatBannerOnHold || this._threatBanner.alpha <= 0)
+            return;
+        const step: number = MainUIScene.HAZARD_TAPE_SPEED * deltaTime;
+        this._hazardTapes[0].tilePositionX += step;
+        this._hazardTapes[1].tilePositionX -= step;
     }
 
     private checkJoinHintIcon(deltaTime: number) {

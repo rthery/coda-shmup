@@ -68,6 +68,13 @@ export default class GameInputManager extends Plugins.BasePlugin {
         wasd: {type: 'keyboard', keys: 'wasd'} as InputDevice,
         arrows: {type: 'keyboard', keys: 'arrows'} as InputDevice,
     };
+    // Arrows and their WASD positions, with the axis sign each one moves toward
+    private static readonly AXIS_SIGNS: Record<string, { axis: 'x' | 'y', sign: number }> = {
+        ArrowLeft: {axis: 'x', sign: -1}, KeyA: {axis: 'x', sign: -1},
+        ArrowRight: {axis: 'x', sign: 1}, KeyD: {axis: 'x', sign: 1},
+        ArrowUp: {axis: 'y', sign: -1}, KeyW: {axis: 'y', sign: -1},
+        ArrowDown: {axis: 'y', sign: 1}, KeyS: {axis: 'y', sign: 1},
+    };
 
     private _scene: Scene | null = null;
 
@@ -83,6 +90,9 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private _justPressedKeyCodes = new Set<string>();
     private _pendingPressedKeyCodes = new Set<string>();
     private readonly _anyDeviceInput: PlayerInput;
+    // When both directions of an axis are held, the last one pressed wins instead of cancelling out:
+    // rolling from Up to Down would otherwise brake the ship for the overlap
+    private readonly _lastPressedSign = {x: 0, y: 0};
 
     // Touch: a floating joystick, the first touch sets its center
     private _touchPointerId: number = -1;
@@ -96,6 +106,9 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private _pauseJustDown: boolean = false;
     // Keyboard events arrive before the step resets the flags: they wait here for the next step
     private _isPausePending: boolean = false;
+    // Opens the pause screen but never closes it, unlike the pause key
+    private _focusJustLost: boolean = false;
+    private _isFocusLossPending: boolean = false;
 
     private _prevGamepadButtons = new Map<string, boolean>();
     private _activeInputType: InputType = 'keyboard';
@@ -108,8 +121,9 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
         this.game.events.on(Phaser.Core.Events.STEP, this._preUpdate, this);
         this.game.events.on(Phaser.Core.Events.POST_STEP, this._postUpdate, this);
-        // Key ups are lost while the window is unfocused
-        this.game.events.on(Phaser.Core.Events.BLUR, () => this._heldKeyCodes.clear());
+        // Key ups are lost while the window is unfocused. A run pauses then: it would resume straight into the swarm
+        this.game.events.on(Phaser.Core.Events.BLUR, this._onFocusLost, this);
+        this.game.events.on(Phaser.Core.Events.HIDDEN, this._onFocusLost, this);
 
         this._anyDeviceInput = this.getInput({type: 'any'});
         (navigator as Navigator & { keyboard?: { getLayoutMap(): Promise<Map<string, string>> } }).keyboard
@@ -296,6 +310,17 @@ export default class GameInputManager extends Plugins.BasePlugin {
         }
     }
 
+    private _onFocusLost(): void {
+        this._heldKeyCodes.clear();
+        this._clearTouch();
+        this._isFocusLossPending = true;
+    }
+
+    // The pause key and the touch pause button both go through the next step's pauseJustPressed()
+    public requestPause(): void {
+        this._isPausePending = true;
+    }
+
     private _preUpdate(): void {
         this._updateSceneBinding();
 
@@ -305,6 +330,8 @@ export default class GameInputManager extends Plugins.BasePlugin {
         this._isPausePending = false;
         [this._justPressedKeyCodes, this._pendingPressedKeyCodes] = [this._pendingPressedKeyCodes, this._justPressedKeyCodes];
         this._pendingPressedKeyCodes.clear();
+        this._focusJustLost = this._isFocusLossPending;
+        this._isFocusLossPending = false;
 
         // Ignore the OS key repeat: SPACE may still be held from the previous scene
         if (this._shootKey && Input.Keyboard.JustDown(this._shootKey) && !this._shootKey.originalEvent?.repeat) {
@@ -453,6 +480,9 @@ export default class GameInputManager extends Plugins.BasePlugin {
         this._heldKeyCodes.add(event.code);
         if (!event.repeat)
             this._pendingPressedKeyCodes.add(event.code);
+        const axisSign = GameInputManager.AXIS_SIGNS[event.code];
+        if (axisSign && !event.repeat)
+            this._lastPressedSign[axisSign.axis] = axisSign.sign;
         // Escape by position, P by character: P moves between layouts
         if (!event.repeat && (event.code === 'Escape' || event.key.toLowerCase() === 'p'))
             this._isPausePending = true;
@@ -558,10 +588,11 @@ export default class GameInputManager extends Plugins.BasePlugin {
         this._moveDirection.set(0, 0);
 
         const held = this._heldKeyCodes;
-        if (this._leftKey?.isDown || held.has(GameInputManager.MOVE_LEFT_CODE)) this._moveDirection.x -= 1;
-        if (this._rightKey?.isDown || held.has(GameInputManager.MOVE_RIGHT_CODE)) this._moveDirection.x += 1;
-        if (this._upKey?.isDown || held.has(GameInputManager.MOVE_UP_CODE)) this._moveDirection.y -= 1;
-        if (this._downKey?.isDown || held.has(GameInputManager.MOVE_DOWN_CODE)) this._moveDirection.y += 1;
+        this._moveDirection.set(
+            GameInputManager.resolveAxis(!!this._leftKey?.isDown || held.has(GameInputManager.MOVE_LEFT_CODE),
+                !!this._rightKey?.isDown || held.has(GameInputManager.MOVE_RIGHT_CODE), this._lastPressedSign.x),
+            GameInputManager.resolveAxis(!!this._upKey?.isDown || held.has(GameInputManager.MOVE_UP_CODE),
+                !!this._downKey?.isDown || held.has(GameInputManager.MOVE_DOWN_CODE), this._lastPressedSign.y));
 
         if (this._moveDirection.lengthSq() === 0) {
             this._moveDirection.copy(this._touchDirection);
@@ -582,6 +613,12 @@ export default class GameInputManager extends Plugins.BasePlugin {
         return this._moveDirection;
     }
 
+    private static resolveAxis(isNegativeHeld: boolean, isPositiveHeld: boolean, lastPressedSign: number): number {
+        if (isNegativeHeld && isPositiveHeld)
+            return lastPressedSign;
+        return (isPositiveHeld ? 1 : 0) - (isNegativeHeld ? 1 : 0);
+    }
+
     public confirmJustPressed(): boolean {
         return this._confirmJustDown || this._touchJustDown;
     }
@@ -592,6 +629,16 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
     public pauseJustPressed(): boolean {
         return this._pauseJustDown;
+    }
+
+    // The window lost focus or got hidden since the last step
+    public focusJustLost(): boolean {
+        return this._focusJustLost;
+    }
+
+    // The floating joystick while a finger holds it, in screen coordinates: null otherwise
+    public get touchJoystick(): { origin: Phaser.Math.Vector2, offset: Phaser.Math.Vector2 } | null {
+        return this._touchPointerId === -1 ? null : {origin: this._touchOrigin, offset: this._touchDirection};
     }
 
     public get activeInputType(): InputType {
@@ -615,6 +662,8 @@ export default class GameInputManager extends Plugins.BasePlugin {
 
         this.game.events.off(Phaser.Core.Events.STEP, this._preUpdate, this);
         this.game.events.off(Phaser.Core.Events.POST_STEP, this._postUpdate, this);
+        this.game.events.off(Phaser.Core.Events.BLUR, this._onFocusLost, this);
+        this.game.events.off(Phaser.Core.Events.HIDDEN, this._onFocusLost, this);
 
         super.destroy();
 

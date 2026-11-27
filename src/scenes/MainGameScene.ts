@@ -97,7 +97,7 @@ export default class MainGameScene extends Scene {
         const players = this.entityManager.initAndSpawnPlayers(team, inputs, () => {
             this.cameras.main.startFollow(this._cameraTarget, true, 0.15, 0.15);
         });
-        this.cheatManager.init({team, jumpThreatLevel: step => this.jumpThreatLevel(step)});
+        this.cheatManager.init({team, entityManager: this.entityManager, jumpThreatLevel: step => this.jumpThreatLevel(step)});
         players.forEach(player => this.initPlayer(player));
 
         // Freeze the game while the player picks an upgrade
@@ -265,7 +265,7 @@ export default class MainGameScene extends Scene {
     }
 
     update(_timeSinceLaunch: number, deltaTime: number) {
-        if (this.gameInputManager.pauseJustPressed()) {
+        if (this.gameInputManager.pauseJustPressed() || this.gameInputManager.focusJustLost()) {
             this.openPause();
             return;
         }

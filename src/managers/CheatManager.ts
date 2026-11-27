@@ -1,10 +1,13 @@
 import {Input, Plugins, Scene} from "phaser";
 import Player from "../entities/Player.ts";
 import type Team from "../Team.ts";
+import Health from "../components/Health.ts";
+import EntityManager from "./EntityManager.ts";
 import type {UpgradeData} from "../gameData/UpgradesData.ts";
 
 export type CheatTargets = {
     team: Team;
+    entityManager: EntityManager;
     jumpThreatLevel: (step: number) => void;
 }
 
@@ -50,6 +53,13 @@ export default class CheatManager extends Plugins.ScenePlugin {
             this.levelUp();
         else if (key === 'f')
             this.toggleFiring();
+        else if (key === 'i')
+            this.toggleInvulnerability();
+        else if (key === 'n')
+            EntityManager.toggleSpawning();
+        // Not B: it removes the bot
+        else if (key === 'k')
+            this._targets.entityManager.cheatSpawnPickup();
         else if (key === '+' || key === '=')
             this._targets.jumpThreatLevel(1);
         else if (key === '-')
@@ -91,6 +101,17 @@ export default class CheatManager extends Plugins.ScenePlugin {
         const experience = this._targets!.team.experience;
         experience.add(experience.xpToNextLevel - experience.xp);
         console.log("[Cheat] Level " + experience.level);
+    }
+
+    // Every ship takes no damage. Kept across restarts
+    private toggleInvulnerability() {
+        Player.isInvulnerable = !Player.isInvulnerable;
+        this._targets!.team.players.forEach(player => {
+            const health = player.getComponent(Health);
+            if (health)
+                health.enabled = !Player.isInvulnerable;
+        });
+        console.log("[Cheat] Players invulnerable " + (Player.isInvulnerable ? "on" : "off"));
     }
 
     // Kept across restarts

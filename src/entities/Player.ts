@@ -42,8 +42,10 @@ export default class Player extends Entity {
     private static readonly LANCE_LENGTH_SCALE: number = 2.2;
     // Random pitch, in cents, so rapid fire doesn't sound like a machine
     private static readonly LASER_DETUNE: number = 150;
-    // Dev cheat, kept across restarts
+    // Dev cheats, kept across restarts
     public static isFiringDisabled: boolean = false;
+    // The ship takes no damage
+    public static isInvulnerable: boolean = false;
 
     private readonly _bulletData: BulletData = {
         scale: 1.8,
@@ -335,6 +337,10 @@ export default class Player extends Entity {
             this.getComponent(Thrusters)?.update(true, 1, deltaTime);
             return;
         }
+        // The end of a hit's blink turns health back on: the cheat keeps it off
+        const health = this.getComponent(Health);
+        if (Player.isInvulnerable && health)
+            health.enabled = false;
 
         this._moveDirection.copy(this._input.moveDirection);
 

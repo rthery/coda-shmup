@@ -53,8 +53,7 @@ export default class GameOverScene extends Phaser.Scene {
             GameOverScene.PANEL_HEIGHT, 'ui_header_blade_green');
         this.reveal(panel, 350, {scaleY: {from: 0, to: UiUtils.PANEL_SCALE}, alpha: {from: 0, to: 1}}, 250);
         const panelTop: number = GameOverScene.PANEL_CENTER_Y - GameOverScene.PANEL_HEIGHT / 2;
-        const tabText = this.add.text(centerX - GameOverScene.PANEL_WIDTH / 2 + 40, panelTop + UiUtils.HEADER_HEIGHT / 2,
-            'RESULTS', {fontSize: '32px', color: '#fff', fontFamily: 'future'}).setOrigin(0, 0.5);
+        const tabText = UiUtils.addHeaderTitle(this, centerX - GameOverScene.PANEL_WIDTH / 2, panelTop, 'RESULTS');
         this.reveal(tabText, 500, {alpha: {from: 0, to: 1}}, 200);
 
         const scoreLabel = this.add.text(centerX, 850, 'SCORE',

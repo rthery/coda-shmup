@@ -5,7 +5,7 @@
 			"format": "RGBA8888",
 			"size": {
 				"w": 1024,
-				"h": 1017
+				"h": 1015
 			},
 			"scale": 1,
 			"frames": [
@@ -1438,24 +1438,24 @@
 					}
 				},
 				{
-					"filename": "ui_crosshair",
+					"filename": "ui_device_bot",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
 						"w": 60,
-						"h": 60
+						"h": 58
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
 						"w": 60,
-						"h": 60
+						"h": 58
 					},
 					"frame": {
 						"x": 2,
 						"y": 925,
 						"w": 60,
-						"h": 60
+						"h": 58
 					}
 				},
 				{
@@ -1474,48 +1474,6 @@
 					},
 					"frame": {
 						"x": 2,
-						"y": 989,
-						"w": 60,
-						"h": 26
-					}
-				},
-				{
-					"filename": "ui_device_bot",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 60,
-						"h": 58
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 60,
-						"h": 58
-					},
-					"frame": {
-						"x": 66,
-						"y": 925,
-						"w": 60,
-						"h": 58
-					}
-				},
-				{
-					"filename": "playerTurret_orange",
-					"rotated": false,
-					"trimmed": false,
-					"sourceSize": {
-						"w": 60,
-						"h": 26
-					},
-					"spriteSourceSize": {
-						"x": 0,
-						"y": 0,
-						"w": 60,
-						"h": 26
-					},
-					"frame": {
-						"x": 66,
 						"y": 987,
 						"w": 60,
 						"h": 26
@@ -1536,7 +1494,7 @@
 						"h": 36
 					},
 					"frame": {
-						"x": 130,
+						"x": 66,
 						"y": 925,
 						"w": 60,
 						"h": 36
@@ -1557,10 +1515,31 @@
 						"h": 36
 					},
 					"frame": {
-						"x": 130,
+						"x": 66,
 						"y": 965,
 						"w": 60,
 						"h": 36
+					}
+				},
+				{
+					"filename": "playerTurret_orange",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 60,
+						"h": 26
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 60,
+						"h": 26
+					},
+					"frame": {
+						"x": 130,
+						"y": 925,
+						"w": 60,
+						"h": 26
 					}
 				},
 				{

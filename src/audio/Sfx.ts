@@ -14,7 +14,7 @@ type SoundData = {
 export type SoundName =
     'laser' | 'enemyHit' | 'explosion' | 'hullHit' | 'playerDeath' | 'shieldDown' | 'shieldUp' | 'repair' |
     'xpPickup' | 'levelUp' | 'cardSelect' | 'cardPick' | 'comboUp' | 'comboBreak' | 'threatAlarm' |
-    'gameOver' | 'scoreTick' | 'newBest' | 'start' | 'launch' | 'uiConfirm';
+    'gameOver' | 'scoreTick' | 'newBest' | 'start' | 'launch' | 'uiConfirm' | 'bomb' | 'magnet';
 
 export type PlayOptions = {
     detune?: number; // cents
@@ -45,6 +45,8 @@ const SOUNDS: Record<SoundName, SoundData> = {
     start: {file: 'start', count: 1, volume: 0.4, minInterval: 0},
     launch: {file: 'launch', count: 1, volume: 0.45, minInterval: 0},
     uiConfirm: {file: 'ui_confirm', count: 1, volume: 0.4, minInterval: 0},
+    bomb: {file: 'bomb', count: 1, volume: 0.6, minInterval: 0},
+    magnet: {file: 'magnet', count: 1, volume: 0.5, minInterval: 0},
 };
 
 // The WebAudio and HTML5 sounds Phaser creates can be muted, BaseSound's type doesn't say so
