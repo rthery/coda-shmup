@@ -59,13 +59,13 @@ Two players on one screen, each on their own device, or one player with a bot. T
 
 ### Joining (`HomeScene`)
 
-- The home screen has two cards in the level-up cards' style: SOLO (1 PLAYER) and COOP (2 PLAYERS), chosen with left and right, the selected one lifted over its shadow, picked with Space, Enter, A or a click. Touch only gets "TAP TO START".
+- The home screen stacks three cards in the level-up cards' style: SOLO (1 PLAYER), LOCAL COOP (2 PLAYERS) and ONLINE COOP (shown, not selectable yet). Up and down choose, skipping ONLINE COOP, the selected card lifts over its shadow and nudges right, Space, Enter, A or a click picks it. Touch only gets "TAP TO START".
 - 1 PLAYER starts a solo run on every device.
 - 2 PLAYERS opens a lobby. The device that picked the option is player 1's: one pad, or the whole keyboard (`keys: 'all'`).
   - Player 2 joins with a device player 1 doesn't hold: Enter takes the arrows (player 1 keeps WASD, Space and Escape), Space takes the whole keyboard when player 1 is on a pad, another pad's A takes that pad. Its ship flies in next to player 1's.
   - B on the keyboard or Y on a pad adds the bot, and removes it.
   - Player 2 leaves with its back: Backspace on the arrows, Escape on the whole keyboard, B on a pad. Player 1's back closes the lobby.
-  - The lobby is a 2 PLAYERS panel with a slot per player (P1 or P2 in its ship's color, the device icon inked, READY or WAITING...) and a START button like the pause screen's: gray until player 2 or the bot is in, then green and lifted. Player 1's confirm or a click launches the run.
+  - The lobby is a LOCAL COOP panel with a row per player (P1 or P2 in its ship's color, the device icon inked, READY or WAITING...) and a START button like the pause screen's: gray until player 2 or the bot is in, then green and lifted. Player 1's confirm or a click launches the run.
 - Both ships sway above the panel, player 2's flying in when it joins.
 - The players' devices go to `MainGameScene` in the scene data and are kept across an R restart. Game over goes back home.
 - During a run nobody joins or leaves. B or a pad's Y still removes the bot: its ship flies off below the screen, its HUD row goes and the difficulty drops back. The HUD shows how at the bottom.
