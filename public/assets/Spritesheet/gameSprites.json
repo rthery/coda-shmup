@@ -5,7 +5,7 @@
 			"format": "RGBA8888",
 			"size": {
 				"w": 174,
-				"h": 416
+				"h": 690
 			},
 			"scale": 1,
 			"frames": [
@@ -73,7 +73,7 @@
 					}
 				},
 				{
-					"filename": "ufoRed-shoot0",
+					"filename": "ufoGreen-shoot0",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -94,7 +94,7 @@
 					}
 				},
 				{
-					"filename": "ufoRed-shoot1",
+					"filename": "ufoGreen-shoot1",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -115,7 +115,7 @@
 					}
 				},
 				{
-					"filename": "ufoRed",
+					"filename": "ufoGreen",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
@@ -136,6 +136,27 @@
 					}
 				},
 				{
+					"filename": "ufoRed-shoot0",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 91,
+						"h": 91
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 91,
+						"h": 91
+					},
+					"frame": {
+						"x": 81,
+						"y": 192,
+						"w": 91,
+						"h": 91
+					}
+				},
+				{
 					"filename": "playerLife1_blue",
 					"rotated": false,
 					"trimmed": false,
@@ -151,9 +172,51 @@
 					},
 					"frame": {
 						"x": 81,
-						"y": 192,
+						"y": 287,
 						"w": 33,
 						"h": 26
+					}
+				},
+				{
+					"filename": "ufoRed-shoot1",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 91,
+						"h": 91
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 91,
+						"h": 91
+					},
+					"frame": {
+						"x": 2,
+						"y": 418,
+						"w": 91,
+						"h": 91
+					}
+				},
+				{
+					"filename": "ufoRed",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 91,
+						"h": 91
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 91,
+						"h": 91
+					},
+					"frame": {
+						"x": 2,
+						"y": 513,
+						"w": 91,
+						"h": 91
 					}
 				},
 				{
@@ -171,8 +234,8 @@
 						"h": 24
 					},
 					"frame": {
-						"x": 81,
-						"y": 222,
+						"x": 2,
+						"y": 608,
 						"w": 25,
 						"h": 24
 					}
@@ -192,8 +255,8 @@
 						"h": 24
 					},
 					"frame": {
-						"x": 81,
-						"y": 250,
+						"x": 2,
+						"y": 636,
 						"w": 25,
 						"h": 24
 					}
@@ -213,8 +276,8 @@
 						"h": 24
 					},
 					"frame": {
-						"x": 81,
-						"y": 278,
+						"x": 2,
+						"y": 664,
 						"w": 24,
 						"h": 24
 					}
