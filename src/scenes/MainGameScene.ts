@@ -8,7 +8,6 @@ import GameConstants from "../GameConstants.ts";
 
 export default class MainGameScene extends Scene {
     private bg: GameObjects.TileSprite;
-    private planet: GameObjects.Image;
     private saveManager: SaveManager;
     private entityManager: EntityManager;
 
@@ -23,10 +22,14 @@ export default class MainGameScene extends Scene {
         }
         this.saveManager?.load();
 
-        const bgMargin = 512;
-        this.bg = this.add.tileSprite(this.cameras.main.centerX, this.cameras.main.centerY,
-            this.cameras.main.width + bgMargin, this.cameras.main.height + bgMargin, 'bg').setTileScale(2);
-        this.planet = this.add.image(0, -512, 'planet').setOrigin(0);
+        // const bgMargin = 512;
+        this.bg = this.add.tileSprite(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY,
+            this.scale.width,
+            this.scale.height,
+            'bg'
+        ).setTileScale(4.5);
 
         if (!this.entityManager) {
             console.error('EntityManager plugin not found');
@@ -65,6 +68,5 @@ export default class MainGameScene extends Scene {
 
     update(_timeSinceLaunch: number, deltaTime: number) {
         this.bg.tilePositionY -= 0.1 * deltaTime;
-        this.planet.y += 0.40 * deltaTime;
     }
 }

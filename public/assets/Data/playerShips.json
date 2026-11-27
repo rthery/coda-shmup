@@ -1,7 +1,7 @@
 {
   "1": {
     "movementSpeed": 0.6,
-    "texture": "playerShip1_blue",
+    "texture": "lisnard",
     "body": {
       "radius": 42,
       "offsetX": -4,
@@ -10,7 +10,7 @@
   },
   "2": {
     "movementSpeed": 0.9,
-    "texture": "playerShip2_blue",
+    "texture": "nouvelle-energie",
     "body": {
       "radius": 42,
       "offsetX": -4,
@@ -19,7 +19,7 @@
   },
   "3": {
     "movementSpeed": 1.2,
-    "texture": "playerShip3_blue",
+    "texture": "absoluteLisnard",
     "body": {
       "radius": 42,
       "offsetX": -4,

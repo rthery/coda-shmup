@@ -22,6 +22,8 @@ export default class Bullet extends Phaser.GameObjects.Rectangle {
         this.setSize(data.width, data.height);
         this.setOrigin(0.5);
         this.setFillStyle(data.color);
+        this.setStrokeStyle(2, 0x000000);
+        console.log('bullet color', data.color.toString(16), this.fillColor.toString(16));
 
         this.scene.physics.world.add(this._arcadeBody);
         this.setActive(true);

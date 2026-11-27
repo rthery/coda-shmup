@@ -43,4 +43,38 @@ export default class Weapon implements IComponent {
             //     bulletVelocityX, bulletVelocityY, this._bulletData);
         }
     }
+
+    public shootSpecialEnemy(source: Entity, numberOfBullets: number = 3, shotRadius: number = 30) {
+        if (!this.enabled)
+            return;
+
+        if (!this._bullets)
+            return;
+
+        const count = Math.max(1, numberOfBullets);
+        const totalSpreadRad = Phaser.Math.DegToRad(shotRadius);
+
+        for (let i = 0; i < count; i++) {
+            const bullet: Bullet = this._bullets.get() as Bullet;
+            if (!bullet) {
+                break;
+            }
+
+            // Répartit les balles symétriquement autour de source.rotation
+            const offsetRad = count === 1
+                ? 0
+                : -totalSpreadRad / 2 + (totalSpreadRad * i) / (count - 1);
+
+            const angleRad = source.rotation + offsetRad;
+            const dirX = Math.cos(angleRad);
+            const dirY = Math.sin(angleRad);
+
+            const spawnX = source.x + dirX * source.arcadeBody.radius;
+            const spawnY = source.y + dirY * source.arcadeBody.radius;
+            const bulletVelocityX = dirX * this._bulletData.speed;
+            const bulletVelocityY = dirY * this._bulletData.speed;
+
+            bullet.enable(spawnX, spawnY, bulletVelocityX, bulletVelocityY, this._bulletData);
+        }
+    }
 }

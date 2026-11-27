@@ -1,0 +1,25 @@
+{
+  "enemies": {
+    "movementSpeed": 0.45,
+    "texture": "mlp",
+    "body": {
+      "radius": 52,
+      "offsetX": 15,
+      "offsetY": 0,
+      "maxHealth": 1
+    }
+  },
+  "specialEnemy": {
+    "movementSpeed": 0.3,
+    "texture": "merluche",
+    "body": {
+      "radius": 42,
+      "offsetX": -4,
+      "offsetY": 16,
+      "maxHealth": 2,
+      "numberOfBullets": 5,
+      "shotRadius": 90,
+      "spawnRate": 8000
+    }
+  }
+}

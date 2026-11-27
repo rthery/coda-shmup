@@ -30,21 +30,49 @@ export default class HomeScene extends Phaser.Scene {
 
         this.load.setPath('assets');
 
-        this.load.image('bg', 'Backgrounds/darkPurple.png');
-        this.load.image('planet', 'Planets/planet00.png');
+        this.load.image('bg', 'Backgrounds/france.png');
+        this.load.image('accueil', 'Backgrounds/elysee.png');
         this.load.atlas('sprites', 'Spritesheet/gameSprites.png', 'Spritesheet/gameSprites.json');
         this.load.bitmapFont('future-bmp', 'Fonts/kenvector_future.png', 'Fonts/kenvector_future.xml');
         this.load.font('future', 'Fonts/kenvector_future.ttf');
         this.load.json('playerShips', 'Data/playerShips.json');
+        this.load.json('specialEnemy', 'Data/specialEnemy.json');
         this.load.audio('sfx_laser1', 'Sounds/sfx_laser1.ogg');
         this.load.audio('sfx_laser2', 'Sounds/sfx_laser2.ogg');
     }
 
     create() {
-        this.add.text(this.scale.width / 2, this.scale.width / 2, 'CODA SHMUP',
-            {fontSize: '72px', color: '#fff', fontFamily: 'future'}).setOrigin(0.5);
-        this.add.text(this.scale.width / 2, this.scale.width / 2 + 72, 'Press SPACE to start',
-            {fontSize: '32px', color: '#fff'}).setOrigin(0.5);
+        this.add.image(this.scale.width / 2, this.scale.height / 2, 'accueil')
+            .setDisplaySize(this.scale.width, this.scale.height);
+        this.add.text(this.scale.width / 2, this.scale.width / 2, 'Objectif 2027', {
+            fontSize: '72px',
+            color: '#ffffff',
+            fontFamily: 'future',
+            stroke: '#000000',
+            strokeThickness: 8,
+            shadow: {
+                offsetX: 0,
+                offsetY: 6,
+                color: '#000000',
+                blur: 10,
+                fill: true
+            }
+        }).setOrigin(0.5);
+
+        this.add.text(this.scale.width / 2, this.scale.height /2, 'Press SPACE to start', {
+            fontSize: '48px',
+            color: '#ffffff',
+            fontFamily: 'future',
+            stroke: '#000000',
+            strokeThickness: 7,
+            shadow: {
+                offsetX: 0,
+                offsetY: 4,
+                color: '#000000',
+                blur: 8,
+                fill: true
+            }
+        }).setOrigin(0.5);
 
         // Ignore the OS key repeat: SPACE may still be held from the previous game
         this.input.keyboard?.on('keydown-SPACE', (event: KeyboardEvent) => {

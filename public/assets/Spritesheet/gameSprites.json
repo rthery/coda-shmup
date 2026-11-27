@@ -4,72 +4,93 @@
 			"image": "gameSprites.png",
 			"format": "RGBA8888",
 			"size": {
-				"w": 174,
-				"h": 416
+				"w": 974,
+				"h": 124
 			},
 			"scale": 1,
 			"frames": [
 				{
-					"filename": "playerShip2_blue",
+					"filename": "mlp",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 75,
-						"h": 112
+						"w": 134,
+						"h": 105
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 75,
-						"h": 112
+						"w": 134,
+						"h": 105
 					},
 					"frame": {
 						"x": 2,
 						"y": 2,
-						"w": 75,
-						"h": 112
+						"w": 134,
+						"h": 105
 					}
 				},
 				{
-					"filename": "playerShip1_blue",
+					"filename": "absoluteLisnard",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 75,
-						"h": 99
+						"w": 122,
+						"h": 105
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 75,
-						"h": 99
+						"w": 122,
+						"h": 105
 					},
 					"frame": {
-						"x": 2,
-						"y": 118,
-						"w": 75,
-						"h": 99
+						"x": 140,
+						"y": 2,
+						"w": 122,
+						"h": 105
 					}
 				},
 				{
-					"filename": "playerShip3_blue",
+					"filename": "lisnard",
 					"rotated": false,
 					"trimmed": false,
 					"sourceSize": {
-						"w": 75,
-						"h": 98
+						"w": 111,
+						"h": 105
 					},
 					"spriteSourceSize": {
 						"x": 0,
 						"y": 0,
-						"w": 75,
-						"h": 98
+						"w": 111,
+						"h": 105
 					},
 					"frame": {
-						"x": 2,
-						"y": 221,
-						"w": 75,
-						"h": 98
+						"x": 266,
+						"y": 2,
+						"w": 111,
+						"h": 105
+					}
+				},
+				{
+					"filename": "nouvelle-energie",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 91,
+						"h": 105
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 91,
+						"h": 105
+					},
+					"frame": {
+						"x": 381,
+						"y": 2,
+						"w": 91,
+						"h": 105
 					}
 				},
 				{
@@ -87,8 +108,8 @@
 						"h": 91
 					},
 					"frame": {
-						"x": 2,
-						"y": 323,
+						"x": 476,
+						"y": 2,
 						"w": 91,
 						"h": 91
 					}
@@ -108,7 +129,7 @@
 						"h": 91
 					},
 					"frame": {
-						"x": 81,
+						"x": 571,
 						"y": 2,
 						"w": 91,
 						"h": 91
@@ -129,10 +150,31 @@
 						"h": 91
 					},
 					"frame": {
-						"x": 81,
-						"y": 97,
+						"x": 666,
+						"y": 2,
 						"w": 91,
 						"h": 91
+					}
+				},
+				{
+					"filename": "merluche",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 88,
+						"h": 120
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 88,
+						"h": 120
+					},
+					"frame": {
+						"x": 761,
+						"y": 2,
+						"w": 88,
+						"h": 120
 					}
 				},
 				{
@@ -150,8 +192,8 @@
 						"h": 26
 					},
 					"frame": {
-						"x": 81,
-						"y": 192,
+						"x": 853,
+						"y": 2,
 						"w": 33,
 						"h": 26
 					}
@@ -171,8 +213,8 @@
 						"h": 24
 					},
 					"frame": {
-						"x": 81,
-						"y": 222,
+						"x": 890,
+						"y": 2,
 						"w": 25,
 						"h": 24
 					}
@@ -192,8 +234,8 @@
 						"h": 24
 					},
 					"frame": {
-						"x": 81,
-						"y": 250,
+						"x": 919,
+						"y": 2,
 						"w": 25,
 						"h": 24
 					}
@@ -213,8 +255,8 @@
 						"h": 24
 					},
 					"frame": {
-						"x": 81,
-						"y": 278,
+						"x": 948,
+						"y": 2,
 						"w": 24,
 						"h": 24
 					}
