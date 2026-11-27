@@ -35,10 +35,11 @@ export default class HomeScene extends Phaser.Scene {
     private static readonly DUO_SWAY_X: number = 48;
     private static readonly DUO_SWAY_DELAY: number = 150; // ms
     private static readonly LABEL_OFFSET_Y: number = 110;
-    private static readonly LABEL_ICON_OFFSET_Y: number = 90;
-    // Longest side: a key cluster (WASD, arrows) is three keys wide, a keyboard or a gamepad is one icon
-    private static readonly LABEL_CLUSTER_SIZE: number = 140;
-    private static readonly LABEL_ICON_SIZE: number = 96;
+    private static readonly LABEL_ICON_OFFSET_Y: number = 75;
+    // Longest side: a key cluster (WASD, arrows) is three keys wide, a keyboard or a gamepad is one icon,
+    // close to its 48 px to stay sharp
+    private static readonly LABEL_CLUSTER_SIZE: number = 110;
+    private static readonly LABEL_ICON_SIZE: number = 52;
     private static readonly PLAYER_COLORS: string[] = ['#7fd4ff', '#ff9a3c'];
 
     private _bg: Phaser.GameObjects.TileSprite;
@@ -175,16 +176,16 @@ export default class HomeScene extends Phaser.Scene {
     }
 
     private _getPromptText(type: InputType): HintPart[] {
-        return type === 'touch' ? ['TAP TO START'] : ['PRESS', this.gameInputManager.keyHintPart('Space'), 'TO START'];
+        return type === 'touch' ? ['TAP TO START'] : this.gameInputManager.startHintParts();
     }
 
-    // How player 2 joins, or how the bot leaves. No coop on touch
+    // How player 2 joins, or leaves once it has. No coop on touch
     private _updateJoinPrompt(): void {
         const inputManager = this.gameInputManager;
-        const isBotJoined: boolean = this._joinedDevice?.type === 'bot';
-        UiUtils.setButtonHint(this._joinPrompt, isBotJoined
-            ? [inputManager.keyHintPart('KeyB'), 'TO REMOVE THE BOT'] : inputManager.joinHintParts());
-        this._joinPrompt.setVisible((!this._joinedDevice || isBotJoined) && inputManager.activeInputType !== 'touch');
+        UiUtils.setButtonHint(this._startPrompt, this._getPromptText(inputManager.activeInputType));
+        UiUtils.setButtonHint(this._joinPrompt, this._joinedDevice
+            ? inputManager.leaveHintParts(this._joinedDevice) : inputManager.joinHintParts());
+        this._joinPrompt.setVisible(inputManager.activeInputType !== 'touch');
     }
 
     private createShip(shipId: number, x: number, y: number): HomeShip {
@@ -221,19 +222,22 @@ export default class HomeScene extends Phaser.Scene {
         });
     }
 
-    // Enter or a gamepad's confirm makes player 2 join, B adds the bot or removes it
+    // Enter or a gamepad's A makes player 2 join, and its Backspace or B makes it leave. Keyboard B adds or removes the bot
     private _updateJoining(): void {
         const inputManager = this.gameInputManager;
         if (inputManager.botJustPressed()) {
             if (!this._joinedDevice)
                 this.join({type: 'bot'});
             else if (this._joinedDevice.type === 'bot')
-                this.removeBot();
+                this.removeJoined();
             return;
         }
-        if (this._joinedDevice)
+        if (this._joinedDevice) {
+            if (inputManager.leaveJustPressed(this._joinedDevice))
+                this.removeJoined();
             return;
-        const device: InputDevice | null = inputManager.findConfirmingDevice();
+        }
+        const device: InputDevice | null = inputManager.findJoiningDevice();
         // Space starts the run
         if (device && !(device.type === 'keyboard' && device.keys === 'wasd'))
             this.join(device);
@@ -268,8 +272,8 @@ export default class HomeScene extends Phaser.Scene {
         this._updateJoinPrompt();
     }
 
-    // The bot flies away, player 1 has the screen to itself again
-    private removeBot() {
+    // Player 2 or the bot flies away, player 1 has the screen to itself again
+    private removeJoined() {
         this._joinedDevice = null;
         const joinedShip = this._joinedShip!;
         this.tweens.killTweensOf(joinedShip.image);

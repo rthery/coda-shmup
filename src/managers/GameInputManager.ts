@@ -11,7 +11,7 @@ declare module 'phaser' {
 }
 
 export type InputType = 'keyboard' | 'touch' | 'gamepad';
-export type GamepadButton = 'confirm' | 'start' | 'dpadVertical';
+export type GamepadButton = 'confirm' | 'cancel' | 'start' | 'dpadVertical';
 type GamepadFamily = 'xbox' | 'playstation' | 'switch';
 
 export default class GameInputManager extends Plugins.BasePlugin {
@@ -22,6 +22,9 @@ export default class GameInputManager extends Plugins.BasePlugin {
     private static readonly TOUCH_DEADZONE = 24;
     private static readonly CONFIRM_BUTTON_INDEX = 0;
     private static readonly START_BUTTON_INDEX = 9;
+    // B on Xbox pads, circle on PlayStation ones: a joined player leaves
+    private static readonly CANCEL_BUTTON_INDEX = 1;
+    private static readonly LEAVE_KEY_CODE = 'Backspace';
     // In a run: adds a bot teammate
     private static readonly BOT_KEY_CODE = 'KeyB';
     // Physical key positions, not characters: WASD on a US keyboard, ZQSD on AZERTY
@@ -38,21 +41,23 @@ export default class GameInputManager extends Plugins.BasePlugin {
     };
     // Kenney Input Prompts. The bottom face button confirms: B on Nintendo pads
     private static readonly GAMEPAD_ICONS: Record<GamepadFamily, Record<GamepadButton, string>> = {
-        xbox: {confirm: 'ui_pad_xbox_a', start: 'ui_pad_xbox_menu', dpadVertical: 'ui_pad_xbox_dpad_vertical'},
-        playstation: {confirm: 'ui_pad_playstation_cross', start: 'ui_pad_playstation_options',
-            dpadVertical: 'ui_pad_playstation_dpad_vertical'},
-        switch: {confirm: 'ui_pad_switch_b', start: 'ui_pad_switch_plus', dpadVertical: 'ui_pad_switch_dpad_vertical'},
+        xbox: {confirm: 'ui_pad_xbox_a', cancel: 'ui_pad_xbox_b', start: 'ui_pad_xbox_menu',
+            dpadVertical: 'ui_pad_xbox_dpad_vertical'},
+        playstation: {confirm: 'ui_pad_playstation_cross', cancel: 'ui_pad_playstation_circle',
+            start: 'ui_pad_playstation_options', dpadVertical: 'ui_pad_playstation_dpad_vertical'},
+        switch: {confirm: 'ui_pad_switch_b', cancel: 'ui_pad_switch_a', start: 'ui_pad_switch_plus',
+            dpadVertical: 'ui_pad_switch_dpad_vertical'},
     };
     private static readonly CONTROLLER_ICONS: Record<GamepadFamily, string> = {
         xbox: 'ui_device_xbox', playstation: 'ui_device_playstation', switch: 'ui_device_switch'
     };
     private static readonly GAMEPAD_BUTTON_NAMES: Record<GamepadButton, string> = {
-        confirm: 'A', start: 'START', dpadVertical: 'UP / DOWN'
+        confirm: 'A', cancel: 'B', start: 'START', dpadVertical: 'UP / DOWN'
     };
     // Kenney Input Prompts, by physical key
     private static readonly KEY_ICONS: Record<string, string> = {
         Space: 'ui_key_space', Enter: 'ui_key_enter', Escape: 'ui_key_escape', ArrowUp: 'ui_key_arrow_up',
-        ArrowDown: 'ui_key_arrow_down', KeyW: 'ui_key_w', KeyS: 'ui_key_s', KeyB: 'ui_key_b',
+        ArrowDown: 'ui_key_arrow_down', KeyW: 'ui_key_w', KeyS: 'ui_key_s', KeyB: 'ui_key_b', Backspace: 'ui_key_backspace',
     };
     // Keys whose label moves between layouts: KeyW is Z on AZERTY
     private static readonly LAYOUT_KEY_ICONS: Record<string, string> = {w: 'ui_key_w', z: 'ui_key_z'};
@@ -127,24 +132,48 @@ export default class GameInputManager extends Plugins.BasePlugin {
         return this._lastUsedDevice;
     }
 
-    // The key set or pad whose confirm was just pressed: a player joining the run
-    public findConfirmingDevice(): InputDevice | null {
+    // A player joining: the key set whose confirm was just pressed (Space, Enter), or the pad whose A was
+    public findJoiningDevice(): InputDevice | null {
         for (const keys of GameInputManager.KEY_SET_NAMES) {
             const device: InputDevice = GameInputManager.KEYBOARD_DEVICES[keys];
             if (this.readConfirmJustPressed(device))
                 return device;
         }
         for (const pad of this._getConnectedGamepads()) {
-            const device: InputDevice = this._getGamepadDevice(pad.index);
-            if (this.readConfirmJustPressed(device))
-                return device;
+            if (this._isGamepadButtonJustPressed(pad, GameInputManager.CONFIRM_BUTTON_INDEX))
+                return this._getGamepadDevice(pad.index);
         }
         return null;
     }
 
-    // Home: only Space starts a run, or a tap on touch screens. The other confirms make a player join
+    // Home: Space or any gamepad's Start launches the run, or a tap on touch screens
     public startJustPressed(): boolean {
-        return this.readConfirmJustPressed(GameInputManager.KEYBOARD_DEVICES.wasd) || this._touchJustDown;
+        return this.readConfirmJustPressed(GameInputManager.KEYBOARD_DEVICES.wasd) || this._touchJustDown
+            || this._getConnectedGamepads().some(pad => this._isGamepadButtonJustPressed(pad, GameInputManager.START_BUTTON_INDEX));
+    }
+
+    // A joined player leaving: Backspace on its key set, the cancel button on its pad
+    public leaveJustPressed(device: InputDevice): boolean {
+        if (device.type === 'keyboard')
+            return this._justPressedKeyCodes.has(GameInputManager.LEAVE_KEY_CODE);
+        if (device.type !== 'gamepad')
+            return false;
+        const pad = this._getConnectedGamepads().find(pad => pad.index === device.index);
+        return !!pad && this._isGamepadButtonJustPressed(pad, GameInputManager.CANCEL_BUTTON_INDEX);
+    }
+
+    public startHintParts(): HintPart[] {
+        const startIcon: string | null = this.gamepadIcon('start');
+        return ['PRESS', this.keyHintPart('Space'), ...(startIcon ? ['OR', {icon: startIcon}] : []), 'TO START'];
+    }
+
+    // How the joined player leaves, or how the bot goes
+    public leaveHintParts(device: InputDevice): HintPart[] {
+        if (device.type === 'bot')
+            return [this.keyHintPart(GameInputManager.BOT_KEY_CODE), 'TO REMOVE THE BOT'];
+        const leave: HintPart = device.type === 'gamepad' ? this.gamepadHintPart('cancel', device.index)
+            : this.keyHintPart(GameInputManager.LEAVE_KEY_CODE);
+        return ['P2: PRESS', leave, 'TO LEAVE'];
     }
 
     // A button's icon in the style of the given gamepad, or the first connected one, null without one.

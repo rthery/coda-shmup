@@ -296,32 +296,45 @@ export default class MainGameScene extends Scene {
         return device.type === 'bot' ? new BotInput(this._team, this.entityManager) : this.gameInputManager.getInput(device);
     }
 
-    // A second player joins anytime with the confirm of a device player 1 isn't using, B adds a bot or removes it
+    // A second player joins anytime with Enter, Space or A on a device player 1 isn't using, and leaves with its
+    // Backspace or B. Keyboard B adds a bot or removes it
     private updateJoining() {
         const inputManager = this.gameInputManager;
-        const isFull: boolean = this._team.players.length >= GameConstants.MAX_PLAYERS;
+        const players = this._team.players;
         if (inputManager.botJustPressed()) {
-            const bot: Player | undefined = this._team.players.find(player => player.playerInput.device.type === 'bot');
+            const bot: Player | undefined = players.find(player => player.playerInput.device.type === 'bot');
             if (bot)
-                this.removeBot(bot);
-            else if (!isFull)
+                this.removePlayer(bot);
+            else if (players.length < GameConstants.MAX_PLAYERS)
                 this.joinPlayer({type: 'bot'});
-        } else if (!isFull) {
-            const confirming: InputDevice | null = inputManager.findConfirmingDevice();
-            if (confirming && !isSameDevice(confirming, this._soloDevice))
-                this.joinPlayer(confirming);
+        } else if (players.length < GameConstants.MAX_PLAYERS) {
+            const joining: InputDevice | null = inputManager.findJoiningDevice();
+            if (joining && !isSameDevice(joining, this._soloDevice))
+                this.joinPlayer(joining);
+        } else {
+            for (let i = 1; i < players.length; i++) {
+                if (inputManager.leaveJustPressed(players[i].playerInput.device)) {
+                    this.removePlayer(players[i]);
+                    break;
+                }
+            }
         }
         this._soloDevice = inputManager.lastUsedDevice;
     }
 
-    private removeBot(bot: Player) {
-        const index: number = this._team.players.indexOf(bot);
-        this._joinedDevices.splice(this._joinedDevices.findIndex(device => device.type === 'bot'), 1);
-        this.entityManager.removePlayer(bot);
+    // Player 1 gets the leaving player's device back
+    private removePlayer(player: Player) {
+        const index: number = this._team.players.indexOf(player);
+        const device: InputDevice = player.playerInput.device;
+        this._joinedDevices.splice(this._joinedDevices.findIndex(joined => isSameDevice(joined, device)), 1);
+        const ownedIndex: number = this._ownedDevices.findIndex(owned => isSameDevice(owned, device));
+        if (ownedIndex !== -1)
+            this._ownedDevices.splice(ownedIndex, 1);
+        this.entityManager.removePlayer(player);
         this._difficulty.setPlayerCount(this._team.players.length);
         this._team.experience.setCurve(this._difficulty.xpCurve);
         Sfx.play(this, 'launch');
-        this.game.events.emit(GameConstants.Events.PLAYER_LEFT_EVENT, index);
+        this.game.events.emit(GameConstants.Events.PLAYER_LEFT_EVENT, index, device.type === 'bot');
     }
 
     private joinPlayer(device: InputDevice) {

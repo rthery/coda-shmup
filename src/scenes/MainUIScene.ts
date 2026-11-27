@@ -3,6 +3,7 @@ import Health from "../components/Health.ts";
 import Experience from "../components/Experience.ts";
 import Player from "../entities/Player.ts";
 import type Team from "../Team.ts";
+import type {InputDevice} from "../managers/PlayerInput.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
 import UiUtils from "../utils/UiUtils.ts";
@@ -15,7 +16,7 @@ type LifeRow = {
     container: GameObjects.Container;
     icons: GameObjects.Image[];
     hullFrame: string;
-    isBot: boolean;
+    device: InputDevice;
 }
 
 export default class MainUIScene extends Scene {
@@ -380,7 +381,7 @@ export default class MainUIScene extends Scene {
             container: this.add.container(0, this._lifeRows.length * MainUIScene.LIFE_ROW_SPACING),
             icons: [],
             hullFrame: player.lifeIcon,
-            isBot: player.playerInput.device.type === 'bot'
+            device: player.playerInput.device
         };
         this._lifeRows.push(row);
         this.updateJoinHint();
@@ -409,21 +410,19 @@ export default class MainUIScene extends Scene {
     private updateJoinHint() {
         if (!this._joinHint)
             return;
-        // With the bot in, how to remove it
+        // Once player 2 or the bot is in, how it leaves
         const inputManager = this.gameInputManager;
-        const hasBot: boolean = this._lifeRows.some(row => row.isBot);
+        const joined: LifeRow | undefined = this._lifeRows[1];
         this._joinHintIcon = inputManager.gamepadIcon('confirm');
-        UiUtils.setButtonHint(this._joinHint, hasBot
-            ? [inputManager.keyHintPart('KeyB'), 'TO REMOVE THE BOT'] : inputManager.joinHintParts());
-        this._joinHint.setVisible((hasBot || this._lifeRows.length < GameConstants.MAX_PLAYERS)
-            && inputManager.activeInputType !== 'touch');
+        UiUtils.setButtonHint(this._joinHint, joined ? inputManager.leaveHintParts(joined.device) : inputManager.joinHintParts());
+        this._joinHint.setVisible(inputManager.activeInputType !== 'touch');
     }
 
-    private onPlayerLeft(index: number) {
+    private onPlayerLeft(index: number, isBot: boolean) {
         const [row] = this._lifeRows.splice(index, 1);
         row?.container.destroy();
         this.updateJoinHint();
-        this.showJoinBanner("BOT LEFT");
+        this.showJoinBanner(isBot ? "BOT LEFT" : `PLAYER ${index + 1} LEFT`);
     }
 
     private onPlayerJoined(playerCount: number, isBot: boolean) {
