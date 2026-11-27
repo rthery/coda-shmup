@@ -4,4 +4,6 @@ export type BulletData = {
     color: number;
     speed: number;
     damage: number;
+    shots: number;
+    angle: number;
 }

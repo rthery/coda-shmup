@@ -12,7 +12,9 @@ export default class Player extends Entity {
         height: 4,
         color: 0xffe066,
         speed: 1024,
-        damage: 1
+        damage: 1,
+        shots: 3,
+        angle: 90
     };
 
     private readonly _cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -47,7 +49,7 @@ export default class Player extends Entity {
         this.getComponent(Health)?.on(Health.CHANGE_EVENT, () => {
             this.arcadeBody.setEnable(false);
 
-            this.scene.time.delayedCall(50, () => {
+            this.scene.time.delayedCall(0, () => {
                 // A dead player stays disabled
                 if (this.active)
                     this.arcadeBody.setEnable(true);
