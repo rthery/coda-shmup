@@ -12,10 +12,11 @@ export default class Enemy extends Entity {
         speed: 512,
         damage: 1,
     };
+    private _isHit: boolean = false;
     private _shootTimerConfig: Phaser.Types.Time.TimerEventConfig;
     private _shootTimer: Phaser.Time.TimerEvent;
 
-    public init(bulletsGroup: Phaser.Physics.Arcade.Group) {
+    public init(bulletsGroup: Phaser.Physics.Arcade.Group, shootIntervalMs?: number) {
         this.addComponent(new Health(1, this));
         this.addComponent(new Movement(0.2));
         this.addComponent(new Weapon(bulletsGroup, this._bulletData));
@@ -23,6 +24,7 @@ export default class Enemy extends Entity {
         // Listen once per enemy, not on every enable(): pooled enemies are reused many times
         const health = this.getComponent(Health);
         health?.on(Health.CHANGE_EVENT, () => {
+            this._isHit = true;
             this.setTintFill(0xffffff);
 
             if (health?.current == 0)
@@ -31,7 +33,8 @@ export default class Enemy extends Entity {
             }
 
             this.scene.time.delayedCall(50, () => {
-                this.clearTint();
+                this._isHit = false;
+                this.restoreAppearance();
 
                 if (health?.current == 0)
                 {
@@ -43,7 +46,7 @@ export default class Enemy extends Entity {
         this.angle = 90;
 
         this._shootTimerConfig = {
-            delay: Phaser.Math.Between(2000, 3000),
+            delay: shootIntervalMs ?? Phaser.Math.Between(2000, 3000),
             callback: this.shoot,
             callbackScope: this,
             loop: true
@@ -73,6 +76,8 @@ export default class Enemy extends Entity {
         // Restore health, in case the enemy is reused from the pool, without emitting events
         const health = this.getComponent(Health);
         health?.heal(health!.max, false);
+        this._isHit = false;
+        this.restoreAppearance();
     }
 
     public disable() {
@@ -83,14 +88,22 @@ export default class Enemy extends Entity {
         this._shootTimer.paused = true;
     }
 
-    private shoot() {
+    protected shoot() {
         this.play('ufoShoot');
         this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
             this.setTexture('sprites', 'ufoRed');
 
-            this.getComponent(Weapon)?.shoot(this);
+            this.fireWeapon();
             this.scene.sound.play('sfx_laser2');
         });
+    }
+
+    protected fireWeapon() {
+        this.getComponent(Weapon)?.shoot(this);
+    }
+
+    protected restoreAppearance() {
+        this.clearTint();
     }
 
     preUpdate(timeSinceLaunch: number, deltaTime: number) {
@@ -101,7 +114,7 @@ export default class Enemy extends Entity {
             this.disable();
         }
 
-        if (!this.isTinted)
+        if (!this._isHit)
             this.getComponent(Movement)?.moveVertically(this, deltaTime);
         else
             this.getComponent(Movement)?.moveVertically(this, deltaTime * 0.5);

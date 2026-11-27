@@ -2,10 +2,13 @@ import {GameObjects, Plugins, Physics, Scene} from "phaser";
 import Health from "../components/Health.ts";
 import Bullet from "../entities/Bullet.ts";
 import Enemy from "../entities/Enemy.ts";
+import SinusoidalEnemy from "../entities/SinusoidalEnemy.ts";
 import Player from "../entities/Player.ts";
 import GroupUtils from "../utils/GroupUtils.ts";
 import GameConstants from "../GameConstants.ts";
 import RegistryConstants from "../RegistryConstants.ts";
+import {parseSinusoidalEnemyConfig} from "../gameData/SinusoidalEnemyConfig.ts";
+import type {SinusoidalEnemyConfig} from "../gameData/SinusoidalEnemyConfig.ts";
 
 export default class EntityManager extends Plugins.ScenePlugin {
     public static readonly PLUGIN_KEY: string = 'EntityManager';
@@ -14,7 +17,7 @@ export default class EntityManager extends Plugins.ScenePlugin {
     // noinspection JSUnusedGlobalSymbols
     private readonly bulletGroupConfig = {
         classType: Bullet,
-        maxSize: 256,
+        maxSize: 2048,
         runChildUpdate: true,
         createCallback: (bullet: GameObjects.GameObject) => {
             (bullet as Bullet).init();
@@ -24,7 +27,9 @@ export default class EntityManager extends Plugins.ScenePlugin {
     private _player: Player;
     private _playerBullets: Physics.Arcade.Group;
     private _enemies: Physics.Arcade.Group;
+    private _sinusoidalEnemies: Physics.Arcade.Group;
     private _enemyBullets: Physics.Arcade.Group;
+    private _sinusoidalEnemyConfig: SinusoidalEnemyConfig;
 
     constructor(scene: Scene, pluginManager: Plugins.PluginManager) {
         super(scene, pluginManager, EntityManager.PLUGIN_KEY);
@@ -53,6 +58,10 @@ export default class EntityManager extends Plugins.ScenePlugin {
     }
 
     public initEnemies(): Physics.Arcade.Group {
+        this._sinusoidalEnemyConfig = parseSinusoidalEnemyConfig(
+            this.scene!.cache.json.get('sinusoidalEnemy')
+        );
+
         this._enemyBullets = this.scene!.physics.add.group(this.bulletGroupConfig);
         GroupUtils.populate(256, this._enemyBullets);
 
@@ -65,10 +74,28 @@ export default class EntityManager extends Plugins.ScenePlugin {
             }
         });
 
+        this._sinusoidalEnemies = this.scene!.physics.add.group({
+            classType: SinusoidalEnemy,
+            defaultKey: 'sprites',
+            defaultFrame: 'ufoRed',
+            createCallback: (enemy) => {
+                const sinusoidalEnemy = enemy as SinusoidalEnemy;
+                sinusoidalEnemy.configure(this._sinusoidalEnemyConfig);
+                sinusoidalEnemy.init(this._enemyBullets);
+            }
+        });
+
         // Spawn enemies indefinitely
         this.scene!.time.addEvent({
             delay: 1500,
             callback: this.spawnEnemy,
+            callbackScope: this,
+            loop: true
+        });
+
+        this.scene!.time.addEvent({
+            delay: this._sinusoidalEnemyConfig.spawnIntervalMs,
+            callback: this.spawnSinusoidalEnemy,
             callbackScope: this,
             loop: true
         });
@@ -84,6 +111,13 @@ export default class EntityManager extends Plugins.ScenePlugin {
 
             (bullet as Bullet).disable();
             (enemy as Enemy).getComponent(Health)?.damage((bullet as Bullet).damage);
+        });
+
+        this.scene!.physics.add.overlap(this._playerBullets, this._sinusoidalEnemies, (bullet, enemy) => {
+            this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
+
+            (bullet as Bullet).disable();
+            (enemy as SinusoidalEnemy).getComponent(Health)?.damage((bullet as Bullet).damage);
         });
 
         this.scene!.physics.add.overlap(this._player, this._enemyBullets, (player, bullet) => {
@@ -105,11 +139,23 @@ export default class EntityManager extends Plugins.ScenePlugin {
             this.scene?.cameras.main.shake(100, 0.03);
         });
 
+        this.scene!.physics.add.overlap(this._player, this._sinusoidalEnemies, (player, enemy) => {
+            this.scene!.registry.inc(RegistryConstants.Keys.PLAYER_SCORE);
+
+            const enemyHealth = (enemy as SinusoidalEnemy).getComponent(Health);
+            enemyHealth?.damage(enemyHealth?.max);
+
+            const playerHealth = (player as Player).getComponent(Health);
+            playerHealth?.damage(1);
+
+            this.scene?.cameras.main.shake(100, 0.03);
+        });
+
         console.log("[EntityManager] Group collisions initialized");
     }
 
     private spawnEnemy() {
-        if (this._enemies.countActive(true) >= 5) {
+        if (this.getActiveEnemyCount() >= 5) {
             return;
         }
 
@@ -123,5 +169,29 @@ export default class EntityManager extends Plugins.ScenePlugin {
         this.game!.events.emit(GameConstants.Events.ENEMY_SPAWNED_EVENT, enemy);
 
         console.log("[EntityManager] Enemy spawned");
+    }
+
+    private spawnSinusoidalEnemy() {
+        if (this.getActiveEnemyCount() >= 5) {
+            return;
+        }
+
+        const enemy = this._sinusoidalEnemies.get() as SinusoidalEnemy;
+        if (!enemy) {
+            return;
+        }
+
+        const camera = this.scene!.cameras.main;
+        const margin = enemy.displayWidth / 2 + this._sinusoidalEnemyConfig.movement.amplitude;
+        const x = Phaser.Math.Between(margin, camera.width - margin);
+        enemy.enable(x, 0);
+
+        this.game!.events.emit(GameConstants.Events.ENEMY_SPAWNED_EVENT, enemy);
+
+        console.log("[EntityManager] Sinusoidal enemy spawned");
+    }
+
+    private getActiveEnemyCount(): number {
+        return this._enemies.countActive(true) + this._sinusoidalEnemies.countActive(true);
     }
 }

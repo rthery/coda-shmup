@@ -1,0 +1,14 @@
+{
+  "spawnIntervalMs": 6000,
+  "movement": {
+    "verticalSpeed": 0.12,
+    "amplitude": 180,
+    "frequencyHz": 0.5
+  },
+  "spreadShot": {
+    "intervalMs": 2200,
+    "bulletCount": 3,
+    "angleDegrees": 30
+  },
+  "visualTint": 5623039
+}
