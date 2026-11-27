@@ -13,7 +13,7 @@ import {isSameDevice, type InputDevice} from "../managers/PlayerInput.ts";
 type MenuOption = {
     title: string;
     label: string;
-    subtitle: string;
+    subtitle?: string;
     frame: UiFrame;
     // Shown, but not selectable yet
     isDisabled?: boolean;
@@ -46,8 +46,9 @@ export default class HomeScene extends Phaser.Scene {
     private static readonly DUO_SWAY_X: number = 48;
     private static readonly DUO_SWAY_DELAY: number = 150; // ms
     private static readonly STICK_THRESHOLD: number = 0.5;
-    // Solo, local coop and online coop: cards stacked like the level-up ones, the selected one lifted and nudged
-    private static readonly MENU_TOP: number = 880;
+    // The menu and the lobby sit on this line, just above the hints
+    private static readonly MENU_BOTTOM: number = 1620;
+    // Solo and local coop: cards stacked like the level-up ones, the selected one lifted and nudged
     private static readonly MENU_CARD_WIDTH: number = 820;
     private static readonly MENU_CARD_HEIGHT: number = 200;
     private static readonly MENU_CARD_GAP: number = 24;
@@ -58,12 +59,10 @@ export default class HomeScene extends Phaser.Scene {
     private static readonly CARD_SHADOW_ALPHA: number = 0.45;
     private static readonly CARD_SHADOW_RADIUS: number = 18;
     private static readonly MENU_OPTIONS: MenuOption[] = [
-        {title: 'SOLO', label: '1 PLAYER', subtitle: 'ANY KEYBOARD OR PAD', frame: 'ui_header_blade_blue'},
+        {title: 'SOLO', label: '1 PLAYER', frame: 'ui_header_blade_blue'},
         {title: 'LOCAL COOP', label: '2 PLAYERS', subtitle: 'SAME SCREEN', frame: 'ui_header_blade_green'},
-        {title: 'ONLINE COOP', label: '2 PLAYERS', subtitle: 'COMING SOON', frame: 'ui_header_blade_red', isDisabled: true},
     ];
     // Local coop: a panel with a row per player and a START button like the pause screen's
-    private static readonly LOBBY_TOP: number = 880;
     private static readonly LOBBY_WIDTH: number = 820;
     private static readonly ROW_HEIGHT: number = 130;
     private static readonly ROW_GAP: number = 20;
@@ -78,9 +77,12 @@ export default class HomeScene extends Phaser.Scene {
     private static readonly BUTTON_LIFT: number = 8;
     private static readonly START_COLORS = {fill: 0x1fbf75, shade: 0x15955a};
     private static readonly DISABLED_BUTTON_COLOR: number = 0xb7bec9;
-    // Above the menu, higher than the old single ship so the stacked cards fit under it
-    private static readonly TITLE_Y: number = 400;
-    private static readonly SHIP_Y: number = 710;
+    private static readonly TITLE_Y: number = 320;
+    // The logo is drawn at twice this width, to stay sharp on large screens
+    private static readonly TITLE_WIDTH: number = 700;
+    private static readonly TITLE_SHADOW_Y: number = 8;
+    // Between the logo and the menu, on the frame: the ship follows it as the frame scales
+    private static readonly SHIP_FRAME_Y: number = 860;
     // Readable on the panels' light body: the ships' blue and orange, darker
     private static readonly PLAYER_INK_COLORS: number[] = [0x2a7fc4, 0xd9731f];
     private static readonly READY_COLOR: string = '#2f8f52';
@@ -120,6 +122,7 @@ export default class HomeScene extends Phaser.Scene {
 
         this.load.image('bg', 'Backgrounds/darkPurple.png');
         this.load.image('planet', 'Planets/planet00.png');
+        this.load.image('logo', 'Logo/logo.png');
         this.load.atlas('sprites', 'Spritesheet/gameSprites.png', 'Spritesheet/gameSprites.json');
         this.load.atlas('shapes', 'FX/shapes.png', 'FX/shapes.json');
         this.load.bitmapFont('future-bmp', 'Fonts/kenvector_future.png', 'Fonts/kenvector_future.xml');
@@ -181,14 +184,15 @@ export default class HomeScene extends Phaser.Scene {
 
         this._bg = this.add.tileSprite(0, 0, 1, 1, 'bg').setOrigin(0).setTileScale(HomeScene.BG_TILE_SCALE);
 
-        this._playerShip = this.createShip(1, UiLayout.WIDTH / 2 - HomeScene.SHIP_SWAY_X, HomeScene.SHIP_Y);
+        this._playerShip = this.createShip(1, UiLayout.WIDTH / 2 - HomeScene.SHIP_SWAY_X, HomeScene.SHIP_FRAME_Y);
         this.sway(this._playerShip, UiLayout.WIDTH / 2, HomeScene.SHIP_SWAY_X);
 
         const centerX: number = UiLayout.WIDTH / 2;
-        this._title = this.add.container(0, 0, [
-            this.add.text(centerX, HomeScene.TITLE_Y, 'FINAL ORBIT', {fontSize: '120px', color: '#fff', fontFamily: 'future'})
-                .setOrigin(0.5).setShadow(0, 8, '#000', 0, false, true),
-        ]);
+        const logo = this.add.image(centerX, HomeScene.TITLE_Y, 'logo');
+        logo.setScale(HomeScene.TITLE_WIDTH / logo.width);
+        const logoShadow = this.add.image(centerX, HomeScene.TITLE_Y + HomeScene.TITLE_SHADOW_Y, 'logo')
+            .setScale(logo.scale).setTintFill(0x000000);
+        this._title = this.add.container(0, 0, [logoShadow, logo]);
 
         this._menuCards = HomeScene.MENU_OPTIONS.map((option, index) => this.createMenuCard(option, index));
         this._lobby = this.createLobby();
@@ -221,6 +225,22 @@ export default class HomeScene extends Phaser.Scene {
 
         const zoom: number = UiLayout.frameZoom(this);
         this._frame.setScale(zoom).setPosition(UiLayout.WIDTH / 2 * (1 - zoom), UiLayout.HEIGHT / 2 * (1 - zoom));
+
+        // Flying out or flying in: their tweens own the height
+        if (this._state === 'started')
+            return;
+        this._playerShip.image.setY(this.shipY());
+        const joinedImage = this._joinedShip?.image;
+        const isFlyingIn: boolean = !!joinedImage && this.tweens.getTweensOf(joinedImage)
+            .some(tween => tween.data.some(data => data instanceof Phaser.Tweens.TweenData && data.key === 'y'));
+        if (this._joinedDevice && joinedImage && !isFlyingIn)
+            joinedImage.setY(this.shipY());
+    }
+
+    // The ships' height on the world, where SHIP_FRAME_Y lands once the frame is scaled around the screen's center
+    private shipY(): number {
+        const zoom: number = UiLayout.frameZoom(this);
+        return UiLayout.HEIGHT / 2 + (HomeScene.SHIP_FRAME_Y - UiLayout.HEIGHT / 2) * zoom;
     }
 
     // The mode's name on the header, its player count and a word on how it plays
@@ -238,14 +258,16 @@ export default class HomeScene extends Phaser.Scene {
                 .on(Phaser.Input.Events.GAMEOBJECT_POINTER_OVER, () => this.selectMenu(index))
                 .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => this.chooseMenu({type: 'keyboard', keys: 'all'}));
         const title = UiUtils.addHeaderTitle(this, -width / 2, top, option.title);
-        // The player count on the left of the body, how it plays on the right
+        // The player count on the left of the body, how it plays on the right if it says
         const bodyCenterY: number = bodyTop + (height / 2 - bodyTop) / 2;
         const label = this.add.text(-width / 2 + 40, bodyCenterY, option.label,
             {fontSize: '44px', color: UiUtils.INK_COLOR, fontFamily: 'future'}).setOrigin(0, 0.5);
-        const subtitle = this.add.text(width / 2 - 40, bodyCenterY, option.subtitle,
+        const subtitle = this.add.text(width / 2 - 40, bodyCenterY, option.subtitle ?? '',
             {fontSize: '26px', color: UiUtils.INK_SOFT_COLOR, fontFamily: 'future'}).setOrigin(1, 0.5);
 
-        const centerY: number = HomeScene.MENU_TOP + height / 2 + index * (height + HomeScene.MENU_CARD_GAP);
+        const count: number = HomeScene.MENU_OPTIONS.length;
+        const menuTop: number = HomeScene.MENU_BOTTOM - count * height - (count - 1) * HomeScene.MENU_CARD_GAP;
+        const centerY: number = menuTop + height / 2 + index * (height + HomeScene.MENU_CARD_GAP);
         return this.add.container(UiLayout.WIDTH / 2, centerY, [shadow, panel, title, label, subtitle])
             .setData('shadow', shadow).setData('restY', centerY);
     }
@@ -268,8 +290,10 @@ export default class HomeScene extends Phaser.Scene {
         const buttonZone = this.add.zone(0, buttonY, HomeScene.BUTTON_WIDTH, HomeScene.BUTTON_HEIGHT)
             .setInteractive({useHandCursor: true})
             .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => this.tryStartCoop());
-        return this.add.container(UiLayout.WIDTH / 2, HomeScene.LOBBY_TOP,
-            [panel, title, ...this._rows, this._startButton, this._startText, buttonZone]).setVisible(false);
+        const top: number = HomeScene.MENU_BOTTOM - height;
+        return this.add.container(UiLayout.WIDTH / 2, top,
+            [panel, title, ...this._rows, this._startButton, this._startText, buttonZone]).setVisible(false)
+            .setData('restY', top);
     }
 
     // The menu on keyboards and gamepads. Touch only gets "TAP TO START": no coop on touch
@@ -459,8 +483,9 @@ export default class HomeScene extends Phaser.Scene {
         this._state = 'lobby';
         this._playerDevice = device.type === 'keyboard' ? {type: 'keyboard', keys: 'all'} : device;
         this._lobby.setVisible(true);
-        this.tweens.add({targets: this._lobby, alpha: {from: 0, to: 1}, y: {from: HomeScene.LOBBY_TOP + 40,
-            to: HomeScene.LOBBY_TOP}, duration: 250, ease: 'Quad.easeOut'});
+        const lobbyTop: number = this._lobby.getData('restY');
+        this.tweens.add({targets: this._lobby, alpha: {from: 0, to: 1}, y: {from: lobbyTop + 40, to: lobbyTop},
+            duration: 250, ease: 'Quad.easeOut'});
         this.refreshLobby();
         this.updateHints();
     }
@@ -517,7 +542,7 @@ export default class HomeScene extends Phaser.Scene {
             this._playerDevice = {type: 'keyboard', keys: 'wasd'};
         Sfx.play(this, 'launch');
         const centerX: number = UiLayout.WIDTH / 2;
-        const y: number = HomeScene.SHIP_Y;
+        const y: number = this.shipY();
         this.sway(this._playerShip, centerX - HomeScene.SHIP_SPACING_X, HomeScene.DUO_SWAY_X);
 
         const joinedShip: HomeShip = this._joinedShip ??= this.createShip(2, 0, 0);
